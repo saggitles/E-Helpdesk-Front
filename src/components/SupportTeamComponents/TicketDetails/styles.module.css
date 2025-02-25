@@ -1,0 +1,10 @@
+/* styles.module.css */
+.base {
+  padding: 2.5rem 3.5rem;
+  overflow-y: auto;
+  max-height: fit-content;
+}
+
+.editingMode {
+  background-color: #e8eaed;
+}

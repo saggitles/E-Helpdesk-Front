@@ -1,0 +1,20 @@
+/* Basic editor styles */
+.tiptap {
+    > * + * {
+      margin-top: 0.75em;
+    }
+    
+    blockquote {
+      border-left: 3px solid #ccc; /* Añade una línea sólida a la izquierda */
+      margin: 0.5em 0; /* Añade un poco de margen para separación */
+      padding-left: 10px; /* Añade padding para no pegar el texto a la línea */
+      color: #666; /* Cambia el color del texto si es necesario */
+      font-style: italic; /* Opcional: estilo itálico para el texto */
+    }
+
+    ul,
+    ol {
+      list-style: circle!important;
+      padding: 0 1rem!important;
+    }
+  }

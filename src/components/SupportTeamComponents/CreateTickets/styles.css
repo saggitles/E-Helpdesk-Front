@@ -1,0 +1,17 @@
+.create-tickets-container {
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  .column1, .column2 {
+    width: 45%; 
+  }
+
+/* Establece el fondo y el color del texto para las opciones del menú desplegable */
+#mySelect option[data-color="In progress"] { background-color: #fff494; color: black; }
+#mySelect option[data-color="Done"] { background-color: #d2f5b0; color: black; }
+#mySelect option[data-color="Scaled"] { background-color: #c2dfff; color: black; }
+#mySelect option[data-color="To Do"] { background-color: #fcbdbd; color: black; }
+#mySelect option[data-color="Won't Do"] { background-color: #c9ccc4; color: black; }
+#mySelect option[data-color="Pending to call"] { background-color: #a909e9; color: black; }
+
