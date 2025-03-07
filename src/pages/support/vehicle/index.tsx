@@ -4,7 +4,7 @@ import NavBar from '@/generic_comp/navbar';
 import Navsearch from '@/generic_comp/navsearch';
 import { integer } from 'aws-sdk/clients/cloudfront';
 import { int } from 'aws-sdk/clients/datapipeline';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 // Define interfaces for your data types
 interface VehicleInfo {
