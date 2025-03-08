@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 
 // Define Types for Filters
 interface Filters {
@@ -29,21 +28,40 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
   const [sites, setSites] = useState<
     { LOCATION_CD: string; NAME: string }[]
   >([]);
+  
+  // Loading states - true por defecto para que se vean los spinners
+  const [loadingCustomers, setLoadingCustomers] = useState<boolean>(true);
+  const [loadingSites, setLoadingSites] = useState<boolean>(false);
+  const [loadingData, setLoadingData] = useState<boolean>(true);
 
   // Load Local Storage Data After Component Mounts
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setFilters({
-        client: localStorage.getItem('selectedCustomer') || '',
-        site: localStorage.getItem('selectedSite') || '',
-        gmptCode: '',
-      });
+      setLoadingData(true);
+      setTimeout(() => {
+        try {
+          const storedClient = localStorage.getItem('selectedCustomer') || '';
+          const storedSite = localStorage.getItem('selectedSite') || '';
+          const storedGmptCode = localStorage.getItem('gmptCode') || '';
+          
+          setFilters({
+            client: storedClient,
+            site: storedSite,
+            gmptCode: storedGmptCode,
+          });
+        } catch (error) {
+          console.error('Error loading data from localStorage:', error);
+        } finally {
+          setLoadingData(false);
+        }
+      }, 1000); // Delay extendido para asegurar visibilidad
     }
   }, []);
 
   // Fetch Customers from Backend
   useEffect(() => {
     const fetchCustomers = async () => {
+      setLoadingCustomers(true);
       try {
         const response = await fetch(
           'http://localhost:8080/api/customers'
@@ -53,16 +71,13 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
 
         const data = await response.json();
         setCustomers(data);
-
-        const storedCustomer = localStorage.getItem('selectedCustomer');
-        if (storedCustomer) {
-          setFilters((prevFilters) => ({
-            ...prevFilters,
-            client: storedCustomer, // ✅ Fixed Key
-          }));
-        }
       } catch (error) {
         console.error('Error fetching customers:', error);
+      } finally {
+        // Delay extendido para asegurar visibilidad
+        setTimeout(() => {
+          setLoadingCustomers(false);
+        }, 1000);
       }
     };
     fetchCustomers();
@@ -76,6 +91,7 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
     }
 
     const fetchSites = async () => {
+      setLoadingSites(true);
       try {
         const response = await fetch(
           `http://localhost:8080/api/sites?customer=${filters.client}`
@@ -89,122 +105,174 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
       } catch (error) {
         console.error('Error fetching sites:', error);
         setSites([]);
+      } finally {
+        // Delay extendido para asegurar visibilidad
+        setTimeout(() => {
+          setLoadingSites(false);
+        }, 1000);
       }
     };
 
     fetchSites();
   }, [filters.client]);
 
-  // Handle Input Changes
+  // Handle Input Changes and save to localStorage immediately
   const handleFilterChange = (
     e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>
   ) => {
     const { name, value } = e.target;
 
+    if (name === 'client') {
+      setLoadingSites(true); // Activar spinner de sitios cuando cambia el cliente
+    }
+
+    // Update state
     setFilters((prev) => ({
       ...prev,
       [name]: value,
     }));
-  };
 
-  // Handle Search Button Click
-  const handleSearch = () => {
-    if (!filters.client) {
-      console.error('Customer is required for search.');
-      return;
-    }
-
-    console.log('Saving to local storage:');
-    console.log('Customer:', filters.client);
-    console.log('Site:', filters.site || 'None selected');
-
-    // Store customer and site in local storage
-    localStorage.setItem('selectedCustomer', filters.client);
-    localStorage.setItem('selectedSite', filters.site || '');
-
+    // Save to localStorage immediately
+    localStorage.setItem(name === 'client' ? 'selectedCustomer' : 
+                         name === 'site' ? 'selectedSite' : 'gmptCode', value);
+    
+    // Call onFilterChange if provided
     if (typeof onFilterChange === 'function') {
       onFilterChange();
-    } else {
-      console.warn(
-        'onFilterChange is not defined, skipping function call.'
-      );
     }
   };
 
   return (
-    <nav className='bg-teal-500 text-white p-4 shadow-md'>
-      <div className='container mx-auto mt-4 bg-gray-100 p-6 rounded-lg shadow'>
-        <h2 className='text-lg font-semibold text-gray-800 mb-3'>
-          Filters
-        </h2>
-        <div className='grid grid-cols-3 gap-4'>
-          {/* Customer Filter */}
-          <div>
-            <label className='block text-sm font-medium text-gray-700 mb-1'>
-              Customer
-            </label>
-            <select
-              name='client'
-              value={filters.client}
-              onChange={handleFilterChange}
-              className='block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black' // Add text-black here
-            >
-              <option value=''>Select a Customer</option>
-              {customers.map((customer) => (
-                <option key={customer.USER_CD} value={customer.USER_CD}>
-                  {customer.USER_NAME}
-                </option>
-              ))}
-            </select>
-          </div>
+    <>
+      {/* CSS GLOBAL para spinners - esto garantiza que los estilos siempre se apliquen */}
+      <style jsx global>{`
+        /* Keyframes para la animación del spinner */
+        @keyframes spinner-border {
+          to { transform: rotate(360deg); }
+        }
 
-          {/* Site Filter */}
-          <div>
-            <label className='block text-sm font-medium text-gray-700 mb-1'>
-              Site
-            </label>
-            <select
-              name='site'
-              value={filters.site}
-              onChange={handleFilterChange}
-              disabled={!filters.client}
-              className='block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black' // Add text-black here
-            >
-              <option value=''>Select a Site</option>
-              {sites.map((site) => (
-                <option key={site.LOCATION_CD} value={site.LOCATION_CD}>
-                  {site.NAME}
-                </option>
-              ))}
-            </select>
-          </div>
+        /* Estilos para el spinner principal */
+        .spinner-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: rgba(255, 255, 255, 0.8);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 9999;
+          border-radius: 0.5rem;
+        }
 
-          {/* GMPT Code Filter */}
-          <div>
-            <label className='block text-sm font-medium text-gray-700 mb-1'>
-              GMPT Code
-            </label>
-            <input
-              type='text'
-              name='gmptCode'
-              value={filters.gmptCode}
-              onChange={handleFilterChange}
-              className='w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500'
-            />
-          </div>
+        .spinner-border {
+          display: inline-block;
+          width: 2rem;
+          height: 2rem;
+          vertical-align: text-bottom;
+          border: 0.25em solid currentColor;
+          border-right-color: transparent;
+          border-radius: 50%;
+          animation: spinner-border .75s linear infinite;
+          color: #0d9488; /* color teal-600 */
+        }
 
-          {/* Search Button */}
-          <div className='col-span-3 flex justify-end'>
-            <button
-              className='bg-teal-600 text-white px-4 py-2 rounded-md hover:bg-teal-700 transition'
-              onClick={handleSearch}
-            >
-              Search
-            </button>
+        .spinner-border-lg {
+          width: 4rem;
+          height: 4rem;
+          border-width: 0.35em;
+        }
+
+        .spinner-label {
+          margin-left: 0.5rem;
+          display: inline-block;
+          vertical-align: middle;
+        }
+      `}</style>
+
+      <nav className='bg-teal-500 text-white p-4 shadow-md'>
+        <div className='container mx-auto mt-4 bg-gray-100 p-6 rounded-lg shadow relative'>
+          {/* Spinner overlay - completamente visible */}
+          {loadingData && (
+            <div className="spinner-overlay">
+              <div className="spinner-border spinner-border-lg"></div>
+            </div>
+          )}
+          
+          <h2 className='text-lg font-semibold text-gray-800 mb-3'>
+            Filtros
+          </h2>
+          <div className='grid grid-cols-3 gap-4'>
+            {/* Customer Filter */}
+            <div>
+              <label className='block text-sm font-medium text-gray-700 mb-1'>
+                Cliente
+                {loadingCustomers && (
+                  <span className="spinner-label">
+                    <div className="spinner-border" style={{ width: '1.5rem', height: '1.5rem' }}></div>
+                  </span>
+                )}
+              </label>
+              <select
+                name='client'
+                value={filters.client}
+                onChange={handleFilterChange}
+                disabled={loadingCustomers}
+                className='block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black'
+              >
+                <option value=''>Seleccionar Cliente</option>
+                {customers.map((customer) => (
+                  <option key={customer.USER_CD} value={customer.USER_CD}>
+                    {customer.USER_NAME}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Site Filter */}
+            <div>
+              <label className='block text-sm font-medium text-gray-700 mb-1'>
+                Sitio
+                {loadingSites && (
+                  <span className="spinner-label">
+                    <div className="spinner-border" style={{ width: '1.5rem', height: '1.5rem' }}></div>
+                  </span>
+                )}
+              </label>
+              <select
+                name='site'
+                value={filters.site}
+                onChange={handleFilterChange}
+                disabled={!filters.client || loadingSites}
+                className='block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black'
+              >
+                <option value=''>Seleccionar Sitio</option>
+                {sites.map((site) => (
+                  <option key={site.LOCATION_CD} value={site.LOCATION_CD}>
+                    {site.NAME}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* GMPT Code Filter */}
+            <div>
+              <label className='block text-sm font-medium text-gray-700 mb-1'>
+                Código GMPT
+              </label>
+              <input
+                type='text'
+                name='gmptCode'
+                value={filters.gmptCode}
+                onChange={handleFilterChange}
+                className='w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500 text-black'
+              />
+            </div>
           </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+    </>
   );
 };
 

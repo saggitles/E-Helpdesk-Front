@@ -1,4 +1,4 @@
-import { useState, FormEvent, ChangeEvent } from 'react';
+import { useState, FormEvent, ChangeEvent, useEffect } from 'react';
 import { toast } from 'react-toastify';
 
 interface TicketModalProps {
@@ -14,9 +14,10 @@ interface TicketModalProps {
     LOCATION_CD: number;
     NAME: string;
   } | null;
+  onTicketCreated?: () => void; // Callback para actualizar los tickets después de crear uno nuevo
 }
 
-const TicketModal = ({ isOpen, onClose, formData, selectedSite }: TicketModalProps) => {
+const TicketModal = ({ isOpen, onClose, formData, selectedSite, onTicketCreated }: TicketModalProps) => {
   const [ticketData, setTicketData] = useState({
     description: '',
     category: 'Support',
@@ -31,7 +32,9 @@ const TicketModal = ({ isOpen, onClose, formData, selectedSite }: TicketModalPro
     solution: ''
   });
   const [files, setFiles] = useState<FileList | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Mostrar o no el modal
   if (!isOpen) return null;
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -50,6 +53,15 @@ const TicketModal = ({ isOpen, onClose, formData, selectedSite }: TicketModalPro
 
   const handleSubmitTicket = async (e: FormEvent) => {
     e.preventDefault();
+    
+    // Validación básica
+    if (!ticketData.description.trim()) {
+      toast.error('Description is required');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
     try {
       // Crear un FormData para enviar archivos
       const formDataToSend = new FormData();
@@ -71,7 +83,8 @@ const TicketModal = ({ isOpen, onClose, formData, selectedSite }: TicketModalPro
         Supported: ticketData.supported,
         Email: ticketData.email,
         Platform: ticketData.platform,
-        Solution: ticketData.solution
+        Solution: ticketData.solution,
+        phone: formData.phone // Añadir el teléfono del contacto
       };
       
       formDataToSend.append('ticket', JSON.stringify(ticketPayload));
@@ -82,6 +95,25 @@ const TicketModal = ({ isOpen, onClose, formData, selectedSite }: TicketModalPro
           formDataToSend.append('files', files[i]);
         }
       }
+
+      // Spinner CSS
+      const styleElement = document.createElement('style');
+      styleElement.textContent = `
+        @keyframes spinner-border {
+          to { transform: rotate(360deg); }
+        }
+        .submit-spinner {
+          display: inline-block;
+          width: 1rem;
+          height: 1rem;
+          border: 0.2em solid currentColor;
+          border-right-color: transparent;
+          border-radius: 50%;
+          animation: spinner-border 0.75s linear infinite;
+          margin-right: 0.5rem;
+        }
+      `;
+      document.head.appendChild(styleElement);
 
       const response = await fetch('http://localhost:8080/api/tickets', {
         method: 'POST',
@@ -97,12 +129,67 @@ const TicketModal = ({ isOpen, onClose, formData, selectedSite }: TicketModalPro
         autoClose: 2000
       });
       
+      // Limpiar el formulario
+      setTicketData({
+        description: '',
+        category: 'Support',
+        incidentDate: new Date().toISOString().split('T')[0],
+        driversName: '',
+        vehicleID: '',
+        supported: '',
+        status: 'New',
+        email: '',
+        priority: 'Medium',
+        platform: 'FleetXQ',
+        solution: ''
+      });
+      setFiles(null);
+      
+      // Llamar al callback para actualizar los tickets
+      if (onTicketCreated) {
+        onTicketCreated();
+      }
+      
       onClose();
     } catch (error) {
       console.error('Error submitting ticket:', error);
       toast.error('Error creating ticket');
+    } finally {
+      setIsSubmitting(false);
+      document.head.removeChild(document.head.lastChild as Node);
     }
   };
+
+  // CSS para spinner
+  useEffect(() => {
+    if (!document.getElementById('modal-spinner-styles')) {
+      const style = document.createElement('style');
+      style.id = 'modal-spinner-styles';
+      style.innerHTML = `
+        @keyframes spinner-border {
+          to { transform: rotate(360deg); }
+        }
+        .submit-spinner {
+          display: inline-block;
+          width: 1rem;
+          height: 1rem;
+          border: 0.2em solid currentColor;
+          border-right-color: transparent;
+          border-radius: 50%;
+          animation: spinner-border 0.75s linear infinite;
+          margin-right: 0.5rem;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+    
+    return () => {
+      const styleElement = document.getElementById('modal-spinner-styles');
+      if (styleElement) {
+        styleElement.remove();
+      }
+    };
+  }, []);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
@@ -110,6 +197,7 @@ const TicketModal = ({ isOpen, onClose, formData, selectedSite }: TicketModalPro
         <button 
           onClick={onClose}
           className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
+          disabled={isSubmitting}
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -127,12 +215,23 @@ const TicketModal = ({ isOpen, onClose, formData, selectedSite }: TicketModalPro
                 value={ticketData.category}
                 onChange={handleChange}
                 className="w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50"
+                disabled={isSubmitting}
               >
-                <option value="Support">Support</option>
-                <option value="Bug">Bug</option>
-                <option value="Feature Request">Feature Request</option>
-                <option value="Technical Issue">Technical Issue</option>
-                <option value="Other">Other</option>
+              <option value="">Select a category</option>
+                                    <option value="Checklist issue">Checklist issue</option>
+                                    <option value="Pin/card issue">Pin/card Issue</option>
+                                    <option value="Software issue">Software Issue</option>
+                                    <option value="Hardware issue">Hardware Issue</option>
+                                    <option value="Dasbhoard issue">Dashboard Issue</option>
+                                    <option value="Conectivity issue">Connectivity Issue</option>
+                                    <option value="User awareness">User Awareness</option>
+                                    <option value="Team Request">Team Request</option>
+                                    <option value="Impact calibrations">Impact Calibrations</option>
+                                    <option value="Polarity Idle timer Issue">Polarity Idle Timer Issue</option>
+                                    <option value="Gps issue">Gps Issue</option>
+                                    <option value="Server down">Server Down</option>
+                                    <option value="Improvement Request">Improvement Request</option>
+                                    <option value="Lockout">Lockout</option>   
               </select>
             </div>
             
@@ -143,11 +242,12 @@ const TicketModal = ({ isOpen, onClose, formData, selectedSite }: TicketModalPro
                 value={ticketData.priority}
                 onChange={handleChange}
                 className="w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50"
+                disabled={isSubmitting}
               >
-                <option value="Low">Low</option>
-                <option value="Medium">Medium</option>
-                <option value="High">High</option>
-                <option value="Critical">Critical</option>
+                <option value='low'>Low</option>
+                  <option value='normal'>Normal</option>
+                  <option value='high'>High</option>
+                  <option value='urgent'>Urgent</option>
               </select>
             </div>
             
@@ -158,12 +258,26 @@ const TicketModal = ({ isOpen, onClose, formData, selectedSite }: TicketModalPro
                 value={ticketData.status}
                 onChange={handleChange}
                 className="w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50"
+                disabled={isSubmitting}
               >
-                <option value="New">New</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Pending">Pending</option>
-                <option value="Resolved">Resolved</option>
-                <option value="Closed">Closed</option>
+                 <option value='In progress' style={{ backgroundColor: '#e6d856', color: 'white' }}>
+              In progress
+            </option>
+            <option value='Done' style={{ backgroundColor: '#92cc75', color: 'white' }}>
+              Done
+            </option>
+            <option value='Scaled' style={{ backgroundColor: '#7ea6d3', color: 'white' }}>
+              Scaled
+            </option>
+            <option value="To Do" style={{ backgroundColor: '#ea7d7d', color: 'white' }}>
+              To Do
+            </option>
+            <option value="Won't do" style={{ backgroundColor: '#a4a89e', color: 'white' }}>
+              Won't do
+            </option>
+            <option value="Pending to call" style={{ backgroundColor: '#800080  ', color: 'white' }}>
+              Pending to call
+            </option>
               </select>
             </div>
             
@@ -174,6 +288,7 @@ const TicketModal = ({ isOpen, onClose, formData, selectedSite }: TicketModalPro
                 value={ticketData.platform}
                 onChange={handleChange}
                 className="w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50"
+                disabled={isSubmitting}
               >
                 <option value="FleetXQ">FleetXQ</option>
                 <option value="FleetIQ">FleetIQ</option>
@@ -189,6 +304,7 @@ const TicketModal = ({ isOpen, onClose, formData, selectedSite }: TicketModalPro
                 value={ticketData.incidentDate}
                 onChange={handleChange}
                 className="w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50"
+                disabled={isSubmitting}
               />
             </div>
             
@@ -201,6 +317,7 @@ const TicketModal = ({ isOpen, onClose, formData, selectedSite }: TicketModalPro
                 onChange={handleChange}
                 className="w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50"
                 placeholder="Enter driver's name"
+                disabled={isSubmitting}
               />
             </div>
             
@@ -213,6 +330,7 @@ const TicketModal = ({ isOpen, onClose, formData, selectedSite }: TicketModalPro
                 onChange={handleChange}
                 className="w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50"
                 placeholder="Enter vehicle ID or GMTP ID"
+                disabled={isSubmitting}
               />
             </div>
             
@@ -225,11 +343,12 @@ const TicketModal = ({ isOpen, onClose, formData, selectedSite }: TicketModalPro
                 onChange={handleChange}
                 className="w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50"
                 placeholder="Enter who is supporting"
+                disabled={isSubmitting}
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email Subject</label>
               <input
                 type="email"
                 name="email"
@@ -237,6 +356,7 @@ const TicketModal = ({ isOpen, onClose, formData, selectedSite }: TicketModalPro
                 onChange={handleChange}
                 className="w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50"
                 placeholder="Enter contact email"
+                disabled={isSubmitting}
               />
             </div>
           </div>
@@ -251,6 +371,7 @@ const TicketModal = ({ isOpen, onClose, formData, selectedSite }: TicketModalPro
               className="w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50"
               placeholder="Describe the issue in detail..."
               required
+              disabled={isSubmitting}
             />
           </div>
           
@@ -263,6 +384,7 @@ const TicketModal = ({ isOpen, onClose, formData, selectedSite }: TicketModalPro
               rows={3}
               className="w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50"
               placeholder="Provide a solution if available..."
+              disabled={isSubmitting}
             />
           </div>
           
@@ -273,6 +395,7 @@ const TicketModal = ({ isOpen, onClose, formData, selectedSite }: TicketModalPro
               onChange={handleFileChange}
               className="w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50"
               multiple
+              disabled={isSubmitting}
             />
             <p className="text-xs text-gray-500 mt-1">Upload screenshots or relevant files</p>
           </div>
@@ -282,14 +405,19 @@ const TicketModal = ({ isOpen, onClose, formData, selectedSite }: TicketModalPro
               type="button"
               onClick={onClose}
               className="mr-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+              disabled={isSubmitting}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+              className="px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 flex items-center"
+              disabled={isSubmitting}
             >
-              Create Ticket
+              {isSubmitting && (
+                <span className="submit-spinner"></span>
+              )}
+              {isSubmitting ? 'Creating...' : 'Create Ticket'}
             </button>
           </div>
         </form>
