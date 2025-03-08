@@ -30,6 +30,9 @@ interface VehicleInfo {
   seatIdle: int;
   surveyTimeout: int;
   canRulesLoaded?: boolean;
+  vehicleModel: string;
+  simNumber: int;
+  status: string;
 }
 
 interface MasterCode {
@@ -62,6 +65,7 @@ interface Driver {
 
 const VehicleDashboard: React.FC = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [additionalData, setAdditionalData] = useState({});
   const [showPopup, setShowPopup] = useState<PopupState>({
     masterCodes: false,
     driverList: false,
@@ -90,13 +94,8 @@ const VehicleDashboard: React.FC = () => {
 
     const queryParams = new URLSearchParams({ customer });
 
-    if (site) {
-      queryParams.append('site', site);
-    }
-
-    if (gmptCode) {
-      queryParams.append('gmptCode', gmptCode);
-    }
+    if (site) queryParams.append('site', site);
+    if (gmptCode) queryParams.append('gmptCode', gmptCode);
 
     try {
       const response = await fetch(
@@ -229,22 +228,40 @@ const VehicleDashboard: React.FC = () => {
                     <strong>Firmware Version:</strong>{' '}
                     {vehicle.vehicle_info.firmwareVersion}
                   </p>
+
+                  <p className='text-gray-600 text-sm'>
+                    <strong>Vehicle Model:</strong>{' '}
+                    {vehicle.vehicle_info.vehicleModel}
+                  </p>
+                  <p className='text-gray-600 text-sm'>
+                    <strong>Sim Number:</strong>{' '}
+                    {vehicle.vehicle_info.simNumber}
+                  </p>
+                  <p className='text-gray-600 text-sm'>
+                    <strong>Firmware Version:</strong>{' '}
+                    {vehicle.vehicle_info.firmwareVersion}
+                  </p>
+
                   <p className='text-gray-600 text-sm'>
                     <strong>Last Connection:</strong>{' '}
                     {vehicle.vehicle_info.lastConnection}
                   </p>
-                  <p
-                    className={`text-sm font-bold ${
-                      vehicle.status === 'Connected'
-                        ? 'text-green-500'
-                        : 'text-red-500'
-                    }`}
-                  >
-                    <strong>Status:</strong>{' '}
-                    {vehicle.vehicle_info.lastConnection}
+
+                  <p>
+                    <span
+                      className={`text-mm font-bold ${
+                        vehicle.vehicle_info.status === 'Online'
+                          ? 'text-green-500'
+                          : 'text-red-500'
+                      }`}
+                    >
+                      <strong>Status:</strong>{' '}
+                      {vehicle.vehicle_info.status}
+                    </span>
                   </p>
                 </div>
               </div>
+
               <hr className='border-gray-300 mb-4' />
               <div className='grid grid-cols-2 gap-4 text-sm text-gray-600'>
                 <p>
@@ -304,7 +321,7 @@ const VehicleDashboard: React.FC = () => {
                         : 'text-red-500'
                     }
                   >
-                    <strong>LO Ene:</strong>{' '}
+                    <strong>Lockout status:</strong>{' '}
                     {vehicle.vehicle_info.impactLockout === null
                       ? 'Unlocked'
                       : 'Locked'}
