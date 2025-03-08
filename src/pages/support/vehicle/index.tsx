@@ -76,6 +76,7 @@ const VehicleDashboard: React.FC = () => {
     // Retrieve filters from local storage
     const customer = localStorage.getItem('selectedCustomer');
     const site = localStorage.getItem('selectedSite');
+    const gmptCode = localStorage.getItem('selectedGmpt'); // Get the GMPT code from local storage
 
     if (!customer) {
       console.warn('No customer selected.');
@@ -85,10 +86,16 @@ const VehicleDashboard: React.FC = () => {
     console.log('Fetching vehicles for:');
     console.log('Customer:', customer);
     console.log('Site:', site || 'None');
+    console.log('GMPT Code:', gmptCode || 'None');
 
     const queryParams = new URLSearchParams({ customer });
+
     if (site) {
       queryParams.append('site', site);
+    }
+
+    if (gmptCode) {
+      queryParams.append('gmptCode', gmptCode);
     }
 
     try {
@@ -105,11 +112,11 @@ const VehicleDashboard: React.FC = () => {
         setVehicles(vehicleData);
       } else {
         console.warn('Received non-array data:', vehicleData);
-        setVehicles([]); // Fallback to empty array
+        setVehicles([]);
       }
     } catch (error) {
       console.error('Error fetching vehicles:', error);
-      setVehicles([]); // Fallback in case of error
+      setVehicles([]);
     }
   };
 

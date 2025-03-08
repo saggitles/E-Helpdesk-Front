@@ -36,7 +36,7 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
       setFilters({
         client: localStorage.getItem('selectedCustomer') || '',
         site: localStorage.getItem('selectedSite') || '',
-        gmptCode: '',
+        gmptCode: localStorage.getItem('selectedGmpt') || '',
       });
     }
   }, []);
@@ -58,7 +58,7 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
         if (storedCustomer) {
           setFilters((prevFilters) => ({
             ...prevFilters,
-            client: storedCustomer, // ✅ Fixed Key
+            client: storedCustomer,
           }));
         }
       } catch (error) {
@@ -95,6 +95,40 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
     fetchSites();
   }, [filters.client]);
 
+  // Fetch Customer & Site Info When GMPT Code is Entered
+  useEffect(() => {
+    const fetchVehicleByGmpt = async () => {
+      if (!filters.gmptCode) return;
+
+      try {
+        const response = await fetch(
+          `http://localhost:8080/api/vehicles?gmptCode=${filters.gmptCode}`
+        );
+        if (!response.ok)
+          throw new Error(`HTTP error! Status: ${response.status}`);
+
+        const data = await response.json();
+        console.log('Vehicle Data:', data);
+
+        if (data.customer && data.site) {
+          console.log('Updating filters based on GMPT vehicle...');
+          localStorage.setItem('selectedCustomer', data.customer);
+          localStorage.setItem('selectedSite', data.site);
+
+          setFilters((prevFilters) => ({
+            ...prevFilters,
+            client: data.customer,
+            site: data.site,
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching vehicle by GMPT:', error);
+      }
+    };
+
+    fetchVehicleByGmpt();
+  }, [filters.gmptCode]);
+
   // Handle Input Changes
   const handleFilterChange = (
     e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>
@@ -105,6 +139,11 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
       ...prev,
       [name]: value,
     }));
+
+    // Store GMPT Code in Local Storage
+    if (name === 'gmptCode') {
+      localStorage.setItem('selectedGmpt', value);
+    }
   };
 
   // Handle Search Button Click
@@ -117,10 +156,12 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
     console.log('Saving to local storage:');
     console.log('Customer:', filters.client);
     console.log('Site:', filters.site || 'None selected');
+    console.log('GMPT:', filters.gmptCode || 'None input');
 
     // Store customer and site in local storage
     localStorage.setItem('selectedCustomer', filters.client);
     localStorage.setItem('selectedSite', filters.site || '');
+    localStorage.setItem('selectedGmpt', filters.gmptCode || '');
 
     if (typeof onFilterChange === 'function') {
       onFilterChange();
@@ -147,7 +188,7 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
               name='client'
               value={filters.client}
               onChange={handleFilterChange}
-              className='block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black' // Add text-black here
+              className='block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black'
             >
               <option value=''>Select a Customer</option>
               {customers.map((customer) => (
@@ -168,7 +209,7 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
               value={filters.site}
               onChange={handleFilterChange}
               disabled={!filters.client}
-              className='block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black' // Add text-black here
+              className='block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black'
             >
               <option value=''>Select a Site</option>
               {sites.map((site) => (
@@ -189,7 +230,7 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
               name='gmptCode'
               value={filters.gmptCode}
               onChange={handleFilterChange}
-              className='w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500'
+              className='block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black'
             />
           </div>
 
