@@ -33,6 +33,7 @@ interface VehicleInfo {
   vehicleModel: string;
   simNumber: int;
   status: string;
+  gmptCode: string;
 }
 
 interface MasterCode {
@@ -196,70 +197,82 @@ const VehicleDashboard: React.FC = () => {
               key={index}
               className='bg-white shadow-lg rounded-lg p-6 border border-gray-300'
             >
-              <div className='grid grid-cols-3 gap-4 items-center'>
-                <div className='w-24 h-24 flex items-center justify-center'>
+              {/* Adjusted grid layout for top section */}
+              <div className='grid grid-cols-3 gap-4 items-start'>
+                {/* Adjusted Image Size & Positioning */}
+                <div className='w-20 h-20 flex items-start justify-start'>
                   <img
                     src='/forklift.png'
                     alt='Forklift'
                     className='w-full h-full object-contain'
                   />
                 </div>
-                <div className='col-span-2 flex flex-col gap-1'>
-                  <h2 className='text-xl font-semibold text-gray-800'>
+                {/* Vehicle Identification Details */}
+                <div className='col-span-2 text-center'>
+                  <h2 className='text-2xl font-bold text-gray-800'>
                     {vehicle.vehicle_info.vehicleName}
                   </h2>
-                  <p className='text-gray-600 text-sm'>
+                  <p className='text-sm text-gray-600'>
                     <strong>Serial:</strong>{' '}
                     {vehicle.vehicle_info.serialNumber}
                   </p>
-                  <p className='text-gray-600 text-sm'>
+                  <p className='text-sm text-gray-600'>
+                    <strong>GMPT:</strong> {vehicle.vehicle_info.gmptCode}
+                  </p>
+                </div>
+              </div>
+
+              {/* Vehicle Specs and Status */}
+              <div className='grid grid-cols-2 gap-4 mt-4'>
+                <div>
+                  <p className='text-sm text-gray-600'>
                     <strong>Department:</strong>{' '}
                     {vehicle.vehicle_info.department}
                   </p>
-                  <p className='text-gray-600 text-sm'>
+                  <p className='text-sm text-gray-600'>
                     <strong>Screen Version:</strong>{' '}
                     {vehicle.vehicle_info.screenVersion}
                   </p>
-                  <p className='text-gray-600 text-sm'>
+                  <p className='text-sm text-gray-600'>
                     <strong>ExpModu Version:</strong>{' '}
                     {vehicle.vehicle_info.expansionVersion}
                   </p>
-                  <p className='text-gray-600 text-sm'>
+                  <p className='text-sm text-gray-600'>
                     <strong>Firmware Version:</strong>{' '}
                     {vehicle.vehicle_info.firmwareVersion}
                   </p>
-
-                  <p className='text-gray-600 text-sm'>
+                </div>
+                <div>
+                  <p className='text-sm text-gray-600'>
                     <strong>Vehicle Model:</strong>{' '}
                     {vehicle.vehicle_info.vehicleModel}
                   </p>
-                  <p className='text-gray-600 text-sm'>
+                  <p className='text-sm text-gray-600'>
                     <strong>Sim Number:</strong>{' '}
                     {vehicle.vehicle_info.simNumber}
                   </p>
-                  <p className='text-gray-600 text-sm'>
+                  <p className='text-sm text-gray-600'>
                     <strong>Firmware Version:</strong>{' '}
                     {vehicle.vehicle_info.firmwareVersion}
                   </p>
-
-                  <p className='text-gray-600 text-sm'>
+                  <p className='text-sm text-gray-600'>
                     <strong>Last Connection:</strong>{' '}
                     {vehicle.vehicle_info.lastConnection}
                   </p>
-
-                  <p>
-                    <span
-                      className={`text-mm font-bold ${
-                        vehicle.vehicle_info.status === 'Online'
-                          ? 'text-green-500'
-                          : 'text-red-500'
-                      }`}
-                    >
-                      <strong>Status:</strong>{' '}
-                      {vehicle.vehicle_info.status}
-                    </span>
-                  </p>
                 </div>
+              </div>
+
+              {/* Status */}
+              <div className='text-center mt-4'>
+                <p
+                  className={`text-lg font-bold ${
+                    vehicle.vehicle_info.status === 'Online'
+                      ? 'text-green-600'
+                      : 'text-red-600'
+                  }`}
+                >
+                  <strong>Status: {vehicle.vehicle_info.status}</strong>
+                </p>
               </div>
 
               <hr className='border-gray-300 mb-4' />
