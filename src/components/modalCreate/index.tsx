@@ -17,7 +17,13 @@ interface TicketModalProps {
   onTicketCreated?: () => void; // Callback para actualizar los tickets después de crear uno nuevo
 }
 
-const TicketModal = ({ isOpen, onClose, formData, selectedSite, onTicketCreated }: TicketModalProps) => {
+const TicketModal = ({
+  isOpen,
+  onClose,
+  formData,
+  selectedSite,
+  onTicketCreated,
+}: TicketModalProps) => {
   const [ticketData, setTicketData] = useState({
     description: '',
     category: 'Support',
@@ -29,19 +35,27 @@ const TicketModal = ({ isOpen, onClose, formData, selectedSite, onTicketCreated 
     email: '',
     priority: 'Medium',
     platform: 'FleetXQ',
-    solution: ''
+    solution: '',
   });
   const [files, setFiles] = useState<FileList | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [availableGMPTs, setAvailableGMPTs] = useState<string[]>([]);
+  const [filteredGMPTs, setFilteredGMPTs] = useState<string[]>([]);
+  const [selectedGMPTs, setSelectedGMPTs] = useState<string[]>([]);
+  const [gmptInput, setGMPTInput] = useState('');
 
   // Mostrar o no el modal
   if (!isOpen) return null;
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
     const { name, value } = e.target;
     setTicketData({
       ...ticketData,
-      [name]: value
+      [name]: value,
     });
   };
 
@@ -53,19 +67,19 @@ const TicketModal = ({ isOpen, onClose, formData, selectedSite, onTicketCreated 
 
   const handleSubmitTicket = async (e: FormEvent) => {
     e.preventDefault();
-    
+
     // Validación básica
     if (!ticketData.description.trim()) {
       toast.error('Description is required');
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
       // Crear un FormData para enviar archivos
       const formDataToSend = new FormData();
-      
+
       // Añadir datos del ticket
       const ticketPayload = {
         Title: `Support request from ${formData.company}`,
@@ -84,11 +98,11 @@ const TicketModal = ({ isOpen, onClose, formData, selectedSite, onTicketCreated 
         Email: ticketData.email,
         Platform: ticketData.platform,
         Solution: ticketData.solution,
-        phone: formData.phone // Añadir el teléfono del contacto
+        phone: formData.phone, // Añadir el teléfono del contacto
       };
-      
+
       formDataToSend.append('ticket', JSON.stringify(ticketPayload));
-      
+
       // Añadir archivos
       if (files) {
         for (let i = 0; i < files.length; i++) {
@@ -117,7 +131,7 @@ const TicketModal = ({ isOpen, onClose, formData, selectedSite, onTicketCreated 
 
       const response = await fetch('http://localhost:8080/api/tickets', {
         method: 'POST',
-        body: formDataToSend
+        body: formDataToSend,
       });
 
       if (!response.ok) {
@@ -125,10 +139,10 @@ const TicketModal = ({ isOpen, onClose, formData, selectedSite, onTicketCreated 
       }
 
       toast.success('Ticket created successfully!', {
-        position: "bottom-right",
-        autoClose: 2000
+        position: 'bottom-right',
+        autoClose: 2000,
       });
-      
+
       // Limpiar el formulario
       setTicketData({
         description: '',
@@ -141,15 +155,15 @@ const TicketModal = ({ isOpen, onClose, formData, selectedSite, onTicketCreated 
         email: '',
         priority: 'Medium',
         platform: 'FleetXQ',
-        solution: ''
+        solution: '',
       });
       setFiles(null);
-      
+
       // Llamar al callback para actualizar los tickets
       if (onTicketCreated) {
         onTicketCreated();
       }
-      
+
       onClose();
     } catch (error) {
       console.error('Error submitting ticket:', error);
@@ -182,7 +196,24 @@ const TicketModal = ({ isOpen, onClose, formData, selectedSite, onTicketCreated 
       `;
       document.head.appendChild(style);
     }
-    
+    useEffect(() => {
+      const fetchGmptCodes = async () => {
+        if (!selectedSite) return;
+
+        try {
+          const response = await fetch(
+            `http://localhost:8080/gmpt-codes?locationCD=${selectedSite}`
+          );
+          const data = await response.json();
+          setAvailableGMPTs(data); // useState to store available GMPT codes
+        } catch (error) {
+          console.error('Error fetching GMPT codes:', error);
+        }
+      };
+
+      fetchGmptCodes();
+    }, [selectedSite]);
+
     return () => {
       const styleElement = document.getElementById('modal-spinner-styles');
       if (styleElement) {
@@ -192,231 +223,357 @@ const TicketModal = ({ isOpen, onClose, formData, selectedSite, onTicketCreated 
   }, []);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-4xl p-6 relative max-h-[90vh] overflow-y-auto">
-        <button 
+    <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
+      <div className='bg-white rounded-lg w-full max-w-4xl p-6 relative max-h-[90vh] overflow-y-auto'>
+        <button
           onClick={onClose}
-          className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
+          className='absolute top-3 right-3 text-gray-500 hover:text-gray-800'
           disabled={isSubmitting}
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+          <svg
+            className='w-6 h-6'
+            fill='none'
+            stroke='currentColor'
+            viewBox='0 0 24 24'
+          >
+            <path
+              strokeLinecap='round'
+              strokeLinejoin='round'
+              strokeWidth='2'
+              d='M6 18L18 6M6 6l12 12'
+            />
           </svg>
         </button>
-        
-        <h2 className="text-xl font-semibold text-teal-700 mb-4">Issue Details</h2>
-        
+
+        <h2 className='text-xl font-semibold text-teal-700 mb-4'>
+          Issue Details
+        </h2>
+
         <form onSubmit={handleSubmitTicket}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+              <label className='block text-sm font-medium text-gray-700 mb-1'>
+                Category
+              </label>
               <select
-                name="category"
+                name='category'
                 value={ticketData.category}
                 onChange={handleChange}
-                className="w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50"
+                className='w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50'
                 disabled={isSubmitting}
               >
-              <option value="">Select a category</option>
-                                    <option value="Checklist issue">Checklist issue</option>
-                                    <option value="Pin/card issue">Pin/card Issue</option>
-                                    <option value="Software issue">Software Issue</option>
-                                    <option value="Hardware issue">Hardware Issue</option>
-                                    <option value="Dasbhoard issue">Dashboard Issue</option>
-                                    <option value="Conectivity issue">Connectivity Issue</option>
-                                    <option value="User awareness">User Awareness</option>
-                                    <option value="Team Request">Team Request</option>
-                                    <option value="Impact calibrations">Impact Calibrations</option>
-                                    <option value="Polarity Idle timer Issue">Polarity Idle Timer Issue</option>
-                                    <option value="Gps issue">Gps Issue</option>
-                                    <option value="Server down">Server Down</option>
-                                    <option value="Improvement Request">Improvement Request</option>
-                                    <option value="Lockout">Lockout</option>   
+                <option value=''>Select a category</option>
+                <option value='Checklist issue'>Checklist issue</option>
+                <option value='Pin/card issue'>Pin/card Issue</option>
+                <option value='Software issue'>Software Issue</option>
+                <option value='Hardware issue'>Hardware Issue</option>
+                <option value='Dasbhoard issue'>Dashboard Issue</option>
+                <option value='Conectivity issue'>
+                  Connectivity Issue
+                </option>
+                <option value='User awareness'>User Awareness</option>
+                <option value='Team Request'>Team Request</option>
+                <option value='Impact calibrations'>
+                  Impact Calibrations
+                </option>
+                <option value='Polarity Idle timer Issue'>
+                  Polarity Idle Timer Issue
+                </option>
+                <option value='Gps issue'>Gps Issue</option>
+                <option value='Server down'>Server Down</option>
+                <option value='Improvement Request'>
+                  Improvement Request
+                </option>
+                <option value='Lockout'>Lockout</option>
               </select>
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+              <label className='block text-sm font-medium text-gray-700 mb-1'>
+                Priority
+              </label>
               <select
-                name="priority"
+                name='priority'
                 value={ticketData.priority}
                 onChange={handleChange}
-                className="w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50"
+                className='w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50'
                 disabled={isSubmitting}
               >
                 <option value='low'>Low</option>
-                  <option value='normal'>Normal</option>
-                  <option value='high'>High</option>
-                  <option value='urgent'>Urgent</option>
+                <option value='normal'>Normal</option>
+                <option value='high'>High</option>
               </select>
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <label className='block text-sm font-medium text-gray-700 mb-1'>
+                Status
+              </label>
               <select
-                name="status"
+                name='status'
                 value={ticketData.status}
                 onChange={handleChange}
-                className="w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50"
+                className='w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50'
                 disabled={isSubmitting}
               >
-                 <option value='In progress' style={{ backgroundColor: '#e6d856', color: 'white' }}>
-              In progress
-            </option>
-            <option value='Done' style={{ backgroundColor: '#92cc75', color: 'white' }}>
-              Done
-            </option>
-            <option value='Scaled' style={{ backgroundColor: '#7ea6d3', color: 'white' }}>
-              Scaled
-            </option>
-            <option value="To Do" style={{ backgroundColor: '#ea7d7d', color: 'white' }}>
-              To Do
-            </option>
-            <option value="Won't do" style={{ backgroundColor: '#a4a89e', color: 'white' }}>
-              Won't do
-            </option>
-            <option value="Pending to call" style={{ backgroundColor: '#800080  ', color: 'white' }}>
-              Pending to call
-            </option>
+                <option
+                  value='First Contact'
+                  style={{ backgroundColor: '#e6d856', color: 'white' }}
+                >
+                  First Contact
+                </option>
+                <option
+                  value='Waiting information'
+                  style={{ backgroundColor: '#800080  ', color: 'white' }}
+                >
+                  Waiting information
+                </option>
+                <option
+                  value='Waiting confirmation'
+                  style={{ backgroundColor: '#800080  ', color: 'white' }}
+                >
+                  Waiting confirmation
+                </option>
+                <option
+                  value='In progress'
+                  style={{ backgroundColor: '#e6d856', color: 'white' }}
+                >
+                  In progress
+                </option>
+                <option
+                  value='Done'
+                  style={{ backgroundColor: '#92cc75', color: 'white' }}
+                >
+                  Done
+                </option>
+                <option
+                  value='Scaled'
+                  style={{ backgroundColor: '#7ea6d3', color: 'white' }}
+                >
+                  Scaled
+                </option>
+
+                <option
+                  value="Won't do"
+                  style={{ backgroundColor: '#a4a89e', color: 'white' }}
+                >
+                  Won't do
+                </option>
+                <option
+                  value='Pending'
+                  style={{ backgroundColor: '#800080  ', color: 'white' }}
+                >
+                  Pending
+                </option>
               </select>
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Platform</label>
+              <label className='block text-sm font-medium text-gray-700 mb-1'>
+                Platform
+              </label>
               <select
-                name="platform"
+                name='platform'
                 value={ticketData.platform}
                 onChange={handleChange}
-                className="w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50"
+                className='w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50'
                 disabled={isSubmitting}
               >
-                <option value="FleetXQ">FleetXQ</option>
-                <option value="FleetIQ">FleetIQ</option>
-                <option value="Fleet Focus">Fleet Focus</option>
+                <option value='FleetIQ'>FleetIQ</option>
+                <option value='RentalIQ'>RentalIQ</option>
+                <option value='FleetXQ'>FleetXQ</option>
+                <option value='Fleet Focus'>Fleet Focus</option>
               </select>
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Incident Date</label>
+              <label className='block text-sm font-medium text-gray-700 mb-1'>
+                Incident Date
+              </label>
               <input
-                type="date"
-                name="incidentDate"
+                type='date'
+                name='incidentDate'
                 value={ticketData.incidentDate}
                 onChange={handleChange}
-                className="w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50"
+                className='w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50'
                 disabled={isSubmitting}
               />
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Driver's Name</label>
+              <label className='block text-sm font-medium text-gray-700 mb-1'>
+                Driver's Name
+              </label>
               <input
-                type="text"
-                name="driversName"
+                type='text'
+                name='driversName'
                 value={ticketData.driversName}
                 onChange={handleChange}
-                className="w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50"
+                className='w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50'
                 placeholder="Enter driver's name"
                 disabled={isSubmitting}
               />
             </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Vehicle ID / GMTP ID</label>
+
+            <div className='col-span-2'>
+              <label className='block text-sm font-medium text-teal-700 mb-1'>
+                GMPT IDs
+              </label>
+
+              {/* Display selected GMPTs */}
+              <div className='flex flex-wrap gap-2 mb-2'>
+                {selectedGMPTs.map((code) => (
+                  <span
+                    key={code}
+                    className='bg-gray-200 text-sm px-2 py-1 rounded-full flex items-center'
+                  >
+                    {code}
+                    <button
+                      type='button'
+                      className='ml-1 text-red-500 hover:text-red-700'
+                      onClick={() =>
+                        setSelectedGMPTs(
+                          selectedGMPTs.filter((id) => id !== code)
+                        )
+                      }
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ))}
+              </div>
+
+              {/* Input with suggestions */}
               <input
-                type="text"
-                name="vehicleID"
-                value={ticketData.vehicleID}
-                onChange={handleChange}
-                className="w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50"
-                placeholder="Enter vehicle ID or GMTP ID"
-                disabled={isSubmitting}
+                type='text'
+                placeholder='Type GMPT ID'
+                value={gmptInput}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setGMPTInput(val);
+                  setFilteredGMPTs(
+                    availableGMPTs.filter((id) =>
+                      id.toLowerCase().includes(val.toLowerCase())
+                    )
+                  );
+                }}
+                className='border border-gray-300 rounded-md px-2 py-1 text-black w-full'
               />
+
+              {gmptInput && filteredGMPTs.length > 0 && (
+                <div className='border border-gray-300 rounded-md mt-1 bg-white max-h-40 overflow-y-auto'>
+                  {filteredGMPTs.map((code) => (
+                    <div
+                      key={code}
+                      className='px-3 py-1 hover:bg-teal-100 cursor-pointer'
+                      onClick={() => {
+                        if (!selectedGMPTs.includes(code)) {
+                          setSelectedGMPTs([...selectedGMPTs, code]);
+                        }
+                        setGMPTInput('');
+                        setFilteredGMPTs([]);
+                      }}
+                    >
+                      {code}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Supported By</label>
+              <label className='block text-sm font-medium text-gray-700 mb-1'>
+                Supported By
+              </label>
               <input
-                type="text"
-                name="supported"
+                type='text'
+                name='supported'
                 value={ticketData.supported}
                 onChange={handleChange}
-                className="w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50"
-                placeholder="Enter who is supporting"
+                className='w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50'
+                placeholder='Enter who is supporting'
                 disabled={isSubmitting}
               />
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email Subject</label>
+              <label className='block text-sm font-medium text-gray-700 mb-1'>
+                Email Subject
+              </label>
               <input
-                type="email"
-                name="email"
+                type='email'
+                name='email'
                 value={ticketData.email}
                 onChange={handleChange}
-                className="w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50"
-                placeholder="Enter contact email"
+                className='w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50'
+                placeholder='Enter contact email'
                 disabled={isSubmitting}
               />
             </div>
           </div>
-          
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+
+          <div className='mb-4'>
+            <label className='block text-sm font-medium text-gray-700 mb-1'>
+              Description
+            </label>
             <textarea
-              name="description"
+              name='description'
               value={ticketData.description}
               onChange={handleChange}
               rows={4}
-              className="w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50"
-              placeholder="Describe the issue in detail..."
+              className='w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50'
+              placeholder='Describe the issue in detail...'
               required
               disabled={isSubmitting}
             />
           </div>
-          
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Solution</label>
+
+          <div className='mb-4'>
+            <label className='block text-sm font-medium text-gray-700 mb-1'>
+              Solution
+            </label>
             <textarea
-              name="solution"
+              name='solution'
               value={ticketData.solution}
               onChange={handleChange}
               rows={3}
-              className="w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50"
-              placeholder="Provide a solution if available..."
+              className='w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50'
+              placeholder='Provide a solution if available...'
               disabled={isSubmitting}
             />
           </div>
-          
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Attachments</label>
+
+          <div className='mb-4'>
+            <label className='block text-sm font-medium text-gray-700 mb-1'>
+              Attachments
+            </label>
             <input
-              type="file"
+              type='file'
               onChange={handleFileChange}
-              className="w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50"
+              className='w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50'
               multiple
               disabled={isSubmitting}
             />
-            <p className="text-xs text-gray-500 mt-1">Upload screenshots or relevant files</p>
+            <p className='text-xs text-gray-500 mt-1'>
+              Upload screenshots or relevant files
+            </p>
           </div>
-          
-          <div className="flex justify-end">
+
+          <div className='flex justify-end'>
             <button
-              type="button"
+              type='button'
               onClick={onClose}
-              className="mr-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+              className='mr-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2'
               disabled={isSubmitting}
             >
               Cancel
             </button>
             <button
-              type="submit"
-              className="px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 flex items-center"
+              type='submit'
+              className='px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 flex items-center'
               disabled={isSubmitting}
             >
-              {isSubmitting && (
-                <span className="submit-spinner"></span>
-              )}
+              {isSubmitting && <span className='submit-spinner'></span>}
               {isSubmitting ? 'Creating...' : 'Create Ticket'}
             </button>
           </div>
