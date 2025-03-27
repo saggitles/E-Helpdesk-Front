@@ -73,15 +73,14 @@ interface Driver {
 interface SnapshotRow {
   // Adjust these fields to match the columns in your DB
   vehicleName: string;
-  serial_number: string;
+  serialNumber: string;
   gmptCode: string;
   firmwareVersion: string | null;
   screenVersion: string | null;
   expansionVersion: string | null;
   lastConnection: string | null;
-  department: string | null;
   vorSetting: string | null;
-  lockout_code: string | null;
+  lockoutCode: string | null;
   impactLockout: string | null;
   redImpactThreshold: string | null;
   seatIdle: string | null;
@@ -93,6 +92,15 @@ interface SnapshotRow {
   fullLockoutEnabled?: boolean;
   fullLockoutTimeout?: number;
   query_execution_date?: string;
+  impactRecalibrationDate: string | null;
+  preopSchedule: string | null;
+  vehicleType: string | null;
+  dept_id: number;
+  site_id: number;
+  cust_id: number;
+  snapshot_id: number;
+  vehicle_cd: number;
+  snapshot_time: string | null;
 }
 
 const VehicleDashboard: React.FC = () => {
@@ -282,14 +290,24 @@ const VehicleDashboard: React.FC = () => {
       return;
     }
 
-    try {
-      const response = await fetch(
-        `http://localhost:8080/api/snapshots?time1=${selectedFirstTime}&time2=${selectedSecondTime}`
-      );
-      if (!response.ok) throw new Error('Failed to fetch snapshots');
+    // Get the filters from local storage.
+    const customer = localStorage.getItem('selectedCustomer');
+    const site = localStorage.getItem('selectedSite'); // optional
+    const gmptCode = localStorage.getItem('selectedGmpt'); // optional
 
+    // Create the URL and append parameters.
+    const url = new URL('http://localhost:8080/api/snapshots');
+    url.searchParams.append('time1', selectedFirstTime);
+    url.searchParams.append('time2', selectedSecondTime);
+    url.searchParams.append('customer', customer);
+    if (site) url.searchParams.append('site', site);
+    if (gmptCode) url.searchParams.append('gmptCode', gmptCode);
+
+    try {
+      const response = await fetch(url.toString());
+      if (!response.ok) throw new Error('Failed to fetch snapshots');
       const data = await response.json();
-      console.log('✅ Snapshot response:', data);
+      console.log('Snapshot data:', data);
       setSnapshotData(data);
     } catch (error) {
       console.error('Failed to fetch snapshots:', error);
@@ -347,6 +365,147 @@ const VehicleDashboard: React.FC = () => {
     // e.g. "9/10/2025 10:00"
     const dt = new Date(snap.query_execution_date);
     return format(dt, 'dd/MM/yyyy HH:mm');
+  };
+
+  interface SnapshotCardProps {
+    snapshot: SnapshotRow;
+  }
+
+  const SnapshotCard: React.FC<SnapshotCardProps> = ({ snapshot }) => {
+    return (
+      <div className='bg-white shadow-lg rounded-lg p-6 border border-gray-300'>
+        {/* Top Section: Image and Basic Details */}
+        <div className='grid grid-cols-3 gap-4 items-start'>
+          <div className='w-20 h-20 flex items-start justify-start'>
+            <img
+              src='/forklift.png'
+              alt='Forklift'
+              className='w-full h-full object-contain'
+            />
+          </div>
+          <div className='col-span-2 text-center'>
+            <h2 className='text-2xl font-bold text-gray-800'>
+              {snapshot.vehicleName || 'N/A'}
+            </h2>
+            <p className='text-sm text-gray-600'>
+              <strong>Serial:</strong> {snapshot.serialNumber || 'N/A'}
+            </p>
+            <p className='text-sm text-gray-600'>
+              <strong>GMPT:</strong> {snapshot.gmptCode || 'N/A'}
+            </p>
+          </div>
+        </div>
+        {/* Middle Section: Vehicle Specs and Connection Info */}
+        <div className='grid grid-cols-2 gap-4 mt-4'>
+          <div>
+            <p className='text-sm text-gray-600'>
+              <strong>Firmware Version:</strong>{' '}
+              {snapshot.firmwareVersion || 'N/A'}
+            </p>
+            <p className='text-sm text-gray-600'>
+              <strong>Screen Version:</strong>{' '}
+              {snapshot.screenVersion || 'N/A'}
+            </p>
+            <p className='text-sm text-gray-600'>
+              <strong>Expansion Version:</strong>{' '}
+              {snapshot.expansionVersion || 'N/A'}
+            </p>
+            <p className='text-sm text-gray-600'>
+              <strong>Last Connection:</strong>{' '}
+              {snapshot.lastConnection
+                ? new Date(snapshot.lastConnection).toLocaleString()
+                : 'N/A'}
+            </p>
+            <p className='text-sm text-gray-600'>
+              <strong>Query Date:</strong>{' '}
+              {snapshot.query_execution_date
+                ? new Date(snapshot.query_execution_date).toLocaleString()
+                : 'N/A'}
+            </p>
+          </div>
+          <div>
+            <p className='text-sm text-gray-600'>
+              <strong>Department:</strong> {snapshot.department || 'N/A'}
+            </p>
+            <p className='text-sm text-gray-600'>
+              <strong>VOR:</strong> {snapshot.vorSetting || 'N/A'}
+            </p>
+            <p className='text-sm text-gray-600'>
+              <strong>Lockout Code:</strong>{' '}
+              {snapshot.lockoutCode || 'N/A'}
+            </p>
+            <p className='text-sm text-gray-600'>
+              <strong>Impact Lockout:</strong>{' '}
+              {snapshot.impactLockout || 'N/A'}
+            </p>
+            <p className='text-sm text-gray-600'>
+              <strong>Red Impact Threshold:</strong>{' '}
+              {snapshot.redImpactThreshold
+                ? snapshot.redImpactThreshold + 'g'
+                : 'N/A'}
+            </p>
+            <p className='text-sm text-gray-600'>
+              <strong>Survey Timeout:</strong>{' '}
+              {snapshot.surveyTimeout
+                ? snapshot.surveyTimeout + 's'
+                : 'N/A'}
+            </p>
+          </div>
+        </div>
+        {/* Bottom Section: Additional Details */}
+        <div className='grid grid-cols-2 gap-4 mt-4'>
+          <div>
+            <p className='text-sm text-gray-600'>
+              <strong>Seat Idle:</strong>{' '}
+              {snapshot.seatIdle ? snapshot.seatIdle + 's' : 'N/A'}
+            </p>
+            <p className='text-sm text-gray-600'>
+              <strong>Impact Recalibration Date:</strong>{' '}
+              {snapshot.impactRecalibrationDate || 'N/A'}
+            </p>
+            <p className='text-sm text-gray-600'>
+              <strong>Preop Schedule:</strong>{' '}
+              {snapshot.preopSchedule || 'N/A'}
+            </p>
+          </div>
+          <div>
+            <p className='text-sm text-gray-600'>
+              <strong>Sim Number:</strong> {snapshot.simNumber || 'N/A'}
+            </p>
+            <p className='text-sm text-gray-600'>
+              <strong>Vehicle Type:</strong>{' '}
+              {snapshot.vehicleType || 'N/A'}
+            </p>
+            <p className='text-sm text-gray-600'>
+              <strong>Vehicle Model:</strong>{' '}
+              {snapshot.vehicleModel || 'N/A'}
+            </p>
+            <p className='text-sm text-gray-600'>
+              <strong>Snapshot ID:</strong> {snapshot.snapshot_id || 'N/A'}
+            </p>
+            <p className='text-sm text-gray-600'>
+              <strong>Vehicle CD:</strong> {snapshot.vehicle_cd || 'N/A'}
+            </p>
+            <p className='text-sm text-gray-600'>
+              <strong>Snapshot Time:</strong>{' '}
+              {snapshot.snapshot_time || 'N/A'}
+            </p>
+          </div>
+        </div>
+        {/* Status */}
+        <div className='text-center mt-4'>
+          <p
+            className={`text-lg font-bold ${
+              snapshot.status === 'Online'
+                ? 'text-green-600'
+                : 'text-red-600'
+            }`}
+          >
+            <strong>Status: {snapshot.status || 'Unknown'}</strong>
+          </p>
+        </div>
+      </div>
+    );
   };
 
   const totalVehicles = 85;
@@ -777,366 +936,45 @@ const VehicleDashboard: React.FC = () => {
         {/* If we DO have snapshot data, show the side-by-side comparison */}
         {snapshotData && (
           <div className='mt-8'>
-            {/* Heading */}
-            <div className='text-2xl font-bold text-gray-800 mb-4'>
-              Snapshot Comparison
-            </div>
-
-            {/* Two-Column Grid for Snapshot Cards */}
+            <h2 className='text-2xl font-bold text-gray-800 mb-4'>
+              Snapshot Cards
+            </h2>
             <div className='grid grid-cols-2 gap-6'>
-              {/* LEFT CARD: "Before" Snapshot */}
-              <div className='bg-white shadow-lg rounded-lg p-6 border border-gray-300'>
-                <div className='text-xl font-bold mb-2'>
-                  Before (ID: {selectedSnapshotId1})
-                </div>
-                {snapshotData[String(selectedSnapshotId1)]?.map(
-                  (snap, idx) => (
-                    <div key={idx} className='mb-4'>
-                      {/* Top Section: Image and Basic Details */}
-                      <div className='grid grid-cols-3 gap-4 items-start'>
-                        <div className='w-20 h-20 flex items-start justify-start'>
-                          <img
-                            src='/forklift.png'
-                            alt='Forklift'
-                            className='w-full h-full object-contain'
-                          />
-                        </div>
-                        <div className='col-span-2 text-center'>
-                          <h2 className='text-2xl font-bold text-gray-800'>
-                            {snap.vehicleName || 'N/A'}
-                          </h2>
-                          <p className='text-sm text-gray-600'>
-                            <strong>Serial:</strong>{' '}
-                            {snap.serialNumber || 'N/A'}
-                          </p>
-                          <p className='text-sm text-gray-600'>
-                            <strong>GMPT:</strong> {snap.gmptCode || 'N/A'}
-                          </p>
-                        </div>
+              {Object.entries(snapshotData).map(([vehicleCd, snaps]) => (
+                <div
+                  key={vehicleCd}
+                  className='bg-white shadow-lg rounded-lg p-6 border border-gray-300'
+                >
+                  <h3 className='text-xl font-bold text-gray-800 mb-2'>
+                    Vehicle CD: {vehicleCd}
+                  </h3>
+                  {/* Before Snapshot */}
+                  <div className='flex gap-6'>
+                    {/* Before Snapshot */}
+                    {snaps.before && snaps.before[0] ? (
+                      <div className='mb-4'>
+                        <h4 className='font-semibold mb-2'>
+                          Before Snapshot
+                        </h4>
+                        <SnapshotCard snapshot={snaps.before[0]} />
                       </div>
-
-                      {/* Middle Section: Specs */}
-                      <div className='grid grid-cols-2 gap-4 mt-4'>
-                        <div>
-                          <p className='text-sm text-gray-600'>
-                            <strong>Firmware:</strong>{' '}
-                            {snap.firmwareVersion || 'N/A'}
-                          </p>
-                          <p className='text-sm text-gray-600'>
-                            <strong>Vehicle Model:</strong>{' '}
-                            {snap.vehicleModel || 'N/A'}
-                          </p>
-                          <p className='text-sm text-gray-600'>
-                            <strong>Sim Number:</strong>{' '}
-                            {snap.simNumber || 'N/A'}
-                          </p>
-                          <p className='text-sm text-gray-600'>
-                            <strong>Screen:</strong>{' '}
-                            {snap.screenVersion || 'N/A'}
-                          </p>
-                          <p className='text-sm text-gray-600'>
-                            <strong>ExpModu:</strong>{' '}
-                            {snap.expansionVersion || 'N/A'}
-                          </p>
-                        </div>
-                        <div>
-                          <p className='text-sm text-gray-600'>
-                            <strong>Customer:</strong>{' '}
-                            {snap.customerName || 'N/A'}
-                          </p>
-                          <p className='text-sm text-gray-600'>
-                            <strong>Site:</strong> {snap.siteName || 'N/A'}
-                          </p>
-                          <p className='text-sm text-gray-600'>
-                            <strong>Department:</strong>{' '}
-                            {snap.department || 'N/A'}
-                          </p>
-                          <p className='text-sm text-gray-600'>
-                            <strong>Last Connection:</strong>{' '}
-                            {snap.lastConnection
-                              ? new Date(
-                                  snap.lastConnection
-                                ).toLocaleString()
-                              : 'N/A'}
-                          </p>
-                        </div>
+                    ) : (
+                      <p>No before snapshot available</p>
+                    )}
+                    {/* After Snapshot */}
+                    {snaps.after && snaps.after[0] ? (
+                      <div>
+                        <h4 className='font-semibold mb-2'>
+                          After Snapshot
+                        </h4>
+                        <SnapshotCard snapshot={snaps.after[0]} />
                       </div>
-
-                      {/* Status */}
-                      <div className='text-center mt-4'>
-                        <p
-                          className={`text-lg font-bold ${
-                            snap.status === 'Online'
-                              ? 'text-green-600'
-                              : 'text-red-600'
-                          }`}
-                        >
-                          <strong>
-                            Status: {snap.status || 'Unknown'}
-                          </strong>
-                        </p>
-                      </div>
-
-                      <hr className='border-gray-300 my-4' />
-
-                      {/* Bottom Section: Additional Details */}
-                      <div className='grid grid-cols-2 gap-4 text-sm text-gray-600'>
-                        <p>
-                          <strong>VOR:</strong>{' '}
-                          {snap.vorSetting === 'false' ? (
-                            <span className='text-green-500'>Off</span>
-                          ) : (
-                            <span className='text-red-500'>On</span>
-                          )}
-                        </p>
-                        <p>
-                          <strong>Lockout:</strong>{' '}
-                          {snap.lockoutCode?.trim() === '0' ? (
-                            <span className='text-green-500'>
-                              Unlocked
-                            </span>
-                          ) : (
-                            <span className='text-red-500'>Locked</span>
-                          )}
-                        </p>
-                        <p>
-                          <strong>LO Reason:</strong>{' '}
-                          {snap.loReason || 'N/A'}
-                        </p>
-                        <p>
-                          <strong>Preop:</strong>{' '}
-                          {snap.preopSchedule || 'N/A'}
-                        </p>
-                        <p>
-                          <strong>Recalibration:</strong>{' '}
-                          {snap.impactRecalibrationDate || 'N/A'}
-                        </p>
-                        <p>
-                          <strong>Red Impact:</strong>{' '}
-                          {snap.redImpactThreshold
-                            ? snap.redImpactThreshold + 'g'
-                            : 'N/A'}
-                        </p>
-                        <p>
-                          <strong>Impact Lockouts:</strong>{' '}
-                          {snap.impactLockout ? (
-                            <span className='text-green-500'>On</span>
-                          ) : (
-                            <span className='text-red-500'>Off</span>
-                          )}
-                        </p>
-                        <p>
-                          <strong>Full Lockout:</strong>{' '}
-                          {snap.fullLockoutEnabled ? (
-                            <span className='text-green-500'>On</span>
-                          ) : (
-                            <span className='text-red-500'>Off</span>
-                          )}
-                        </p>
-                        <p className='text-gray-600 text-sm'>
-                          <strong>Full Lock Timeout:</strong>{' '}
-                          {snap.fullLockoutTimeout
-                            ? snap.fullLockoutTimeout + 's'
-                            : 'N/A'}
-                        </p>
-                        <p className='text-gray-600 text-sm'>
-                          <strong>Idle Timeout:</strong>{' '}
-                          {snap.seatIdle ? snap.seatIdle + 's' : 'Off'}
-                        </p>
-                        <p className='text-gray-600 text-sm'>
-                          <strong>Checklist Timeout:</strong>{' '}
-                          {snap.surveyTimeout
-                            ? snap.surveyTimeout + 's'
-                            : 'Off'}
-                        </p>
-                      </div>
-                    </div>
-                  )
-                )}
-              </div>
-
-              {/* RIGHT CARD: "After" snapshot */}
-              <div className='bg-white shadow-lg rounded-lg p-6 border border-gray-300'>
-                <div className='text-xl font-bold mb-2'>
-                  After: {selectedSnapshotId2}
-                </div>
-
-                <div className='grid grid-cols-3 gap-4 items-start'>
-                  <div className='w-20 h-20'>
-                    <img
-                      src='/forklift.png'
-                      alt='Forklift'
-                      className='w-full h-full object-contain'
-                    />
-                  </div>
-                  <div className='col-span-2 text-center'>
-                    <h2 className='text-2xl font-bold text-gray-800'>
-                      {snapshotData[String(selectedSnapshotId2)]?.[0]
-                        ?.vehicleName || 'No Name'}
-                    </h2>
-                    <p className='text-sm text-gray-600'>
-                      <strong>Serial:</strong>{' '}
-                      {
-                        snapshotData[String(selectedSnapshotId2)]?.[0]
-                          ?.serial_number
-                      }
-                    </p>
-                    <p className='text-sm text-gray-600'>
-                      <strong>GMPT:</strong>{' '}
-                      {
-                        snapshotData[String(selectedSnapshotId2)]?.[0]
-                          ?.gmptCode
-                      }
-                    </p>
+                    ) : (
+                      <p>No after snapshot available</p>
+                    )}
                   </div>
                 </div>
-
-                <div className='grid grid-cols-2 gap-4 mt-4'>
-                  <div>
-                    <p className='text-sm text-gray-600'>
-                      <strong>Firmware Version:</strong>{' '}
-                      {
-                        snapshotData[String(selectedSnapshotId2)]?.[0]
-                          ?.firmwareVersion
-                      }
-                    </p>
-                    <p className='text-sm text-gray-600'>
-                      <strong>Vehicle Model:</strong>{' '}
-                      {
-                        snapshotData[String(selectedSnapshotId2)]?.[0]
-                          ?.vehicleModel
-                      }
-                    </p>
-                    <p className='text-sm text-gray-600'>
-                      <strong>Sim Number:</strong>{' '}
-                      {
-                        snapshotData[String(selectedSnapshotId2)]?.[0]
-                          ?.simNumber
-                      }
-                    </p>
-                    <p className='text-sm text-gray-600'>
-                      <strong>Screen Version:</strong>{' '}
-                      {
-                        snapshotData[String(selectedSnapshotId2)]?.[0]
-                          ?.screenVersion
-                      }
-                    </p>
-                    <p className='text-sm text-gray-600'>
-                      <strong>ExpModu Version:</strong>{' '}
-                      {
-                        snapshotData[String(selectedSnapshotId2)]?.[0]
-                          ?.expansionVersion
-                      }
-                    </p>
-                  </div>
-                  <div>
-                    <p className='text-sm text-gray-600'>
-                      <strong>Department:</strong>{' '}
-                      {
-                        snapshotData[String(selectedSnapshotId2)]?.[0]
-                          ?.department
-                      }
-                    </p>
-                    <p className='text-sm text-gray-600'>
-                      <strong>Last Connection:</strong>{' '}
-                      {String(
-                        snapshotData[String(selectedSnapshotId2)]?.[0]
-                          ?.lastConnection || 'N/A'
-                      )}
-                    </p>
-                  </div>
-                </div>
-
-                <div className='text-center mt-4'>
-                  <p
-                    className={`text-lg font-bold ${
-                      snapshotData[String(selectedSnapshotId2)]?.[0]
-                        ?.status === 'Online'
-                        ? 'text-green-600'
-                        : 'text-red-600'
-                    }`}
-                  >
-                    <strong>
-                      Status:{' '}
-                      {snapshotData[String(selectedSnapshotId2)]?.[0]
-                        ?.status || 'Unknown'}
-                    </strong>
-                  </p>
-                </div>
-
-                <hr className='border-gray-300 mb-4 mt-4' />
-
-                <div className='grid grid-cols-2 gap-4 text-sm text-gray-600'>
-                  <p>
-                    <strong>VOR:</strong>{' '}
-                    {snapshotData[String(selectedSnapshotId2)]?.[0]
-                      ?.vorSetting === 'false' ? (
-                      <span className='text-green-500'>Off</span>
-                    ) : (
-                      <span className='text-red-500'>On</span>
-                    )}
-                  </p>
-                  <p>
-                    <strong>Lockout Status:</strong>{' '}
-                    {snapshotData[
-                      String(selectedSnapshotId2)
-                    ]?.[0]?.lockout_code?.trim() === '0' ? (
-                      <span className='text-green-500'>Unlocked</span>
-                    ) : (
-                      <span className='text-red-500'>Locked</span>
-                    )}
-                  </p>
-                  <p>
-                    <strong>LO Reason:</strong>{' '}
-                    {snapshotData[String(selectedSnapshotId2)]?.[0]
-                      ?.loReason || 'N/A'}
-                  </p>
-                  <p>
-                    <strong>Recalibration Date:</strong> N/A
-                  </p>
-                  <p>
-                    <strong>Red Impact Threshold:</strong>{' '}
-                    {snapshotData[String(selectedSnapshotId2)]?.[0]
-                      ?.redImpactThreshold || 'N/A'}
-                  </p>
-                  <p>
-                    <strong>Impact Lockouts:</strong>{' '}
-                    {snapshotData[String(selectedSnapshotId2)]?.[0]
-                      ?.impactLockout ? (
-                      <span className='text-green-500'>On</span>
-                    ) : (
-                      <span className='text-red-500'>Off</span>
-                    )}
-                  </p>
-                  <p>
-                    <strong>Full Lockout:</strong>{' '}
-                    {snapshotData[String(selectedSnapshotId2)]?.[0]
-                      ?.fullLockoutEnabled ? (
-                      <span className='text-green-500'>On</span>
-                    ) : (
-                      <span className='text-red-500'>Off</span>
-                    )}
-                  </p>
-                  <p>
-                    <strong>Full Lockout Timeout:</strong>{' '}
-                    {snapshotData[String(selectedSnapshotId2)]?.[0]
-                      ?.fullLockoutTimeout || 0}
-                    s
-                  </p>
-                  <p>
-                    <strong>Idle Timeout:</strong>{' '}
-                    {snapshotData[String(selectedSnapshotId2)]?.[0]
-                      ?.seatIdle || 'Off'}
-                    s
-                  </p>
-                  <p>
-                    <strong>Checklist Timeout:</strong>{' '}
-                    {snapshotData[String(selectedSnapshotId2)]?.[0]
-                      ?.surveyTimeout || 'Off'}
-                    s
-                  </p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         )}
