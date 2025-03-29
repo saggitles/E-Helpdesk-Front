@@ -8,6 +8,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { format } from 'date-fns';
+import { after, before } from 'node:test';
 
 // Define interfaces for your data types
 interface VehicleInfo {
@@ -71,7 +72,6 @@ interface Driver {
 }
 
 interface SnapshotRow {
-  // Adjust these fields to match the columns in your DB
   vehicleName: string;
   serialNumber: string;
   gmptCode: string;
@@ -103,6 +103,14 @@ interface SnapshotRow {
   snapshot_time: string | null;
 }
 
+//TODO: check if snapshot can be a singular object and not an array
+interface GroupedSnapshots {
+  [vehicleCd: string]: {
+    before: SnapshotRow;
+    after: SnapshotRow;
+  };
+}
+
 const VehicleDashboard: React.FC = () => {
   const [dates, setDates] = useState<Date[]>([]);
   const [selectedFirstDate, setSelectedFirstDate] = useState<Date | null>(
@@ -129,15 +137,7 @@ const VehicleDashboard: React.FC = () => {
     number | null
   >(null);
 
-  interface GroupedSnapshots {
-    [vehicleCd: string]: {
-      before: SnapshotRow[];
-      after: SnapshotRow[];
-    };
-  }
-
-  const [snapshotData, setSnapshotData] =
-    useState<GroupedSnapshots | null>(null);
+  const [snapshotData, setSnapshotData] = useState<GroupedSnapshots>({});
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [additionalData, setAdditionalData] = useState({});
@@ -195,6 +195,13 @@ const VehicleDashboard: React.FC = () => {
       if (!response.ok)
         throw new Error(`HTTP error! Status: ${response.status}`);
 
+      setSelectedFirstDate(null);
+      setSelectedFirstTime('');
+      setSelectedSecondDate(null);
+      setSelectedSecondTime('');
+      setSnapshotData({});
+
+      /// Aqui estoy cambiando cosas/////////////////////////////////////////
       const vehicleData = await response.json();
       console.log('Fetched Vehicle Data:', vehicleData);
 
@@ -364,12 +371,18 @@ const VehicleDashboard: React.FC = () => {
     }));
     setActiveVehicleId(vehicleId);
   };
-  const leftSnap: SnapshotRow | undefined = snapshotData
-    ? snapshotData[String(selectedFirstTime)]?.[0]
-    : undefined;
-  const rightSnap: SnapshotRow | undefined = snapshotData
-    ? snapshotData[String(selectedSecondTime)]?.[0]
-    : undefined;
+
+  console.log('mesajito para vaidar snapshot data', snapshotData);
+  const leftSnap: SnapshotRow = snapshotData[String(selectedFirstTime)]?.[
+    'before'
+  ]
+    ? snapshotData[String(selectedFirstTime)]['before']
+    : snapshotData[String(selectedFirstTime)];
+  const rightSnap: SnapshotRow = snapshotData[String(selectedFirstTime)]?.[
+    'after'
+  ]
+    ? snapshotData[String(selectedFirstTime)]['after']
+    : snapshotData[String(selectedFirstTime)];
 
   // Format date/time from the snapshot row if needed
   const formatSnapshotDate = (snap?: SnapshotRow) => {
@@ -381,9 +394,35 @@ const VehicleDashboard: React.FC = () => {
 
   interface SnapshotCardProps {
     snapshot: SnapshotRow;
+    bothSnaps?: any;
+    isAfter?: boolean;
   }
 
-  const SnapshotCard: React.FC<SnapshotCardProps> = ({ snapshot }) => {
+  const SnapshotCard: React.FC<SnapshotCardProps> = ({
+    snapshot,
+    bothSnaps,
+    isAfter,
+  }) => {
+    const compareBeforeAfterSnaps = (atributeName: string) => {
+      let className = 'bg-yellow-300';
+      console.log(atributeName);
+      console.log(bothSnaps);
+
+      if (isAfter) {
+        switch (atributeName) {
+          case 'serialNumber': {
+            className =
+              bothSnaps.before[atributeName] !==
+              bothSnaps.after[atributeName]
+                ? className
+                : '';
+            console.log(bothSnaps.after[atributeName]);
+            return className;
+          }
+        }
+      }
+    };
+
     return (
       <div className='bg-white shadow-lg rounded-lg p-6 border border-gray-300'>
         {/* Top Section: Image and Basic Details */}
@@ -399,7 +438,11 @@ const VehicleDashboard: React.FC = () => {
             <h2 className='text-2xl font-bold text-gray-800'>
               {snapshot.vehicleName || 'N/A'}
             </h2>
-            <p className='text-sm text-gray-600'>
+            <p
+              className={`text-sm text-gray-600 ${compareBeforeAfterSnaps(
+                'serialNumber'
+              )} `}
+            >
               <strong>Serial:</strong> {snapshot.serialNumber || 'N/A'}
             </p>
             <p className='text-sm text-gray-600'>
@@ -567,7 +610,7 @@ const VehicleDashboard: React.FC = () => {
   const totalVehicles = 85;
   const inactiveVehicles72H = 5;
   const activeVehicles24H = 80;
-
+  console.log('snapshotDatasnapshotDatasnapshotData', snapshotData);
   return (
     <div>
       <NavBar />
@@ -600,7 +643,10 @@ const VehicleDashboard: React.FC = () => {
               <label className='block text-sm font-medium text-gray-700'>
                 Time
               </label>
-              <select onChange={handleFirstTimeSelect}>
+              <select
+                onChange={handleFirstTimeSelect}
+                value={selectedFirstTime as string}
+              >
                 <option value=''>Select a time</option>
                 {availableTimes1.map(({ time, ID }) => (
                   <option key={ID} value={time}>
@@ -637,7 +683,10 @@ const VehicleDashboard: React.FC = () => {
               <label className='block text-sm font-medium text-gray-700'>
                 Second Time
               </label>
-              <select onChange={handleSecondTimeSelect}>
+              <select
+                onChange={handleSecondTimeSelect}
+                value={selectedSecondTime as string}
+              >
                 <option value=''>Select a time</option>
                 {availableTimes2.map(({ time, ID }) => (
                   <option key={ID} value={time}>
@@ -677,7 +726,7 @@ const VehicleDashboard: React.FC = () => {
           </div>
         </div>
 
-        {!snapshotData && (
+        {Object.keys(snapshotData).length === 0 && (
           <div className='grid grid-cols-3 gap-6'>
             {vehicles.map((vehicle, index) => (
               <div
@@ -990,7 +1039,7 @@ const VehicleDashboard: React.FC = () => {
         )}
 
         {/* If we DO have snapshot data, show the side-by-side comparison */}
-        {snapshotData && (
+        {Object.keys(snapshotData).length > 0 && (
           <div className='mt-8'>
             <h2 className='text-2xl font-bold text-gray-800 mb-4'>
               Snapshot Cards
@@ -999,56 +1048,55 @@ const VehicleDashboard: React.FC = () => {
               {Object.entries(snapshotData).map(
                 ([vehicleCd, snaps]: [
                   string,
-                  { before: SnapshotRow[]; after: SnapshotRow[] }
+                  { before: SnapshotRow; after: SnapshotRow }
                 ]) => (
                   <div
                     key={vehicleCd}
                     className='bg-white shadow-lg rounded-lg p-6 border border-gray-300'
                   >
                     <h3 className='text-xl font-bold text-gray-800 mb-2'>
-                      GMPT :{' '}
-                      {snaps.before && snaps.before.length > 0
-                        ? snaps.before[0].gmptCode
-                        : snaps.after && snaps.after.length > 0
-                        ? snaps.after[0].gmptCode
-                        : 'N/A'}
+                      GMPT : {snaps.before.gmptCode}
                     </h3>
                     {/* Before Snapshot */}
                     <div className='flex gap-6'>
                       {/* Before Snapshot */}
-                      {snaps.before && snaps.before[0] ? (
+                      {snaps.before && snaps.before ? (
                         <div className='mb-4'>
                           <h4 className='font-semibold mb-2'>
                             Before Snapshot -{' '}
-                            {snaps.before[0].query_execution_date
+                            {snaps.before.query_execution_date
                               ? format(
                                   new Date(
-                                    snaps.before[0].query_execution_date
+                                    snaps.before.query_execution_date
                                   ),
                                   'dd/MM/yyyy HH:mm'
                                 )
                               : 'N/A'}
                           </h4>
-                          <SnapshotCard snapshot={snaps.before[0]} />
+                          <SnapshotCard snapshot={snaps.before} />
                         </div>
                       ) : (
                         <p>No before snapshot available</p>
                       )}
                       {/* After Snapshot */}
-                      {snaps.after && snaps.after[0] ? (
+                      {snaps.after && snaps.after ? (
                         <div>
                           <h4 className='font-semibold mb-2'>
                             After Snapshot -{' '}
-                            {snaps.after[0].query_execution_date
+                            {snaps.after.query_execution_date
                               ? format(
                                   new Date(
-                                    snaps.after[0].query_execution_date
+                                    snaps.after.query_execution_date
                                   ),
                                   'dd/MM/yyyy HH:mm'
                                 )
                               : 'N/A'}
                           </h4>
-                          <SnapshotCard snapshot={snaps.after[0]} />
+                          <SnapshotCard
+                            snapshot={snaps.after}
+                            isAfter
+                            bothSnaps={snaps}
+                          />
                         </div>
                       ) : (
                         <p>No after snapshot available</p>
