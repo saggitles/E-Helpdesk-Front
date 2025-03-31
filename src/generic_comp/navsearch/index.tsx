@@ -41,7 +41,7 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
 
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [sites, setSites] = useState<Site[]>([]);
-  
+
   // Loading states
   const [loadingCustomers, setLoadingCustomers] = useState<boolean>(true);
   const [loadingSites, setLoadingSites] = useState<boolean>(false);
@@ -52,10 +52,11 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
     if (typeof window !== 'undefined') {
       setLoadingData(true);
       try {
-        const storedClient = localStorage.getItem('selectedCustomer') || '';
+        const storedClient =
+          localStorage.getItem('selectedCustomer') || '';
         const storedSite = localStorage.getItem('selectedSite') || '';
         const storedGmptCode = localStorage.getItem('selectedGmpt') || '';
-        
+
         setFilters({
           client: storedClient,
           site: storedSite,
@@ -74,6 +75,8 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
   // Fetch Customers from Backend
   useEffect(() => {
     const fetchCustomers = async () => {
+      localStorage.removeItem('siteData');
+
       setLoadingCustomers(true);
       try {
         const response = await fetch(
@@ -180,16 +183,29 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
       ...prev,
       [name]: value,
     }));
-
     // Save to localStorage immediately
     if (name === 'gmptCode') {
+      setFilters((prev) => ({
+        ...prev,
+        gmptCode: value,
+      }));
       localStorage.setItem('selectedGmpt', value);
     } else if (name === 'client') {
+      setFilters((prev) => ({
+        ...prev,
+        client: value,
+        site: '',
+      }));
+      localStorage.removeItem('selectedSite');
       localStorage.setItem('selectedCustomer', value);
     } else if (name === 'site') {
+      setFilters((prev) => ({
+        ...prev,
+        site: value,
+      }));
       localStorage.setItem('selectedSite', value);
     }
-    
+
     // Immediate callback if needed
     if (typeof onFilterChange === 'function') {
       onFilterChange();
@@ -224,7 +240,7 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
 
   // Loading spinner component with CSS
   const Spinner = () => (
-    <div className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-teal-600 border-t-2 border-transparent ml-2"></div>
+    <div className='inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-teal-600 border-t-2 border-transparent ml-2'></div>
   );
 
   // CSS para spinner
@@ -242,7 +258,7 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
       `;
       document.head.appendChild(style);
     }
-    
+
     return () => {
       const styleElement = document.getElementById('spinner-styles');
       if (styleElement) {
@@ -255,8 +271,8 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
     <nav className='bg-teal-500 text-white p-4 shadow-md'>
       <div className='container mx-auto mt-4 bg-gray-100 p-6 rounded-lg shadow relative'>
         {loadingData && (
-          <div className="absolute inset-0 bg-gray-200 bg-opacity-50 flex items-center justify-center z-10 rounded-lg">
-            <div className="h-12 w-12 border-4 border-t-teal-600 border-b-teal-600 border-l-transparent border-r-transparent rounded-full animate-spin"></div>
+          <div className='absolute inset-0 bg-gray-200 bg-opacity-50 flex items-center justify-center z-10 rounded-lg'>
+            <div className='h-12 w-12 border-4 border-t-teal-600 border-b-teal-600 border-l-transparent border-r-transparent rounded-full animate-spin'></div>
           </div>
         )}
         <h2 className='text-lg font-semibold text-gray-800 mb-3 flex items-center'>

@@ -9,6 +9,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { format } from 'date-fns';
 import { after, before } from 'node:test';
+import { useMemo } from 'react';
 
 // Define interfaces for your data types
 interface VehicleInfo {
@@ -113,6 +114,7 @@ interface GroupedSnapshots {
 
 const VehicleDashboard: React.FC = () => {
   const [dates, setDates] = useState<Date[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
   const [selectedFirstDate, setSelectedFirstDate] = useState<Date | null>(
     null
   );
@@ -151,8 +153,27 @@ const VehicleDashboard: React.FC = () => {
     string | number | null
   >(null);
 
+  const vehicleSummary = useMemo(() => {
+    if (!vehicles || vehicles.length === 0) {
+      return { total: 0, active: 0, inactive: 0 };
+    }
+    return {
+      total: vehicles.length,
+      active: vehicles.filter(
+        (v) =>
+          v.vehicle_info.status &&
+          v.vehicle_info.status.toLowerCase() === 'online'
+      ).length,
+      inactive: vehicles.filter(
+        (v) =>
+          v.vehicle_info.status &&
+          v.vehicle_info.status.toLowerCase() === 'offline'
+      ).length,
+    };
+  }, [vehicles]);
+
   const fetchVehicles = async () => {
-    // Retrieve filters from local storage
+    setLoading(true);
     const customer = localStorage.getItem('selectedCustomer');
     const site = localStorage.getItem('selectedSite');
     const gmptCode = localStorage.getItem('selectedGmpt'); // Get the GMPT code from local storage
@@ -215,6 +236,7 @@ const VehicleDashboard: React.FC = () => {
       console.error('Error fetching vehicles:', error);
       setVehicles([]);
     }
+    setLoading(false);
   };
 
   // ✅ Fetch available dates from backend
@@ -335,6 +357,7 @@ const VehicleDashboard: React.FC = () => {
 
   // Fetch vehicles when the component loads
   useEffect(() => {
+    console.log('Loading state:', loading);
     fetchVehicles();
 
     const handleStorageChange = (event: StorageEvent) => {
@@ -403,25 +426,58 @@ const VehicleDashboard: React.FC = () => {
     bothSnaps,
     isAfter,
   }) => {
-    const compareBeforeAfterSnaps = (atributeName: string) => {
-      let className = 'bg-yellow-300';
-      console.log(atributeName);
-      console.log(bothSnaps);
-
-      if (isAfter) {
-        switch (atributeName) {
-          case 'serialNumber': {
-            className =
-              bothSnaps.before[atributeName] !==
-              bothSnaps.after[atributeName]
-                ? className
-                : '';
-            console.log(bothSnaps.after[atributeName]);
-            return className;
-          }
-        }
+    const compareBeforeAfterSnaps = (attributeName: string) => {
+      if (isAfter && bothSnaps) {
+        return bothSnaps.before[attributeName] !==
+          bothSnaps.after[attributeName]
+          ? 'bg-yellow-300'
+          : '';
       }
+      return '';
     };
+
+    const vehicleSummary = useMemo(() => {
+      if (!vehicles || vehicles.length === 0) {
+        return { total: 0, active: 0, inactive: 0 };
+      }
+      return {
+        total: vehicles.length,
+        active: vehicles.filter(
+          (v) => v.status && v.status.toLowerCase() === 'online'
+        ).length,
+        inactive: vehicles.filter(
+          (v) => v.status && v.status.toLowerCase() === 'offline'
+        ).length,
+      };
+    }, [vehicles]);
+
+    if (loading) {
+      console.log('Loading state:', loading); // Debugging
+      return (
+        <div className='flex justify-center items-center h-screen'>
+          <svg
+            className='animate-spin h-12 w-12 text-blue-600'
+            xmlns='http://www.w3.org/2000/svg'
+            fill='none'
+            viewBox='0 0 24 24'
+          >
+            <circle
+              className='opacity-25'
+              cx='12'
+              cy='12'
+              r='10'
+              stroke='currentColor'
+              strokeWidth='4'
+            ></circle>
+            <path
+              className='opacity-75'
+              fill='currentColor'
+              d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z'
+            ></path>
+          </svg>
+        </div>
+      );
+    }
 
     return (
       <div className='bg-white shadow-lg rounded-lg p-6 border border-gray-300'>
@@ -439,13 +495,13 @@ const VehicleDashboard: React.FC = () => {
               {snapshot.vehicleName || 'N/A'}
             </h2>
             <p
-              className={`text-sm text-gray-600 ${compareBeforeAfterSnaps(
+              className={`text-base text-gray-600 ${compareBeforeAfterSnaps(
                 'serialNumber'
-              )} `}
+              )}`}
             >
               <strong>Serial:</strong> {snapshot.serialNumber || 'N/A'}
             </p>
-            <p className='text-sm text-gray-600'>
+            <p className='text-base text-gray-600'>
               <strong>GMPT:</strong> {snapshot.gmptCode || 'N/A'}
             </p>
           </div>
@@ -454,33 +510,69 @@ const VehicleDashboard: React.FC = () => {
         {/* Middle Section: Vehicle Specs and Connection Info */}
         <div className='grid grid-cols-2 gap-4 mt-4'>
           <div>
-            <p className='text-sm text-gray-600'>
+            <p
+              className={`text-base text-gray-600 ${compareBeforeAfterSnaps(
+                'cust_id'
+              )}`}
+            >
               <strong>Customer:</strong> {snapshot.cust_id || 'N/A'}
             </p>
-            <p className='text-sm text-gray-600'>
+            <p
+              className={`text-base text-gray-600 ${compareBeforeAfterSnaps(
+                'site_id'
+              )}`}
+            >
               <strong>Site:</strong> {snapshot.site_id || 'N/A'}
             </p>
-            <p className='text-sm text-gray-600'>
+            <p
+              className={`text-base text-gray-600 ${compareBeforeAfterSnaps(
+                'dept_id'
+              )}`}
+            >
               <strong>Department:</strong> {snapshot.dept_id || 'N/A'}
             </p>
-            <p className='text-sm text-gray-600'>
+            <p
+              className={`text-base text-gray-600 ${compareBeforeAfterSnaps(
+                'screenVersion'
+              )}`}
+            >
               <strong>Screen Version:</strong> {snapshot.screenVersion}
             </p>
-            <p className='text-sm text-gray-600'>
+            <p
+              className={`text-base text-gray-600 ${compareBeforeAfterSnaps(
+                'expansionVersion'
+              )}`}
+            >
               <strong>ExpModu Version:</strong> {snapshot.expansionVersion}
             </p>
           </div>
           <div>
-            <p className='text-sm text-gray-600'>
+            <p
+              className={`text-base text-gray-600 ${compareBeforeAfterSnaps(
+                'firmwareVersion'
+              )}`}
+            >
               <strong>Firmware Version:</strong> {snapshot.firmwareVersion}
             </p>
-            <p className='text-sm text-gray-600'>
+            <p
+              className={`text-base text-gray-600 ${compareBeforeAfterSnaps(
+                'vehicleModel'
+              )}`}
+            >
               <strong>Vehicle Model:</strong> {snapshot.vehicleModel}
             </p>
-            <p className='text-sm text-gray-600'>
+            <p
+              className={`text-base text-gray-600 ${compareBeforeAfterSnaps(
+                'simNumber'
+              )}`}
+            >
               <strong>Sim Number:</strong> {snapshot.simNumber || 'N/A'}
             </p>
-            <p className='text-sm text-gray-600'>
+            <p
+              className={`text-base text-gray-600 ${compareBeforeAfterSnaps(
+                'lastConnection'
+              )}`}
+            >
               <strong>Last Connection:</strong>{' '}
               {snapshot.lastConnection
                 ? new Date(snapshot.lastConnection).toLocaleString()
@@ -508,20 +600,28 @@ const VehicleDashboard: React.FC = () => {
           <div>
             <p>
               <span
-                className={
+                className={`${compareBeforeAfterSnaps('vorSetting')}${
                   snapshot.vorSetting == 'false'
                     ? 'text-green-500'
                     : 'text-red-500'
-                }
+                }`}
               >
                 <strong>VOR: </strong>{' '}
                 {snapshot.vorSetting == 'false' ? 'Off' : 'On'}
               </span>
             </p>
-            <p className='text-sm text-gray-600'>
+            <p
+              className={`text-base text-gray-600 ${compareBeforeAfterSnaps(
+                'loReason'
+              )}`}
+            >
               <strong>LO Reason:</strong> {snapshot.loReason || 'N/A'}
             </p>
-            <p className='text-sm text-gray-600'>
+            <p
+              className={`text-base text-gray-600 ${compareBeforeAfterSnaps(
+                'impactRecalibrationDate'
+              )}`}
+            >
               <strong>Recalibration Date:</strong>{' '}
               {snapshot.impactRecalibrationDate
                 ? new Date(
@@ -542,11 +642,19 @@ const VehicleDashboard: React.FC = () => {
               </span>
             </p>
 
-            <p className='text-sm text-gray-600'>
+            <p
+              className={`text-base text-gray-600 ${compareBeforeAfterSnaps(
+                'fullLockoutTimeout'
+              )}`}
+            >
               <strong>Full Lockout Timeout:</strong>{' '}
               {snapshot.fullLockoutTimeout || 'N/A'}s
             </p>
-            <p className='text-sm text-gray-600'>
+            <p
+              className={`text-base text-gray-600 ${compareBeforeAfterSnaps(
+                'surveyTimeout'
+              )}`}
+            >
               <strong>Checklist Timeout:</strong>{' '}
               {snapshot.surveyTimeout || 'N/A'}s
             </p>
@@ -554,11 +662,11 @@ const VehicleDashboard: React.FC = () => {
           <div>
             <p>
               <span
-                className={
+                className={`${compareBeforeAfterSnaps('lockoutCode')}${
                   snapshot.lockoutCode?.toString().trim() === '0'
                     ? 'text-green-500' // If "0", Unlocked (Green)
                     : 'text-red-500' // If not "0", Locked (Red)
-                }
+                }`}
               >
                 <strong>Lockout Status:</strong>{' '}
                 {snapshot.lockoutCode?.toString().trim() === '0'
@@ -566,12 +674,18 @@ const VehicleDashboard: React.FC = () => {
                   : 'Locked'}
               </span>
             </p>
-            <p className='text-sm text-gray-600'>
+            <p
+              className={`text-base text-gray-600 ${compareBeforeAfterSnaps(
+                'preopSchedule'
+              )}`}
+            >
               <strong>Checklist Schedule:</strong>{' '}
               {snapshot.preopSchedule || 'N/A'}
             </p>
             <p
-              className={` ${
+              className={` ${compareBeforeAfterSnaps(
+                'redImpactThreshold'
+              )}${
                 snapshot.redImpactThreshold !== null &&
                 snapshot.redImpactThreshold > 0.0
                   ? 'text-green-500'
@@ -583,21 +697,32 @@ const VehicleDashboard: React.FC = () => {
             </p>
             <p>
               <span
-                className={
+                className={`${compareBeforeAfterSnaps(
+                  'fullLockoutEnabled'
+                )}${
                   snapshot.fullLockoutEnabled
-                    ? 'text-green-500' // If false/null, Unlocked (Green)
-                    : 'text-red-500' // If true, Locked (Red)
-                }
+                    ? 'text-green-500'
+                    : 'text-red-500'
+                } 
+                `}
               >
                 <strong>Full Lockout:</strong>{' '}
                 {snapshot.fullLockoutEnabled ? 'On' : 'Off'}
               </span>
             </p>
 
-            <p className='text-sm text-gray-600'>
+            <p
+              className={`text-base text-gray-600 ${compareBeforeAfterSnaps(
+                'seatIdle'
+              )}`}
+            >
               <strong>Idle Timeout:</strong> {snapshot.seatIdle || 'N/A'}s
             </p>
-            <p className='text-sm text-gray-600'>
+            <p
+              className={`text-base text-gray-600 ${compareBeforeAfterSnaps(
+                'canRulesLoaded'
+              )}`}
+            >
               <strong>Can Rules Loaded:</strong>{' '}
               {snapshot.canRulesLoaded || 'N/A'}
             </p>
@@ -607,10 +732,6 @@ const VehicleDashboard: React.FC = () => {
     );
   };
 
-  const totalVehicles = 85;
-  const inactiveVehicles72H = 5;
-  const activeVehicles24H = 80;
-  console.log('snapshotDatasnapshotDatasnapshotData', snapshotData);
   return (
     <div>
       <NavBar />
@@ -626,7 +747,7 @@ const VehicleDashboard: React.FC = () => {
           <div className='flex items-center gap-4 mb-6'>
             {/* 📅 First Date Picker */}
             <div>
-              <label className='block text-sm font-medium text-gray-700'>
+              <label className='block text-base font-medium text-gray-700'>
                 Select Date
               </label>
               <DatePicker
@@ -640,7 +761,7 @@ const VehicleDashboard: React.FC = () => {
 
             {/* ⏰ First Time Picker (Disabled until Date is selected) */}
             <div>
-              <label className='block text-sm font-medium text-gray-700'>
+              <label className='block text-base font-medium text-gray-700'>
                 Time
               </label>
               <select
@@ -660,7 +781,7 @@ const VehicleDashboard: React.FC = () => {
           <div className='flex items-center gap-4 mb-6'>
             {/* 📅 Second Date Picker */}
             <div>
-              <label className='block text-sm font-medium text-gray-700'>
+              <label className='block text-base font-medium text-gray-700'>
                 Second Date
               </label>
               <DatePicker
@@ -680,7 +801,7 @@ const VehicleDashboard: React.FC = () => {
 
             {/* ⏰ Second Time Picker */}
             <div>
-              <label className='block text-sm font-medium text-gray-700'>
+              <label className='block text-base font-medium text-gray-700'>
                 Second Time
               </label>
               <select
@@ -696,7 +817,6 @@ const VehicleDashboard: React.FC = () => {
               </select>
             </div>
           </div>
-          {/* 🔘 Button to Trigger Snapshot Fetch */}
           <div className='flex justify-end'>
             <button
               className='mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition'
@@ -710,18 +830,19 @@ const VehicleDashboard: React.FC = () => {
         {/* Site Summary Card */}
         <div className='bg-white shadow-lg rounded-lg p-6 mb-6 border border-gray-300'>
           <h2 className='text-2xl font-bold text-gray-800 mb-4'>
-            Site Summary
+            Vehicle Summary
           </h2>
           <div className='flex justify-between text-gray-600 text-lg'>
             <p>
-              <strong>Total Vehicles:</strong> {totalVehicles}
+              <strong>Total Vehicles: </strong>
+              {vehicleSummary.total}
             </p>
             <p>
-              <strong>Inactive Vehicles (72H):</strong>{' '}
-              {inactiveVehicles72H}
+              <strong>Active Vehicles: </strong> {vehicleSummary.active}
             </p>
             <p>
-              <strong>Active Vehicles (24H):</strong> {activeVehicles24H}
+              <strong>Inactive Vehicles: </strong>{' '}
+              {vehicleSummary.inactive}
             </p>
           </div>
         </div>
@@ -748,11 +869,11 @@ const VehicleDashboard: React.FC = () => {
                     <h2 className='text-2xl font-bold text-gray-800'>
                       {vehicle.vehicle_info.vehicleName}
                     </h2>
-                    <p className='text-sm text-gray-600'>
+                    <p className='text-base text-gray-600'>
                       <strong>Serial:</strong>{' '}
                       {vehicle.vehicle_info.serialNumber}
                     </p>
-                    <p className='text-sm text-gray-600'>
+                    <p className='text-base text-gray-600'>
                       <strong>GMPT:</strong>{' '}
                       {vehicle.vehicle_info.gmptCode}
                     </p>
@@ -762,45 +883,45 @@ const VehicleDashboard: React.FC = () => {
                 {/* Vehicle Specs and Status */}
                 <div className='grid grid-cols-2 gap-4 mt-4'>
                   <div>
-                    <p className='text-sm text-gray-600'>
+                    <p className='text-base text-gray-600'>
                       <strong>Customer:</strong>{' '}
                       {vehicle.vehicle_info.customerName}
                     </p>
-                    <p className='text-sm text-gray-600'>
+                    <p className='text-base text-gray-600'>
                       <strong>Site:</strong>{' '}
                       {vehicle.vehicle_info.siteName}
                     </p>
-                    <p className='text-sm text-gray-600'>
+                    <p className='text-base text-gray-600'>
                       <strong>Department:</strong>{' '}
                       {vehicle.vehicle_info.department}
                     </p>
-                    <p className='text-sm text-gray-600'>
+                    <p className='text-base text-gray-600'>
                       <strong>Screen Version:</strong>{' '}
                       {vehicle.vehicle_info.screenVersion}
                     </p>
-                    <p className='text-sm text-gray-600'>
+                    <p className='text-base text-gray-600'>
                       <strong>ExpModu Version:</strong>{' '}
                       {vehicle.vehicle_info.expansionVersion}
                     </p>
                   </div>
                   <div>
-                    <p className='text-sm text-gray-600'>
+                    <p className='text-base text-gray-600'>
                       <strong>Firmware Version:</strong>{' '}
                       {vehicle.vehicle_info.firmwareVersion}
                     </p>
-                    <p className='text-sm text-gray-600'>
+                    <p className='text-base text-gray-600'>
                       <strong>Vehicle Model:</strong>{' '}
                       {vehicle.vehicle_info.vehicleModel}
                     </p>
-                    <p className='text-sm text-gray-600'>
+                    <p className='text-base text-gray-600'>
                       <strong>Sim Number:</strong>{' '}
                       {vehicle.vehicle_info.simNumber}
                     </p>
-                    <p className='text-sm text-gray-600'>
+                    <p className='text-base text-gray-600'>
                       <strong>Firmware Version:</strong>{' '}
                       {vehicle.vehicle_info.firmwareVersion}
                     </p>
-                    <p className='text-sm text-gray-600'>
+                    <p className='text-base text-gray-600'>
                       <strong>Last Connection:</strong>{' '}
                       {vehicle.vehicle_info.lastConnection}
                     </p>
@@ -821,7 +942,7 @@ const VehicleDashboard: React.FC = () => {
                 </div>
 
                 <hr className='border-gray-300 mb-4' />
-                <div className='grid grid-cols-2 gap-4 text-sm text-gray-600'>
+                <div className='grid grid-cols-2 gap-4 text-base text-gray-600'>
                   <p>
                     <span
                       className={
@@ -905,23 +1026,23 @@ const VehicleDashboard: React.FC = () => {
                     </span>
                   </p>
 
-                  <p className='text-gray-600 text-sm'>
+                  <p className='text-gray-600 text-base'>
                     <strong>Full Lockout Timeout:</strong>{' '}
                     {vehicle.vehicle_info.fullLockoutTimeout}s
                   </p>
 
-                  <p className='text-gray-600 text-sm'>
+                  <p className='text-gray-600 text-base'>
                     <strong>Idle Timeout:</strong>{' '}
                     {vehicle.vehicle_info.seatIdle !== null
                       ? vehicle.vehicle_info.seatIdle
                       : 'Off'}
                     s
                   </p>
-                  <p className='text-gray-600 text-sm'>
+                  <p className='text-gray-600 text-base'>
                     <strong>Checklist Timeout:</strong>{' '}
                     {vehicle.vehicle_info.surveyTimeout}s
                   </p>
-                  <p className='text-gray-600 text-sm'>
+                  <p className='text-gray-600 text-base'>
                     <strong>Can-Rules Loaded:</strong>{' '}
                     {vehicle.vehicle_info.canRulesLoaded ? 'Yes' : 'No'}
                   </p>
