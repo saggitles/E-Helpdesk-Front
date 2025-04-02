@@ -281,44 +281,48 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
         <div className='grid grid-cols-3 gap-4'>
           {/* Customer Filter */}
           <div>
-            <label className='block text-sm font-medium text-gray-700 mb-1 flex items-center'>
+            <label className='block text-base font-medium text-gray-700 mb-1 flex items-center'>
               Customer {loadingCustomers && <Spinner />}
             </label>
-            <select
-              name='client'
-              value={filters.client}
-              onChange={handleFilterChange}
-              disabled={loadingCustomers}
-              className='block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black'
-            >
-              <option value=''>Select a Customer</option>
-              {customers.map((customer) => (
-                <option key={customer.USER_CD} value={customer.USER_CD}>
-                  {customer.USER_NAME}
-                </option>
-              ))}
-            </select>
+            <div className='flex items-center justify-center h-12 bg-white border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 rounded-lg'>
+              <select
+                name='client'
+                value={filters.client}
+                onChange={handleFilterChange}
+                disabled={loadingCustomers}
+                className='block w-full h-full sm:text-sm text-black focus:outline-none rounded-lg'
+              >
+                <option value=''>Select a Customer</option>
+                {customers.map((customer) => (
+                  <option key={customer.USER_CD} value={customer.USER_CD}>
+                    {customer.USER_NAME}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Site Filter */}
           <div>
-            <label className='block text-sm font-medium text-gray-700 mb-1 flex items-center'>
+            <label className='block text-base font-medium text-gray-700 mb-1 flex items-center'>
               Site {loadingSites && <Spinner />}
             </label>
-            <select
-              name='site'
-              value={filters.site}
-              onChange={handleFilterChange}
-              disabled={!filters.client || loadingSites}
-              className='block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black'
-            >
-              <option value=''>Select a Site</option>
-              {sites.map((site) => (
-                <option key={site.LOCATION_CD} value={site.LOCATION_CD}>
-                  {site.NAME}
-                </option>
-              ))}
-            </select>
+            <div className='flex items-center justify-center h-12 bg-white border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 rounded-lg'>
+              <select
+                name='site'
+                value={filters.site}
+                onChange={handleFilterChange}
+                disabled={!filters.client || loadingSites}
+                className='block w-full h-full sm:text-sm text-black focus:outline-none rounded-lg'
+              >
+                <option value=''>Select a Site</option>
+                {sites.map((site) => (
+                  <option key={site.LOCATION_CD} value={site.LOCATION_CD}>
+                    {site.NAME}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* GMPT Code Filter */}
@@ -326,15 +330,16 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
             <label className='block text-sm font-medium text-gray-700 mb-1'>
               GMPT Code
             </label>
-            <input
-              type='text'
-              name='gmptCode'
-              value={filters.gmptCode}
-              onChange={handleFilterChange}
-              className='w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500 text-black'
-            />
+            <div className='flex items-center justify-center h-12 bg-white border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 rounded-lg'>
+              <input
+                type='text'
+                name='gmptCode'
+                value={filters.gmptCode}
+                onChange={handleFilterChange}
+                className='block w-full h-full sm:text-sm text-black focus:outline-none rounded-lg'
+              />
+            </div>
           </div>
-
           {/* Search Button */}
           <div className='col-span-3 flex justify-end'>
             <button

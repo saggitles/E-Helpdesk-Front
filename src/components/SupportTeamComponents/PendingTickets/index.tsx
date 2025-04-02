@@ -89,24 +89,30 @@ export const PendingTickets: React.FC = () => {
   };
 
   const handleExportTickets = async () => {
+    console.log('Exporting tickets...');
+    console.log('API URL:', process.env.NEXT_PUBLIC_API_URL);
+    const token = localStorage.getItem('accessToken');
     try {
-      const response = await fetch(
-        'http://localhost:8080/api/ticket/export'
+      const response = await axios.get(
+        'https://ci-ehelpdesk-be.azurewebsites.net/tickets/export',
+        {
+          // updated endpoint (plural "tickets")
+          responseType: 'blob', // important for file downloads
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
-      if (!response.ok) {
-        throw new Error('Failed to export tickets');
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-
+      const url = window.URL.createObjectURL(response.data);
       const a = document.createElement('a');
       a.href = url;
       a.download = 'tickets.csv';
       document.body.appendChild(a);
       a.click();
       a.remove();
+
+      console.log('Exported tickets successfully');
     } catch (error) {
       console.error('Error exporting tickets:', error);
     }
@@ -118,11 +124,15 @@ export const PendingTickets: React.FC = () => {
     console.log('Applying filters:', selectedStatuses);
 
     try {
-      const response = await axios.post(
-        'http://localhost:8080/tickets/filterByStatus',
-        { statuses: selectedStatuses }
+      // Convert selected statuses to a comma-separated string for the query parameter
+      const statusQuery = selectedStatuses.join(',');
+
+      // Send a GET request with statuses as query parameters
+      const response = await axios.get(
+        `http://localhost:8080/tickets/filterByStatus?status=${statusQuery}`
       );
 
+      // Sort the tickets by ID in descending order
       const sorted = response.data.sort(
         (a: Ticket, b: Ticket) => b.IDTicket - a.IDTicket
       );
@@ -245,6 +255,7 @@ export const PendingTickets: React.FC = () => {
                   'Pending',
                   'First Contact',
                   'In progress',
+                  'Warranty sent',
                   'Done',
                   'Scaled',
                   "Won't do",
@@ -279,6 +290,7 @@ export const PendingTickets: React.FC = () => {
                 <th className='px-4 py-2'>Date</th>
                 <th className='px-4 py-2'>Priority</th>
                 <th className='px-4 py-2'>Company</th>
+                <th className='px-4 py-2'>Site</th>
                 <th className='px-4 py-2'>Contact</th>
                 <th className='px-4 py-2'>Subject</th>
                 <th className='px-4 py-2'>Supported By</th>

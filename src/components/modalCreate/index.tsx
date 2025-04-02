@@ -1,3 +1,4 @@
+'use client';
 import { useState, FormEvent, ChangeEvent, useEffect } from 'react';
 import { toast } from 'react-toastify';
 
@@ -196,23 +197,6 @@ const TicketModal = ({
       `;
       document.head.appendChild(style);
     }
-    useEffect(() => {
-      const fetchGmptCodes = async () => {
-        if (!selectedSite) return;
-
-        try {
-          const response = await fetch(
-            `http://localhost:8080/gmpt-codes?locationCD=${selectedSite}`
-          );
-          const data = await response.json();
-          setAvailableGMPTs(data); // useState to store available GMPT codes
-        } catch (error) {
-          console.error('Error fetching GMPT codes:', error);
-        }
-      };
-
-      fetchGmptCodes();
-    }, [selectedSite]);
 
     return () => {
       const styleElement = document.getElementById('modal-spinner-styles');
@@ -221,6 +205,24 @@ const TicketModal = ({
       }
     };
   }, []);
+
+  useEffect(() => {
+    const fetchGmptCodes = async () => {
+      if (!selectedSite) return;
+
+      try {
+        const response = await fetch(
+          `http://localhost:8080/gmpt-codes?locationCD=${selectedSite}`
+        );
+        const data = await response.json();
+        setAvailableGMPTs(data); // useState to store available GMPT codes
+      } catch (error) {
+        console.error('Error fetching GMPT codes:', error);
+      }
+    };
+
+    fetchGmptCodes();
+  }, [selectedSite]);
 
   return (
     <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
@@ -324,13 +326,19 @@ const TicketModal = ({
                 </option>
                 <option
                   value='Waiting information'
-                  style={{ backgroundColor: '#800080  ', color: 'white' }}
+                  style={{ backgroundColor: '#800080', color: 'white' }}
                 >
                   Waiting information
                 </option>
                 <option
+                  value='Warranty sent'
+                  style={{ backgroundColor: '#9932CC', color: 'white' }} // changed from #800080 to a slightly different purple
+                >
+                  Warranty sent
+                </option>
+                <option
                   value='Waiting confirmation'
-                  style={{ backgroundColor: '#800080  ', color: 'white' }}
+                  style={{ backgroundColor: '#8A2BE2', color: 'white' }} // changed from #800080 to blue-violet
                 >
                   Waiting confirmation
                 </option>
@@ -360,10 +368,10 @@ const TicketModal = ({
                   Won't do
                 </option>
                 <option
-                  value='Pending'
-                  style={{ backgroundColor: '#800080  ', color: 'white' }}
+                  value='To do'
+                  style={{ backgroundColor: '#9370DB  ', color: 'white' }}
                 >
-                  Pending
+                  To do
                 </option>
               </select>
             </div>

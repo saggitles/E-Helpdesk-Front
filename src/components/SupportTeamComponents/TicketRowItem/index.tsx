@@ -63,6 +63,7 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
 
   const handleCategoryChange = async (newCategory: string) => {
     setCategory(newCategory);
+    console.log('New category url:', process.env.NEXT_PUBLIC_API_URL);
 
     try {
       const token = localStorage.getItem('accessToken');
@@ -255,9 +256,6 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
   };
 
   const handleDoneConfirm = async () => {
-    console.log('Aca esta la fucking solutioooon');
-    console.log(conclusion);
-
     setShowDonePopup(false);
     setSelectedStatus('Done');
     try {
@@ -328,6 +326,9 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
           {ticket.Companyname}
         </td>
         <td className='text-center text-xs font-Lato text-gray-900'>
+          {ticket.Site}
+        </td>
+        <td className='text-center text-xs font-Lato text-gray-900'>
           {ticket.Contact}
         </td>
         <td className='text-center text-xs font-Lato text-gray-900'>
@@ -362,9 +363,7 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
             </option>
             <option value='Connectivity Issue'>Connectivity Issue</option>
             <option value='User Unawareness'>User Unawareness</option>
-            <option value='Team Request (support)'>
-              Team Request (support)
-            </option>
+            <option value='Team Request'>Team Request</option>
             <option value='Server Down'>Server Down</option>
             <option value='Impact Calibrations'>
               Impact Calibrations

@@ -60,8 +60,8 @@ const CreateTicketPage = () => {
 
   const [sites, setSites] = useState<Site[]>([]);
   const [showSiteDropdown, setShowSiteDropdown] = useState(false);
-  const [customerOptions, setCustomerOptions] = useState([]);
-  const [siteOptions, setSiteOptions] = useState([]);
+  const [customerOptions, setCustomerOptions] = useState<Company[]>([]);
+  const [siteOptions, setSiteOptions] = useState<Site[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<string>('');
   const [selectedSite, setSelectedSite] = useState<string>('');
 
@@ -107,18 +107,15 @@ const CreateTicketPage = () => {
   };
 
   useEffect(() => {
-    const savedCustomer = localStorage.getItem('selectedCustomer');
-    const savedSite = localStorage.getItem('selectedSite');
+    const savedCustomer = localStorage.getItem('selectedCustomer') || '';
+    const savedSite = localStorage.getItem('selectedSite') || '';
 
-    if (savedCustomer) setSelectedCustomer(savedCustomer);
-    if (savedSite) {
-      try {
-        setSelectedSite(JSON.parse(savedSite));
-      } catch (error) {
-        console.error('Error parsing saved site:', error);
-        setSelectedSite(null);
-      }
-    }
+    setFormData((prev) => ({
+      ...prev,
+      company: savedCustomer,
+      site: savedSite,
+    }));
+    setSelectedCustomer(savedCustomer);
   }, []);
 
   useEffect(() => {
@@ -201,16 +198,15 @@ const CreateTicketPage = () => {
   };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (!['company', 'site'].includes(e.target.name)) {
-      setFormData({
-        ...formData,
-        [e.target.name]: e.target.value,
-      });
-    }
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    console.log(formData);
 
     // Validamos que los campos requeridos estén completos
     if (!formData.company || !formData.site || !formData.contactName) {
@@ -269,7 +265,7 @@ const CreateTicketPage = () => {
                             <div
                               key={company.USER_CD}
                               className='px-4 py-2 hover:bg-teal-50 cursor-pointer'
-                              onClick={() => handleCompanySelect(company)}
+                              onClick={() => handleCustomerChange(company)}
                             >
                               {company.USER_NAME}
                             </div>
@@ -286,7 +282,7 @@ const CreateTicketPage = () => {
                       Site
                     </label>
                     <select
-                      value={selectedSite}
+                      value={formData.site}
                       onChange={handleSiteChange}
                     >
                       <option value=''>Select Site</option>
