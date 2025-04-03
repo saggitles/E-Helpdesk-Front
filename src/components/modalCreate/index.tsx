@@ -212,7 +212,7 @@ const TicketModal = ({
 
       try {
         const response = await fetch(
-          `http://localhost:8080/gmpt-codes?locationCD=${selectedSite}`
+          `http://localhost:8080/api/gmpt-codes?locationCD=${selectedSite}`
         );
         const data = await response.json();
         setAvailableGMPTs(data); // useState to store available GMPT codes
