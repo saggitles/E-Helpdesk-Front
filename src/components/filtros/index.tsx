@@ -551,17 +551,6 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
                 </tbody>
               </table>
             </div>
-
-            {/* Load More Button */}
-            <div className='flex justify-center mt-6 pb-8'>
-              <button
-                onClick={loadMoreTickets}
-                disabled={currentPage === totalPages}
-                className='bg-teal-500 text-white px-8 py-3 rounded-md hover:bg-teal-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
-              >
-                Load More
-              </button>
-            </div>
           </div>
         </div>
       )}

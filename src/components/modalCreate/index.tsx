@@ -189,7 +189,7 @@ const TicketModal = ({
 
       try {
         const response = await fetch(
-          `http://localhost:8080/api/gmpt-codes?locationCD=${selectedSite}`
+          `http://localhost:8080/api/gmpt-codes?locationCD=${selectedSite.site}`
         );
         const data = await response.json();
         setAvailableGMPTs(data); // useState to store available GMPT codes
@@ -502,7 +502,7 @@ const TicketModal = ({
                 Email Subject
               </label>
               <input
-                type='email'
+                type='string'
                 name='email'
                 value={ticketData.email}
                 onChange={handleChange}
