@@ -94,9 +94,9 @@ export const PendingTickets: React.FC = () => {
     const token = localStorage.getItem('accessToken');
     try {
       const response = await axios.get(
-        'https://ci-ehelpdesk-be.azurewebsites.net/tickets/export',
+        `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/export`, // updated endpoint (plural "tickets")
+
         {
-          // updated endpoint (plural "tickets")
           responseType: 'blob', // important for file downloads
           headers: {
             Authorization: `Bearer ${token}`,

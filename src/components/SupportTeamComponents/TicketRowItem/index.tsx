@@ -17,7 +17,7 @@ interface Ticket {
   Priority: string;
   AssignedUserID: number;
   CustomerID: number;
-  Site: string | null;
+  SiteName: string | null;
   Department: string | null;
   createdAt: string;
   updatedAt: string;
@@ -25,11 +25,10 @@ interface Ticket {
   VehicleID: string;
   Dealer: string;
   contactName: string;
-  Customer: string;
+  CustomerName: string;
   User: string;
   Platform: string;
   Email: string;
-  Companyname: string;
   Contact: string;
   Reporter: string;
   Supported: string;
@@ -180,16 +179,15 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
           Title: ticket.Title,
           Description: ticket.Description,
           Priority: ticket.Priority,
-          Dealer: ticket.Dealer,
           Status: ticket.Status,
           Department: ticket.Department || '',
-          Site: ticket.Site || '',
+          Sitename: ticket.SiteName || '',
           createdAt: fechaCreate,
           updatedAt: fechaUpdate,
           Category: ticket.Category,
           Platform: ticket.Platform || '',
           Email: ticket.Email || '',
-          Companyname: ticket.Companyname,
+          Customername: ticket.CustomerName,
           Contact: ticket.Contact,
           VehicleID: ticket.VehicleID,
           Reporter: ticket.Reporter || '',
@@ -199,7 +197,6 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
           Solution: ticket.Solution || '',
           incidentDate: fechaIncidentFormatted,
           TicketNumber: ticket.TicketNumber,
-          openSince: ticket.openSince,
         }).toString(),
       '_blank'
     );
@@ -323,10 +320,10 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
         </td>
 
         <td className='text-center text-xs font-Lato text-gray-900'>
-          {ticket.Companyname}
+          {ticket.CustomerName}
         </td>
         <td className='text-center text-xs font-Lato text-gray-900'>
-          {ticket.Site}
+          {ticket.SiteName}
         </td>
         <td className='text-center text-xs font-Lato text-gray-900'>
           {ticket.Contact}

@@ -6,13 +6,15 @@ interface TicketModalProps {
   isOpen: boolean;
   onClose: () => void;
   formData: {
-    company: string;
-    site: string;
+    customerName: string;
+    customer_id: number;
+    siteName: string | null;
+    site_id: number | null;
     contactName: string;
-    phone: string;
+    phone: string | null;
   };
   selectedSite: {
-    LOCATION_CD: number;
+    site: number;
     NAME: string;
   } | null;
   onTicketCreated?: () => void; // Callback para actualizar los tickets después de crear uno nuevo
@@ -69,7 +71,7 @@ const TicketModal = ({
   const handleSubmitTicket = async (e: FormEvent) => {
     e.preventDefault();
 
-    // Validación básica
+    // Validate required fields
     if (!ticketData.description.trim()) {
       toast.error('Description is required');
       return;
@@ -78,19 +80,17 @@ const TicketModal = ({
     setIsSubmitting(true);
 
     try {
-      // Crear un FormData para enviar archivos
-      const formDataToSend = new FormData();
-
-      // Añadir datos del ticket
+      // Build your payload object
       const ticketPayload = {
-        Title: `Support request from ${formData.company}`,
-        LocationCD: selectedSite?.LOCATION_CD,
-        Site: formData.site,
+        Title: `Support request from ${formData.customerName}`,
+        LocationCD: formData.site_id, // site id as number
+        SiteName: formData.siteName, // site name as string
         Contact: formData.contactName,
         Priority: ticketData.priority,
         Status: ticketData.status,
         Category: ticketData.category,
-        Companyname: formData.company,
+        CustomerName: formData.customerName,
+        customer_id: formData.customer_id, // Include customer id if needed
         Description: ticketData.description,
         incidentDate: ticketData.incidentDate,
         driversName: ticketData.driversName,
@@ -99,40 +99,18 @@ const TicketModal = ({
         Email: ticketData.email,
         Platform: ticketData.platform,
         Solution: ticketData.solution,
-        phone: formData.phone, // Añadir el teléfono del contacto
+        phone: formData.phone,
       };
 
-      formDataToSend.append('ticket', JSON.stringify(ticketPayload));
+      console.log('Ticket Payload:', ticketPayload);
 
-      // Añadir archivos
-      if (files) {
-        for (let i = 0; i < files.length; i++) {
-          formDataToSend.append('files', files[i]);
-        }
-      }
-
-      // Spinner CSS
-      const styleElement = document.createElement('style');
-      styleElement.textContent = `
-        @keyframes spinner-border {
-          to { transform: rotate(360deg); }
-        }
-        .submit-spinner {
-          display: inline-block;
-          width: 1rem;
-          height: 1rem;
-          border: 0.2em solid currentColor;
-          border-right-color: transparent;
-          border-radius: 50%;
-          animation: spinner-border 0.75s linear infinite;
-          margin-right: 0.5rem;
-        }
-      `;
-      document.head.appendChild(styleElement);
-
+      // Send JSON directly with the proper header.
       const response = await fetch('http://localhost:8080/api/tickets', {
         method: 'POST',
-        body: formDataToSend,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(ticketPayload),
       });
 
       if (!response.ok) {
@@ -144,7 +122,7 @@ const TicketModal = ({
         autoClose: 2000,
       });
 
-      // Limpiar el formulario
+      // Clear the form data (reset states)
       setTicketData({
         description: '',
         category: 'Support',
@@ -160,7 +138,7 @@ const TicketModal = ({
       });
       setFiles(null);
 
-      // Llamar al callback para actualizar los tickets
+      // If there's a callback to update tickets, call it.
       if (onTicketCreated) {
         onTicketCreated();
       }
@@ -171,7 +149,6 @@ const TicketModal = ({
       toast.error('Error creating ticket');
     } finally {
       setIsSubmitting(false);
-      document.head.removeChild(document.head.lastChild as Node);
     }
   };
 
@@ -311,69 +288,85 @@ const TicketModal = ({
               <label className='block text-sm font-medium text-gray-700 mb-1'>
                 Status
               </label>
-              <select
-                name='status'
-                value={ticketData.status}
-                onChange={handleChange}
-                className='w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50'
-                disabled={isSubmitting}
-              >
-                <option
-                  value='First Contact'
-                  style={{ backgroundColor: '#e6d856', color: 'white' }}
+              <div className='relative'>
+                <select
+                  name='status'
+                  value={ticketData.status}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
+                  className='block w-full p-3 text-sm border border-teal-300 rounded-lg bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500'
                 >
-                  First Contact
-                </option>
-                <option
-                  value='Waiting information'
-                  style={{ backgroundColor: '#800080', color: 'white' }}
-                >
-                  Waiting information
-                </option>
-                <option
-                  value='Warranty sent'
-                  style={{ backgroundColor: '#9932CC', color: 'white' }} // changed from #800080 to a slightly different purple
-                >
-                  Warranty sent
-                </option>
-                <option
-                  value='Waiting confirmation'
-                  style={{ backgroundColor: '#8A2BE2', color: 'white' }} // changed from #800080 to blue-violet
-                >
-                  Waiting confirmation
-                </option>
-                <option
-                  value='In progress'
-                  style={{ backgroundColor: '#e6d856', color: 'white' }}
-                >
-                  In progress
-                </option>
-                <option
-                  value='Done'
-                  style={{ backgroundColor: '#92cc75', color: 'white' }}
-                >
-                  Done
-                </option>
-                <option
-                  value='Scaled'
-                  style={{ backgroundColor: '#7ea6d3', color: 'white' }}
-                >
-                  Scaled
-                </option>
-
-                <option
-                  value="Won't do"
-                  style={{ backgroundColor: '#a4a89e', color: 'white' }}
-                >
-                  Won't do
-                </option>
-                <option
-                  value='To do'
-                  style={{ backgroundColor: '#9370DB  ', color: 'white' }}
-                >
-                  To do
-                </option>
-              </select>
+                  <option
+                    value='First Contact'
+                    style={{ backgroundColor: '#e6d856', color: 'white' }}
+                  >
+                    First Contact
+                  </option>
+                  <option
+                    value='Waiting information'
+                    style={{ backgroundColor: '#800080', color: 'white' }}
+                  >
+                    Waiting information
+                  </option>
+                  <option
+                    value='Warranty sent'
+                    style={{ backgroundColor: '#9932CC', color: 'white' }}
+                  >
+                    Warranty sent
+                  </option>
+                  <option
+                    value='Waiting confirmation'
+                    style={{ backgroundColor: '#8A2BE2', color: 'white' }}
+                  >
+                    Waiting confirmation
+                  </option>
+                  <option
+                    value='In progress'
+                    style={{ backgroundColor: '#e6d856', color: 'white' }}
+                  >
+                    In progress
+                  </option>
+                  <option
+                    value='Done'
+                    style={{ backgroundColor: '#92cc75', color: 'white' }}
+                  >
+                    Done
+                  </option>
+                  <option
+                    value='Scaled'
+                    style={{ backgroundColor: '#7ea6d3', color: 'white' }}
+                  >
+                    Scaled
+                  </option>
+                  <option
+                    value="Won't do"
+                    style={{ backgroundColor: '#a4a89e', color: 'white' }}
+                  >
+                    Won't do
+                  </option>
+                  <option
+                    value='To do'
+                    style={{ backgroundColor: '#9370DB', color: 'white' }}
+                  >
+                    To do
+                  </option>
+                </select>
+                {/* Custom arrow */}
+                <div className='pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3'>
+                  <svg
+                    className='h-5 w-5 text-gray-600'
+                    xmlns='http://www.w3.org/2000/svg'
+                    viewBox='0 0 20 20'
+                    fill='currentColor'
+                  >
+                    <path
+                      fillRule='evenodd'
+                      d='M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z'
+                      clipRule='evenodd'
+                    />
+                  </svg>
+                </div>
+              </div>
             </div>
 
             <div>
