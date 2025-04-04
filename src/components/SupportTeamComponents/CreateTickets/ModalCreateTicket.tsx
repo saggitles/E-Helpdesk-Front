@@ -69,7 +69,7 @@ const ModalCreateTicket: FC<ModalCreateTicketProps> = ({
     assignedUserID: '',
     driversName: '',
     VehicleID: '',
-    Companyname: '',
+    CustomerName: '',
     Email: '',
     Platform: '',
     Reporter: '',
@@ -240,7 +240,7 @@ const ModalCreateTicket: FC<ModalCreateTicketProps> = ({
       Contact: formData.Contact,
       Supported: formData.Supported,
       Platform: selectedValue_2,
-      Companyname: formData.Companyname,
+      CustomerName: formData.CustomerName,
       Email: formData.Email,
       VehicleID: formData.VehicleID,
       Reporter: formData.Reporter,
@@ -400,17 +400,17 @@ const ModalCreateTicket: FC<ModalCreateTicketProps> = ({
                 </div>
                 <div className='col-span-2 sm:col-span-1'>
                   <label
-                    htmlFor='Companyname'
+                    htmlFor='CustomerName'
                     className='block mb-1 font-normal text-teal-700'
                   >
-                    Company
+                    Customer
                   </label>
                   <input
-                    value={formData.Companyname}
+                    value={formData.CustomerName}
                     onChange={handleChangeCreate}
                     type='text'
-                    name='Companyname'
-                    id='Companyname'
+                    name='CustomerName'
+                    id='CustomerName'
                     placeholder='Type customer name'
                     className='bg-gray-50 border border-teal-300 text-teal-900 font-normal placeholder:text-gray-400 text-sm rounded-lg focus:ring-teal-600 focus:border-teal-600 block w-full p-2.5'
                     required

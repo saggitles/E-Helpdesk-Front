@@ -29,6 +29,7 @@ interface Ticket {
   User: string;
   Platform: string;
   Email: string;
+  CompanyName: string;
   Contact: string;
   Reporter: string;
   Supported: string;
@@ -181,13 +182,13 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
           Priority: ticket.Priority,
           Status: ticket.Status,
           Department: ticket.Department || '',
-          Sitename: ticket.SiteName || '',
           createdAt: fechaCreate,
           updatedAt: fechaUpdate,
           Category: ticket.Category,
           Platform: ticket.Platform || '',
           Email: ticket.Email || '',
-          Customername: ticket.CustomerName,
+          Customer: ticket.CustomerName || '',
+          SiteName: ticket.SiteName || '',
           Contact: ticket.Contact,
           VehicleID: ticket.VehicleID,
           Reporter: ticket.Reporter || '',
@@ -197,6 +198,7 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
           Solution: ticket.Solution || '',
           incidentDate: fechaIncidentFormatted,
           TicketNumber: ticket.TicketNumber,
+          openSince: ticket.openSince,
         }).toString(),
       '_blank'
     );

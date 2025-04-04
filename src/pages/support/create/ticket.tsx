@@ -255,6 +255,7 @@ const CreateTicketPage = () => {
 
           const tickets = await response.json();
           console.log('Received tickets:', tickets.length);
+          console.log('Received tickets:', tickets);
           setFilteredTickets(tickets);
         } else {
           throw new Error('Invalid locationCD');
