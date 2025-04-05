@@ -344,10 +344,19 @@ const VehicleDashboard: React.FC = () => {
     const url = new URL('http://localhost:8080/api/snapshots');
     url.searchParams.append('time1', selectedFirstTime);
     url.searchParams.append('time2', selectedSecondTime);
-    url.searchParams.append('date1', selectedFirstDate);
-    url.searchParams.append('date2', selectedSecondDate);
-
-    url.searchParams.append('customer', customer);
+    url.searchParams.append(
+      'date1',
+      selectedFirstDate
+        ? selectedFirstDate.toISOString().split('T')[0]
+        : ''
+    );
+    url.searchParams.append(
+      'date2',
+      selectedSecondDate
+        ? selectedSecondDate.toISOString().split('T')[0]
+        : ''
+    );
+    url.searchParams.append('customer', customer ?? '');
     if (site) url.searchParams.append('site', site);
     if (gmptCode) url.searchParams.append('gmptCode', gmptCode);
 
@@ -404,26 +413,6 @@ const VehicleDashboard: React.FC = () => {
       [key]: !prev[key],
     }));
     setActiveVehicleId(vehicleId);
-  };
-
-  console.log('mesajito para vaidar snapshot data', snapshotData);
-  const leftSnap: SnapshotRow = snapshotData[String(selectedFirstTime)]?.[
-    'before'
-  ]
-    ? snapshotData[String(selectedFirstTime)]['before']
-    : snapshotData[String(selectedFirstTime)];
-  const rightSnap: SnapshotRow = snapshotData[String(selectedFirstTime)]?.[
-    'after'
-  ]
-    ? snapshotData[String(selectedFirstTime)]['after']
-    : snapshotData[String(selectedFirstTime)];
-
-  // Format date/time from the snapshot row if needed
-  const formatSnapshotDate = (snap?: SnapshotRow) => {
-    if (!snap?.query_execution_date) return '';
-    // e.g. "9/10/2025 10:00"
-    const dt = new Date(snap.query_execution_date);
-    return format(dt, 'dd/MM/yyyy HH:mm');
   };
 
   interface SnapshotCardProps {
@@ -745,503 +734,488 @@ const VehicleDashboard: React.FC = () => {
 
   return (
     <div>
-      
-        <div>
-          <NavBar />
-          <Navsearch onFilterChange={fetchVehicles} />
-          <div className='bg-gray-100 min-h-screen p-8'>
-            {/* Title with Date & Time Filters */}
-            <h1 className='text-4xl font-bold text-gray-800 text-center py-5'>
-                Vehicle Diagnostics Dashboard
-              </h1>
-            <div className='flex justify-between items-center mb-6'>
-              
-              <div className="shadow-lg rounded-lg p-6 border border-gray-300 bg-white"  >
-              <h3 className='text-2xl font-bold text-gray-800 px-4 py-2 text-center' >
+      <div>
+        <NavBar />
+        <Navsearch onFilterChange={fetchVehicles} />
+        <div className='bg-gray-100 min-h-screen p-8'>
+          {/* Title with Date & Time Filters */}
+          <h1 className='text-4xl font-bold text-gray-800 text-center py-5'>
+            Vehicle Diagnostics Dashboard
+          </h1>
+          <div className='flex justify-between items-center mb-6'>
+            <div className='shadow-lg rounded-lg p-6 border border-gray-300 bg-white'>
+              <h3 className='text-2xl font-bold text-gray-800 px-4 py-2 text-center'>
                 Compare vehicles at 2 points in time
               </h3>
               <hr className='border-gray-300 mb-4' />
 
-                <div className="grid grid-cols-3 gap-4 items-center">
-                  {/* First Date & Time */}
-                  <div>
-                    <label className="block text-base font-medium text-gray-700 mb-1">
-                      First Date
-                    </label>
-                    <DatePicker
-                      selected={selectedFirstDate}
-                      onChange={(date: Date) => setSelectedFirstDate(date)}
-                      includeDates={dates}
-                      dateFormat="dd/MM/yyyy"
-                      className="border border-gray-300 rounded-md px-2 py-1 text-black w-full"
-                    />
-                    <label className="block text-base font-medium text-gray-700 mt-2 mb-1">
-                      First Time
-                    </label>
-                    <select
-                      onChange={handleFirstTimeSelect}
-                      value={selectedFirstTime as string}
-                      className="border border-gray-300 rounded-md px-2 py-1 text-black w-full"
-                    >
-                      <option value="">Select a time</option>
-                      {availableTimes1.map(({ time, ID }) => (
-                        <option key={ID} value={time}>
-                          {time}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+              <div className='grid grid-cols-3 gap-4 items-center'>
+                {/* First Date & Time */}
+                <div>
+                  <label className='block text-base font-medium text-gray-700 mb-1'>
+                    First Date
+                  </label>
+                  <DatePicker
+                    selected={selectedFirstDate}
+                    onChange={(date: Date) => setSelectedFirstDate(date)}
+                    includeDates={dates}
+                    dateFormat='dd/MM/yyyy'
+                    className='border border-gray-300 rounded-md px-2 py-1 text-black w-full'
+                  />
+                  <label className='block text-base font-medium text-gray-700 mt-2 mb-1'>
+                    First Time
+                  </label>
+                  <select
+                    onChange={handleFirstTimeSelect}
+                    value={selectedFirstTime as string}
+                    className='border border-gray-300 rounded-md px-2 py-1 text-black w-full'
+                  >
+                    <option value=''>Select a time</option>
+                    {availableTimes1.map(({ time, ID }) => (
+                      <option key={ID} value={time}>
+                        {time}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-                  {/* Second Date & Time */}
-                  <div>
-                    <label className="block text-base font-medium text-gray-700 mb-1">
-                      Second Date
-                    </label>
-                    <DatePicker
-                      selected={selectedSecondDate}
-                      onChange={(date: Date) => setSelectedSecondDate(date)}
-                      includeDates={
-                        selectedFirstDate
-                          ? dates.filter(
-                              (d) => d.getTime() > selectedFirstDate.getTime()
-                            )
-                          : dates
-                      }
-                      dateFormat="dd/MM/yyyy"
-                      className="border border-gray-300 rounded-md px-2 py-1 text-black w-full"
-                    />
-                    <label className="block text-base font-medium text-gray-700 mt-2 mb-1">
-                      Second Time
-                    </label>
-                    <select
-                      onChange={handleSecondTimeSelect}
-                      value={selectedSecondTime as string}
-                      className="border border-gray-300 rounded-md px-2 py-1 text-black w-full"
-                    >
-                      <option value="">Select a time</option>
-                      {availableTimes2.map(({ time, ID }) => (
-                        <option key={ID} value={time}>
-                          {time}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                {/* Second Date & Time */}
+                <div>
+                  <label className='block text-base font-medium text-gray-700 mb-1'>
+                    Second Date
+                  </label>
+                  <DatePicker
+                    selected={selectedSecondDate}
+                    onChange={(date: Date) => setSelectedSecondDate(date)}
+                    includeDates={
+                      selectedFirstDate
+                        ? dates.filter(
+                            (d) =>
+                              d.getTime() > selectedFirstDate.getTime()
+                          )
+                        : dates
+                    }
+                    dateFormat='dd/MM/yyyy'
+                    className='border border-gray-300 rounded-md px-2 py-1 text-black w-full'
+                  />
+                  <label className='block text-base font-medium text-gray-700 mt-2 mb-1'>
+                    Second Time
+                  </label>
+                  <select
+                    onChange={handleSecondTimeSelect}
+                    value={selectedSecondTime as string}
+                    className='border border-gray-300 rounded-md px-2 py-1 text-black w-full'
+                  >
+                    <option value=''>Select a time</option>
+                    {availableTimes2.map(({ time, ID }) => (
+                      <option key={ID} value={time}>
+                        {time}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-                  {/* Snapshot Button */}
-                  <div className="flex items-center justify-center">
-                    <button
-                      className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
-                      onClick={fetchSnapshots}
-                    >
-                      Fetch Vehicle Snapshots
-                    </button>
-                  </div>
+                {/* Snapshot Button */}
+                <div className='flex items-center justify-center'>
+                  <button
+                    className='bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition'
+                    onClick={fetchSnapshots}
+                  >
+                    Fetch Vehicle Snapshots
+                  </button>
                 </div>
               </div>
             </div>
-            
+          </div>
 
-
-
-            {Object.keys(snapshotData).length === 0 && (
-              <div className='grid grid-cols-3 gap-6'>
-                {vehicles.map((vehicle, index) => (
-                  <div
-                    key={index}
-                    className='bg-white shadow-lg rounded-lg p-6 border border-gray-300'
-                  >
-                    {/* Adjusted grid layout for top section */}
-                    <div className='grid grid-cols-3 gap-4 items-start'>
-                      {/* Adjusted Image Size & Positioning */}
-                      <div className='w-20 h-20 flex items-start justify-start'>
-                        <img
-                          src='/forklift.png'
-                          alt='Forklift'
-                          className='w-full h-full object-contain'
-                        />
-                      </div>
-                      {/* Vehicle Identification Details */}
-                      <div className='col-span-2 text-center'>
-                        <h2 className='text-2xl font-bold text-gray-800'>
-                          {vehicle.vehicle_info.vehicleName}
-                        </h2>
-                        <p className='text-base text-gray-600'>
-                          <strong>Serial:</strong>{' '}
-                          {vehicle.vehicle_info.serialNumber}
-                        </p>
-                        <p className='text-base text-gray-600'>
-                          <strong>GMPT:</strong>{' '}
-                          {vehicle.vehicle_info.gmptCode}
-                        </p>
-                      </div>
+          {Object.keys(snapshotData).length === 0 && (
+            <div className='grid grid-cols-3 gap-6'>
+              {vehicles.map((vehicle, index) => (
+                <div
+                  key={index}
+                  className='bg-white shadow-lg rounded-lg p-6 border border-gray-300'
+                >
+                  {/* Adjusted grid layout for top section */}
+                  <div className='grid grid-cols-3 gap-4 items-start'>
+                    {/* Adjusted Image Size & Positioning */}
+                    <div className='w-20 h-20 flex items-start justify-start'>
+                      <img
+                        src='/forklift.png'
+                        alt='Forklift'
+                        className='w-full h-full object-contain'
+                      />
                     </div>
-
-                    {/* Vehicle Specs and Status */}
-                    <div className='grid grid-cols-2 gap-4 mt-4'>
-                      <div>
-                        <p className='text-base text-gray-600'>
-                          <strong>Customer:</strong>{' '}
-                          {vehicle.vehicle_info.customerName}
-                        </p>
-                        <p className='text-base text-gray-600'>
-                          <strong>Site:</strong>{' '}
-                          {vehicle.vehicle_info.siteName}
-                        </p>
-                        <p className='text-base text-gray-600'>
-                          <strong>Department:</strong>{' '}
-                          {vehicle.vehicle_info.department}
-                        </p>
-                        <p className='text-base text-gray-600'>
-                          <strong>Screen Version:</strong>{' '}
-                          {vehicle.vehicle_info.screenVersion}
-                        </p>
-                        <p className='text-base text-gray-600'>
-                          <strong>ExpModu Version:</strong>{' '}
-                          {vehicle.vehicle_info.expansionVersion}
-                        </p>
-                      </div>
-                      <div>
-                        <p className='text-base text-gray-600'>
-                          <strong>Firmware Version:</strong>{' '}
-                          {vehicle.vehicle_info.firmwareVersion}
-                        </p>
-                        <p className='text-base text-gray-600'>
-                          <strong>Vehicle Model:</strong>{' '}
-                          {vehicle.vehicle_info.vehicleModel}
-                        </p>
-                        <p className='text-base text-gray-600'>
-                          <strong>Sim Number:</strong>{' '}
-                          {vehicle.vehicle_info.simNumber}
-                        </p>
-                        <p className='text-base text-gray-600'>
-                          <strong>Firmware Version:</strong>{' '}
-                          {vehicle.vehicle_info.firmwareVersion}
-                        </p>
-                        <p className='text-base text-gray-600'>
-                          <strong>Last Connection:</strong>{' '}
-                          {vehicle.vehicle_info.lastConnection}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Status */}
-                    <div className='text-center mt-4'>
-                      <p
-                        className={`text-lg font-bold ${
-                          vehicle.vehicle_info.status === 'Online'
-                            ? 'text-green-600'
-                            : 'text-red-600'
-                        }`}
-                      >
-                        <strong>
-                          Status: {vehicle.vehicle_info.status}
-                        </strong>
+                    {/* Vehicle Identification Details */}
+                    <div className='col-span-2 text-center'>
+                      <h2 className='text-2xl font-bold text-gray-800'>
+                        {vehicle.vehicle_info.vehicleName}
+                      </h2>
+                      <p className='text-base text-gray-600'>
+                        <strong>Serial:</strong>{' '}
+                        {vehicle.vehicle_info.serialNumber}
+                      </p>
+                      <p className='text-base text-gray-600'>
+                        <strong>GMPT:</strong>{' '}
+                        {vehicle.vehicle_info.gmptCode}
                       </p>
                     </div>
+                  </div>
 
-                    <hr className='border-gray-300 mb-4' />
-                    <div className='grid grid-cols-2 gap-4 text-base text-gray-600'>
-                      <p>
-                        <span
-                          className={
-                            vehicle.vehicle_info.vorSetting == false
-                              ? 'text-green-500'
-                              : 'text-red-500'
-                          }
-                        >
-                          <strong>VOR: </strong>{' '}
-                          {vehicle.vehicle_info.vorSetting == false
-                            ? 'Off'
-                            : 'On'}
-                        </span>
+                  {/* Vehicle Specs and Status */}
+                  <div className='grid grid-cols-2 gap-4 mt-4'>
+                    <div>
+                      <p className='text-base text-gray-600'>
+                        <strong>Customer:</strong>{' '}
+                        {vehicle.vehicle_info.customerName}
                       </p>
-                      <p>
-                        <span
-                          className={
-                            vehicle.vehicle_info.lockoutCode
-                              ?.toString()
-                              .trim() === '0'
-                              ? 'text-green-500' // If "0", Unlocked (Green)
-                              : 'text-red-500' // If not "0", Locked (Red)
-                          }
-                        >
-                          <strong>Lockout Status:</strong>{' '}
-                          {vehicle.vehicle_info.lockoutCode
-                            ?.toString()
-                            .trim() === '0'
-                            ? 'Unlocked'
-                            : 'Locked'}
-                        </span>
+                      <p className='text-base text-gray-600'>
+                        <strong>Site:</strong>{' '}
+                        {vehicle.vehicle_info.siteName}
                       </p>
-                      <p>
-                        <strong>LO Reason:</strong>{' '}
-                        {vehicle.vehicle_info.loReason}
+                      <p className='text-base text-gray-600'>
+                        <strong>Department:</strong>{' '}
+                        {vehicle.vehicle_info.department}
                       </p>
-                      <p>
-                        <strong>Checklist Schedule:</strong>{' '}
-                        {vehicle.vehicle_info.preopSchedule}
+                      <p className='text-base text-gray-600'>
+                        <strong>Screen Version:</strong>{' '}
+                        {vehicle.vehicle_info.screenVersion}
                       </p>
-                      <p>
-                        <strong>Recalibration Date:</strong>{' '}
-                        {vehicle.vehicle_info.impactRecalibrationDate}
+                      <p className='text-base text-gray-600'>
+                        <strong>ExpModu Version:</strong>{' '}
+                        {vehicle.vehicle_info.expansionVersion}
                       </p>
+                    </div>
+                    <div>
+                      <p className='text-base text-gray-600'>
+                        <strong>Firmware Version:</strong>{' '}
+                        {vehicle.vehicle_info.firmwareVersion}
+                      </p>
+                      <p className='text-base text-gray-600'>
+                        <strong>Vehicle Model:</strong>{' '}
+                        {vehicle.vehicle_info.vehicleModel}
+                      </p>
+                      <p className='text-base text-gray-600'>
+                        <strong>Sim Number:</strong>{' '}
+                        {vehicle.vehicle_info.simNumber}
+                      </p>
+                      <p className='text-base text-gray-600'>
+                        <strong>Firmware Version:</strong>{' '}
+                        {vehicle.vehicle_info.firmwareVersion}
+                      </p>
+                      <p className='text-base text-gray-600'>
+                        <strong>Last Connection:</strong>{' '}
+                        {vehicle.vehicle_info.lastConnection}
+                      </p>
+                    </div>
+                  </div>
 
-                      <p
-                        className={` ${
-                          vehicle.vehicle_info.redImpactThreshold !==
-                            null &&
-                          vehicle.vehicle_info.redImpactThreshold > 0.0
+                  {/* Status */}
+                  <div className='text-center mt-4'>
+                    <p
+                      className={`text-lg font-bold ${
+                        vehicle.vehicle_info.status === 'Online'
+                          ? 'text-green-600'
+                          : 'text-red-600'
+                      }`}
+                    >
+                      <strong>
+                        Status: {vehicle.vehicle_info.status}
+                      </strong>
+                    </p>
+                  </div>
+
+                  <hr className='border-gray-300 mb-4' />
+                  <div className='grid grid-cols-2 gap-4 text-base text-gray-600'>
+                    <p>
+                      <span
+                        className={
+                          vehicle.vehicle_info.vorSetting == false
                             ? 'text-green-500'
                             : 'text-red-500'
-                        }`}
-                      >
-                        <strong>Red Impact Threshold: </strong>{' '}
-                        {vehicle.vehicle_info.redImpactThreshold}g
-                      </p>
-                      <p>
-                        <span
-                          className={
-                            vehicle.vehicle_info.impactLockout
-                              ? 'text-green-500' // If false/null, Unlocked (Green)
-                              : 'text-red-500' // If true, Locked (Red)
-                          }
-                        >
-                          <strong>Impact Lockouts:</strong>{' '}
-                          {vehicle.vehicle_info.impactLockout
-                            ? 'On'
-                            : 'Off'}
-                        </span>
-                      </p>
-                      <p>
-                        <span
-                          className={
-                            vehicle.vehicle_info.fullLockoutEnabled
-                              ? 'text-green-500' // If false/null, Unlocked (Green)
-                              : 'text-red-500' // If true, Locked (Red)
-                          }
-                        >
-                          <strong>Full Lockout:</strong>{' '}
-                          {vehicle.vehicle_info.fullLockoutEnabled
-                            ? 'On'
-                            : 'Off'}
-                        </span>
-                      </p>
-
-                      <p className='text-gray-600 text-base'>
-                        <strong>Full Lockout Timeout:</strong>{' '}
-                        {vehicle.vehicle_info.fullLockoutTimeout}s
-                      </p>
-
-                      <p className='text-gray-600 text-base'>
-                        <strong>Idle Timeout:</strong>{' '}
-                        {vehicle.vehicle_info.seatIdle !== null
-                          ? vehicle.vehicle_info.seatIdle
-                          : 'Off'}
-                        s
-                      </p>
-                      <p className='text-gray-600 text-base'>
-                        <strong>Checklist Timeout:</strong>{' '}
-                        {vehicle.vehicle_info.surveyTimeout}s
-                      </p>
-                      <p className='text-gray-600 text-base'>
-                        <strong>Can-Rules Loaded:</strong>{' '}
-                        {vehicle.vehicle_info.canRulesLoaded
-                          ? 'Yes'
-                          : 'No'}
-                      </p>
-                      {/* Master Codes Popup */}
-                      <button
-                        className='text-blue-500 hover:underline mt-2'
-                        onClick={() =>
-                          togglePopup('masterCodes', vehicle.VEHICLE_CD)
                         }
                       >
-                        Master Codes
-                      </button>
-                      {showPopup.masterCodes &&
-                        activeVehicleId === vehicle.VEHICLE_CD && (
-                          <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
-                            <div className='bg-white p-6 rounded-lg shadow-lg w-1/2'>
-                              <h3 className='text-lg font-semibold mb-4'>
-                                Master Codes for {activeVehicleId}
-                              </h3>
-
-                              <ul className='list-disc pl-6'>
-                                {vehicle.master_codes.length > 0 ? (
-                                  vehicle.master_codes.map((user, idx) => (
-                                    <li key={idx}>
-                                      {user.masterCodeUser}
-                                    </li>
-                                  ))
-                                ) : (
-                                  <p className='text-gray-600'>
-                                    No master codes found.
-                                  </p>
-                                )}
-                              </ul>
-
-                              <button
-                                className='mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700'
-                                onClick={() => togglePopup('masterCodes')}
-                              >
-                                Close
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      {/* Driver List Popup */}
-                      <button
-                        className='text-blue-500 hover:underline mt-2'
-                        onClick={() => togglePopup('driverList')}
+                        <strong>VOR: </strong>{' '}
+                        {vehicle.vehicle_info.vorSetting == false
+                          ? 'Off'
+                          : 'On'}
+                      </span>
+                    </p>
+                    <p>
+                      <span
+                        className={
+                          vehicle.vehicle_info.lockoutCode
+                            ?.toString()
+                            .trim() === '0'
+                            ? 'text-green-500' // If "0", Unlocked (Green)
+                            : 'text-red-500' // If not "0", Locked (Red)
+                        }
                       >
-                        Driver List
-                      </button>
-                      {showPopup.driverList && (
+                        <strong>Lockout Status:</strong>{' '}
+                        {vehicle.vehicle_info.lockoutCode
+                          ?.toString()
+                          .trim() === '0'
+                          ? 'Unlocked'
+                          : 'Locked'}
+                      </span>
+                    </p>
+                    <p>
+                      <strong>LO Reason:</strong>{' '}
+                      {vehicle.vehicle_info.loReason}
+                    </p>
+                    <p>
+                      <strong>Checklist Schedule:</strong>{' '}
+                      {vehicle.vehicle_info.preopSchedule}
+                    </p>
+                    <p>
+                      <strong>Recalibration Date:</strong>{' '}
+                      {vehicle.vehicle_info.impactRecalibrationDate}
+                    </p>
+
+                    <p
+                      className={` ${
+                        vehicle.vehicle_info.redImpactThreshold !== null &&
+                        vehicle.vehicle_info.redImpactThreshold > 0.0
+                          ? 'text-green-500'
+                          : 'text-red-500'
+                      }`}
+                    >
+                      <strong>Red Impact Threshold: </strong>{' '}
+                      {vehicle.vehicle_info.redImpactThreshold}g
+                    </p>
+                    <p>
+                      <span
+                        className={
+                          vehicle.vehicle_info.impactLockout
+                            ? 'text-green-500' // If false/null, Unlocked (Green)
+                            : 'text-red-500' // If true, Locked (Red)
+                        }
+                      >
+                        <strong>Impact Lockouts:</strong>{' '}
+                        {vehicle.vehicle_info.impactLockout ? 'On' : 'Off'}
+                      </span>
+                    </p>
+                    <p>
+                      <span
+                        className={
+                          vehicle.vehicle_info.fullLockoutEnabled
+                            ? 'text-green-500' // If false/null, Unlocked (Green)
+                            : 'text-red-500' // If true, Locked (Red)
+                        }
+                      >
+                        <strong>Full Lockout:</strong>{' '}
+                        {vehicle.vehicle_info.fullLockoutEnabled
+                          ? 'On'
+                          : 'Off'}
+                      </span>
+                    </p>
+
+                    <p className='text-gray-600 text-base'>
+                      <strong>Full Lockout Timeout:</strong>{' '}
+                      {vehicle.vehicle_info.fullLockoutTimeout}s
+                    </p>
+
+                    <p className='text-gray-600 text-base'>
+                      <strong>Idle Timeout:</strong>{' '}
+                      {vehicle.vehicle_info.seatIdle !== null
+                        ? vehicle.vehicle_info.seatIdle
+                        : 'Off'}
+                      s
+                    </p>
+                    <p className='text-gray-600 text-base'>
+                      <strong>Checklist Timeout:</strong>{' '}
+                      {vehicle.vehicle_info.surveyTimeout}s
+                    </p>
+                    <p className='text-gray-600 text-base'>
+                      <strong>Can-Rules Loaded:</strong>{' '}
+                      {vehicle.vehicle_info.canRulesLoaded ? 'Yes' : 'No'}
+                    </p>
+                    {/* Master Codes Popup */}
+                    <button
+                      className='text-blue-500 hover:underline mt-2'
+                      onClick={() =>
+                        togglePopup('masterCodes', vehicle.VEHICLE_CD)
+                      }
+                    >
+                      Master Codes
+                    </button>
+                    {showPopup.masterCodes &&
+                      activeVehicleId === vehicle.VEHICLE_CD && (
                         <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
-                          <div className='bg-white p-6 rounded-lg shadow-lg w-3/4'>
+                          <div className='bg-white p-6 rounded-lg shadow-lg w-1/2'>
                             <h3 className='text-lg font-semibold mb-4'>
-                              Driver List
+                              Master Codes for {activeVehicleId}
                             </h3>
+
                             <ul className='list-disc pl-6'>
-                              {driverList.map((driver, idx) => (
-                                <li key={idx}>
-                                  {driver.firstName} {driver.lastName}
-                                </li>
-                              ))}
+                              {vehicle.master_codes.length > 0 ? (
+                                vehicle.master_codes.map((user, idx) => (
+                                  <li key={idx}>{user.masterCodeUser}</li>
+                                ))
+                              ) : (
+                                <p className='text-gray-600'>
+                                  No master codes found.
+                                </p>
+                              )}
                             </ul>
+
                             <button
                               className='mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700'
-                              onClick={() => togglePopup('driverList')}
+                              onClick={() => togglePopup('masterCodes')}
                             >
                               Close
                             </button>
                           </div>
                         </div>
                       )}
-                      {/* Drivers on Blacklist Popup */}
-                      <button
-                        className='text-blue-500 hover:underline mt-2'
-                        onClick={() =>
-                          togglePopup(
-                            'blacklistDrivers',
-                            vehicle.VEHICLE_CD
-                          )
-                        }
-                      >
-                        Drivers on Blacklist
-                      </button>
-                      {showPopup.blacklistDrivers &&
-                        activeVehicleId === vehicle.VEHICLE_CD && (
-                          <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
-                            <div className='bg-white p-6 rounded-lg shadow-lg w-1/2'>
-                              <h3 className='text-lg font-semibold mb-4'>
-                                Drivers on Blacklist for {activeVehicleId}
-                              </h3>
-                              <ul className='list-disc pl-6'>
-                                {vehicle.blacklisted_drivers.length > 0 ? (
-                                  vehicle.blacklisted_drivers.map(
-                                    (driver, idx) => (
-                                      <li key={idx}>
-                                        {driver.blacklistedDriver}
-                                      </li>
-                                    )
-                                  )
-                                ) : (
-                                  <p className='text-gray-600'>
-                                    No blacklisted drivers found.
-                                  </p>
-                                )}
-                              </ul>
-                              <button
-                                className='mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700'
-                                onClick={() =>
-                                  togglePopup('blacklistDrivers')
-                                }
-                              >
-                                Close
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* If we DO have snapshot data, show the side-by-side comparison */}
-            {Object.keys(snapshotData).length > 0 && (
-              <div className='mt-8'>
-                <h2 className='text-2xl font-bold text-gray-800 mb-4'>
-                  Snapshot Cards
-                </h2>
-                <div className='grid grid-cols-2 gap-6'>
-                  {Object.entries(snapshotData).map(
-                    ([vehicleCd, snaps]: [
-                      string,
-                      { before: SnapshotRow; after: SnapshotRow }
-                    ]) => (
-                      <div
-                        key={vehicleCd}
-                        className='bg-white shadow-lg rounded-lg p-6 border border-gray-300'
-                      >
-                        <h3 className='text-xl font-bold text-gray-800 mb-2'>
-                          GMPT : {snaps.before.gmptCode}
-                        </h3>
-                        {/* Before Snapshot */}
-                        <div className='flex gap-6'>
-                          {/* Before Snapshot */}
-                          {snaps.before && snaps.before ? (
-                            <div className='mb-4'>
-                              <h4 className='font-semibold mb-2'>
-                                Before Snapshot -{' '}
-                                {snaps.before.query_execution_date
-                                  ? format(
-                                      new Date(
-                                        snaps.before.query_execution_date
-                                      ),
-                                      'dd/MM/yyyy HH:mm'
-                                    )
-                                  : 'N/A'}
-                              </h4>
-                              <SnapshotCard snapshot={snaps.before} />
-                            </div>
-                          ) : (
-                            <p>No before snapshot available</p>
-                          )}
-                          {/* After Snapshot */}
-                          {snaps.after && snaps.after ? (
-                            <div>
-                              <h4 className='font-semibold mb-2'>
-                                After Snapshot -{' '}
-                                {snaps.after.query_execution_date
-                                  ? format(
-                                      new Date(
-                                        snaps.after.query_execution_date
-                                      ),
-                                      'dd/MM/yyyy HH:mm'
-                                    )
-                                  : 'N/A'}
-                              </h4>
-                              <SnapshotCard
-                                snapshot={snaps.after}
-                                isAfter
-                                bothSnaps={snaps}
-                              />
-                            </div>
-                          ) : (
-                            <p>No after snapshot available</p>
-                          )}
+                    {/* Driver List Popup */}
+                    <button
+                      className='text-blue-500 hover:underline mt-2'
+                      onClick={() => togglePopup('driverList')}
+                    >
+                      Driver List
+                    </button>
+                    {showPopup.driverList && (
+                      <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
+                        <div className='bg-white p-6 rounded-lg shadow-lg w-3/4'>
+                          <h3 className='text-lg font-semibold mb-4'>
+                            Driver List
+                          </h3>
+                          <ul className='list-disc pl-6'>
+                            {driverList.map((driver, idx) => (
+                              <li key={idx}>
+                                {driver.firstName} {driver.lastName}
+                              </li>
+                            ))}
+                          </ul>
+                          <button
+                            className='mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700'
+                            onClick={() => togglePopup('driverList')}
+                          >
+                            Close
+                          </button>
                         </div>
                       </div>
-                    )
-                  )}
+                    )}
+                    {/* Drivers on Blacklist Popup */}
+                    <button
+                      className='text-blue-500 hover:underline mt-2'
+                      onClick={() =>
+                        togglePopup('blacklistDrivers', vehicle.VEHICLE_CD)
+                      }
+                    >
+                      Drivers on Blacklist
+                    </button>
+                    {showPopup.blacklistDrivers &&
+                      activeVehicleId === vehicle.VEHICLE_CD && (
+                        <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
+                          <div className='bg-white p-6 rounded-lg shadow-lg w-1/2'>
+                            <h3 className='text-lg font-semibold mb-4'>
+                              Drivers on Blacklist for {activeVehicleId}
+                            </h3>
+                            <ul className='list-disc pl-6'>
+                              {vehicle.blacklisted_drivers.length > 0 ? (
+                                vehicle.blacklisted_drivers.map(
+                                  (driver, idx) => (
+                                    <li key={idx}>
+                                      {driver.blacklistedDriver}
+                                    </li>
+                                  )
+                                )
+                              ) : (
+                                <p className='text-gray-600'>
+                                  No blacklisted drivers found.
+                                </p>
+                              )}
+                            </ul>
+                            <button
+                              className='mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700'
+                              onClick={() =>
+                                togglePopup('blacklistDrivers')
+                              }
+                            >
+                              Close
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                  </div>
                 </div>
+              ))}
+            </div>
+          )}
+
+          {/* If we DO have snapshot data, show the side-by-side comparison */}
+          {Object.keys(snapshotData).length > 0 && (
+            <div className='mt-8'>
+              <h2 className='text-2xl font-bold text-gray-800 mb-4'>
+                Snapshot Cards
+              </h2>
+              <div className='grid grid-cols-2 gap-6'>
+                {Object.entries(snapshotData).map(
+                  ([vehicleCd, snaps]: [
+                    string,
+                    { before: SnapshotRow; after: SnapshotRow }
+                  ]) => (
+                    <div
+                      key={vehicleCd}
+                      className='bg-white shadow-lg rounded-lg p-6 border border-gray-300'
+                    >
+                      <h3 className='text-xl font-bold text-gray-800 mb-2'>
+                        GMPT : {snaps.before.gmptCode}
+                      </h3>
+                      {/* Before Snapshot */}
+                      <div className='flex gap-6'>
+                        {/* Before Snapshot */}
+                        {snaps.before && snaps.before ? (
+                          <div className='mb-4'>
+                            <h4 className='font-semibold mb-2'>
+                              Before Snapshot -{' '}
+                              {snaps.before.query_execution_date
+                                ? format(
+                                    new Date(
+                                      snaps.before.query_execution_date
+                                    ),
+                                    'dd/MM/yyyy HH:mm'
+                                  )
+                                : 'N/A'}
+                            </h4>
+                            <SnapshotCard snapshot={snaps.before} />
+                          </div>
+                        ) : (
+                          <p>No before snapshot available</p>
+                        )}
+                        {/* After Snapshot */}
+                        {snaps.after && snaps.after ? (
+                          <div>
+                            <h4 className='font-semibold mb-2'>
+                              After Snapshot -{' '}
+                              {snaps.after.query_execution_date
+                                ? format(
+                                    new Date(
+                                      snaps.after.query_execution_date
+                                    ),
+                                    'dd/MM/yyyy HH:mm'
+                                  )
+                                : 'N/A'}
+                            </h4>
+                            <SnapshotCard
+                              snapshot={snaps.after}
+                              isAfter
+                              bothSnaps={snaps}
+                            />
+                          </div>
+                        ) : (
+                          <p>No after snapshot available</p>
+                        )}
+                      </div>
+                    </div>
+                  )
+                )}
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };

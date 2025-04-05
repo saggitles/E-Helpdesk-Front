@@ -500,7 +500,7 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
                     </th>
                     <th
                       className='px-6 py-3 text-center text-sm font-semibold'
-                      onClick={() => handleSort('Customername')}
+                      onClick={() => handleSort('Customerame')}
                     >
                       Customer
                     </th>
