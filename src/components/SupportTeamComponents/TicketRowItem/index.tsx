@@ -2,43 +2,12 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
 import LoadingScreen from '@/components/generalComponents/LoadingScreen';
-
-type TicketRowItemProps = {
-  ticket: Ticket;
-  style?: React.CSSProperties;
-  index: number;
-};
-
-interface Ticket {
-  IDTicket: number;
-  Title: string;
-  Description: string;
-  Status: string;
-  Priority: string;
-  AssignedUserID: number;
-  CustomerID: number;
-  SiteName: string | null;
-  Department: string | null;
-  createdAt: string;
-  updatedAt: string;
-  Category: string;
-  VehicleID: string;
-  Dealer: string;
-  contactName: string;
-  CustomerName: string;
-  User: string;
-  Platform: string;
-  Email: string;
-  CompanyName: string;
-  Contact: string;
-  Reporter: string;
-  Supported: string;
-  JiraTicketID: number;
-  Solution: string;
-  incidentDate: string;
-  TicketNumber: string;
-  openSince: string;
-}
+import { TicketRowItemProps } from '@/types/tickets.types';
+import {
+  STATUS_OPTIONS,
+  getStatusColor,
+  getStatusStyles,
+} from '@/utils/statusConfig';
 
 export const TicketRowItem: React.FC<TicketRowItemProps> = ({
   ticket,
@@ -51,9 +20,9 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
   );
   const [hover, setHover] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string>(
-    ticket.Status
+    ticket.status
   );
-  const [category, setCategory] = useState(ticket.Category);
+  const [category, setCategory] = useState(ticket.category);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [is_Y, setis_y] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -68,7 +37,7 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
     try {
       const token = localStorage.getItem('accessToken');
       await axios.put(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/updateTicketCategory/${ticket.IDTicket}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/${ticket.id}`,
         { Category: newCategory },
         {
           headers: {
@@ -79,9 +48,7 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
 
       window.location.reload();
 
-      console.log(
-        `Ticket category updated successfully: ${ticket.IDTicket}`
-      );
+      console.log(`Ticket category updated successfully: ${ticket.id}`);
     } catch (error) {
       console.error('Error updating ticket category:', error);
     }
@@ -115,12 +82,12 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
       };
 
       const response = await axios.delete(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/${ticket.IDTicket}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/${ticket.id}`,
         { headers }
       );
 
       console.log(response.data);
-      console.log('Ticket eliminado con éxito:', ticket.IDTicket);
+      console.log('Ticket eliminado con éxito:', ticket.id);
 
       window.location.href = '/support/tickets/pending';
     } catch (error) {
@@ -139,9 +106,9 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
       return;
     }
     setIsLoading(true);
-    setSelectedTicketId(ticket.IDTicket);
+    setSelectedTicketId(ticket.id);
 
-    const fechaUpdatedISO = ticket.updatedAt;
+    const fechaUpdatedISO = ticket.updated_at;
     const fechaUpdated = new Date(fechaUpdatedISO);
 
     const opciones: Intl.DateTimeFormatOptions = {
@@ -160,45 +127,44 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
       .replace(/\//g, '/')
       .replace(',', '');
 
-    const fechaCreatedISO = ticket.createdAt;
+    const fechaCreatedISO = ticket.created_at;
     const fechaCreated = new Date(fechaCreatedISO);
     const fechaCreate = fechaCreated
       .toLocaleDateString('es-ES', opciones)
       .replace(/\//g, '/')
       .replace(',', '');
 
-    const fechaIncidentISO = ticket.incidentDate;
-    const fechaIncident = new Date(fechaIncidentISO);
+    const fechaIncidentISO = ticket.incident_date;
+    const fechaIncident = new Date(fechaIncidentISO ?? Date.now());
     const fechaIncidentFormatted = fechaIncident
       .toLocaleDateString('es-ES', opciones)
       .replace(/\//g, '/')
       .replace(',', '');
 
     window.open(
-      `/support/tickets/${ticket.IDTicket}?` +
+      `/support/tickets/${ticket.id}?` +
         new URLSearchParams({
-          Title: ticket.Title,
-          Description: ticket.Description,
-          Priority: ticket.Priority,
-          Status: ticket.Status,
-          Department: ticket.Department || '',
-          createdAt: fechaCreate,
-          updatedAt: fechaUpdate,
-          Category: ticket.Category,
-          Platform: ticket.Platform || '',
-          Email: ticket.Email || '',
-          Customer: ticket.CustomerName || '',
-          SiteName: ticket.SiteName || '',
-          Contact: ticket.Contact,
-          VehicleID: ticket.VehicleID,
-          Reporter: ticket.Reporter || '',
-          Supported: ticket.Supported,
-          IDTicket: ticket.IDTicket.toString(),
-          JiraTicketID: ticket.JiraTicketID?.toString() || '',
-          Solution: ticket.Solution || '',
-          incidentDate: fechaIncidentFormatted,
-          TicketNumber: ticket.TicketNumber,
-          openSince: ticket.openSince,
+          title: ticket.title,
+          description: ticket.description,
+          priority: ticket.priority,
+          status: ticket.status,
+          department: ticket.department || '',
+          created_at: fechaCreate,
+          updated_at: fechaUpdate,
+          category: ticket.category,
+          platform: ticket.platform || '',
+          email: ticket.email || '',
+          customer: ticket.customer_name || '',
+          site_name: ticket.site_name || '',
+          contact_name: ticket.contact_name,
+          vehicle_id: ticket.vehicle_id || '',
+          reporter: ticket.reporter || '',
+          supported: ticket.supported || '',
+          id: ticket.id.toString(),
+          solution: ticket.solution || '',
+          incident_date: fechaIncidentFormatted || '',
+          ticket_number: ticket.ticket_number || '',
+          open_since: ticket.open_since || '',
         }).toString(),
       '_blank'
     );
@@ -216,8 +182,8 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
     try {
       const token = localStorage.getItem('accessToken');
       await axios.put(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/updateTicketStatus/${ticket.IDTicket}`,
-        { Status: newStatus },
+        `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/${ticket.id}`,
+        { status: newStatus },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -227,32 +193,30 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
 
       window.location.reload();
 
-      console.log(
-        `Ticket status updated successfully: ${ticket.IDTicket}`
-      );
+      console.log(`Ticket status updated successfully: ${ticket.id}`);
     } catch (error) {
       console.error('Error updating ticket status:', error);
     }
   };
 
-  const getStatusColor = (status: string): string => {
-    switch (status) {
-      case 'In progress':
-        return '#e6d856';
-      case 'Done':
-        return '#92cc75';
-      case 'Scaled':
-        return '#7ea6d3';
-      case 'To Do':
-        return '#ea7d7d';
-      case "Won't do":
-        return '#a4a89e';
-      case 'Pending to call':
-        return '#a909e9';
-      default:
-        return '#e6d856';
-    }
-  };
+  // const getStatusColor = (status: string): string => {
+  //   switch (status) {
+  //     case 'In progress':
+  //       return '#e6d856';
+  //     case 'Done':
+  //       return '#92cc75';
+  //     case 'Scaled':
+  //       return '#7ea6d3';
+  //     case 'To Do':
+  //       return '#ea7d7d';
+  //     case "Won't do":
+  //       return '#a4a89e';
+  //     case 'Pending to call':
+  //       return '#a909e9';
+  //     default:
+  //       return '#e6d856';
+  //   }
+  // };
 
   const handleDoneConfirm = async () => {
     setShowDonePopup(false);
@@ -260,7 +224,7 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
     try {
       const token = localStorage.getItem('accessToken');
       const put = await axios.put(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/${ticket.IDTicket}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/${ticket.id}`,
         { Status: 'Done', Solution: conclusion },
         {
           headers: {
@@ -271,9 +235,7 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
       window.location.reload();
 
       console.log(put);
-      console.log(
-        `Ticket status updated successfully: ${ticket.IDTicket}`
-      );
+      console.log(`Ticket status updated successfully: ${ticket.id}`);
     } catch (error) {
       console.error('Error updating ticket status:', error);
     }
@@ -304,37 +266,37 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
         }
       >
         <td className='text-center text-xs font-Lato text-gray-900'>
-          # {ticket.IDTicket}
+          # {ticket.id}
         </td>
         <td className='text-center text-xs font-Lato text-gray-900'>
-          {new Date(ticket.createdAt).toLocaleDateString('en-GB')}
+          {new Date(ticket.created_at).toLocaleDateString('en-GB')}
         </td>
         <td
           className={`text-center text-xs font-Lato font-bold ${
-            ticket.Priority === 'High'
+            ticket.priority === 'High'
               ? 'text-red-600'
-              : ticket.Priority === 'Medium'
+              : ticket.priority === 'Medium'
               ? 'text-yellow-600'
               : 'text-green-600'
           }`}
         >
-          {ticket.Priority}
+          {ticket.priority}
         </td>
 
         <td className='text-center text-xs font-Lato text-gray-900'>
-          {ticket.CustomerName}
+          {ticket.customer_name}
         </td>
         <td className='text-center text-xs font-Lato text-gray-900'>
-          {ticket.SiteName}
+          {ticket.site_name}
         </td>
         <td className='text-center text-xs font-Lato text-gray-900'>
-          {ticket.Contact}
+          {ticket.contact_name}
         </td>
         <td className='text-center text-xs font-Lato text-gray-900'>
-          {ticket.Email}
+          {ticket.email}
         </td>
         <td className='text-center text-xs font-Lato text-gray-900'>
-          {ticket.Supported}
+          {ticket.supported}
         </td>
 
         {isLoading && <LoadingScreen />}
@@ -351,7 +313,7 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
               boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
             }}
           >
-            <option value={ticket.Category}>{ticket.Category}</option>
+            <option value={ticket.category}>{ticket.category}</option>
             <option value='Checklist issue'>Checklist issue</option>
             <option value='Software Issue'>Software Issue</option>
             <option value='Hardware Issue'>Hardware Issue</option>
@@ -376,62 +338,31 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
 
         <td className='text-center text-xs font-Lato text-gray-900'>
           <select
-            value={ticket.Status}
+            value={ticket.status}
             onChange={(e) => handleStatusChange(e.target.value)}
-            style={{
-              borderRadius: '10px',
-              borderColor: '#555',
-              backgroundColor: getStatusColor(ticket.Status),
-              color: 'white',
-              padding: '3px',
-              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-            }}
+            style={getStatusStyles(ticket.status)}
           >
             <option
-              value={ticket.Status}
+              value={ticket.status}
               style={{
-                backgroundColor: getStatusColor(ticket.Status),
+                backgroundColor: getStatusColor(ticket.status),
                 color: 'white',
               }}
             >
-              {ticket.Status}
+              {ticket.status}
             </option>
-            <option
-              value='In progress'
-              style={{ backgroundColor: '#e6d856', color: 'white' }}
-            >
-              In progress
-            </option>
-            <option
-              value='Done'
-              style={{ backgroundColor: '#92cc75', color: 'white' }}
-            >
-              Done
-            </option>
-            <option
-              value='Scaled'
-              style={{ backgroundColor: '#7ea6d3', color: 'white' }}
-            >
-              Scaled
-            </option>
-            <option
-              value='To Do'
-              style={{ backgroundColor: '#ea7d7d', color: 'white' }}
-            >
-              To Do
-            </option>
-            <option
-              value="Won't do"
-              style={{ backgroundColor: '#a4a89e', color: 'white' }}
-            >
-              Won't do
-            </option>
-            <option
-              value='Pending to call'
-              style={{ backgroundColor: '#800080  ', color: 'white' }}
-            >
-              Pending to call
-            </option>
+            {STATUS_OPTIONS.map((status) => (
+              <option
+                key={status}
+                value={status}
+                style={{
+                  backgroundColor: getStatusColor(status),
+                  color: 'white',
+                }}
+              >
+                {status}
+              </option>
+            ))}
           </select>
         </td>
 

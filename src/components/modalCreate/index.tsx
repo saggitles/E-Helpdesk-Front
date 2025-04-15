@@ -1,43 +1,29 @@
 'use client';
 import { useState, FormEvent, ChangeEvent, useEffect } from 'react';
 import { toast } from 'react-toastify';
-
-interface TicketModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  formData: {
-    customerName: string;
-    customer_id: number;
-    siteName: string | null;
-    site_id: number | null;
-    contactName: string;
-    phone: string | null;
-  };
-  selectedSite: {
-    site: number;
-    NAME: string;
-  } | null;
-  onTicketCreated?: () => void; // Callback para actualizar los tickets después de crear uno nuevo
-}
+import { Ticket, TicketModalProps } from '@/types/tickets.types';
+import { CATEGORY_OPTIONS } from '@/utils/categoryConfig';
+import { STATUS_OPTIONS, getStatusColor } from '@/utils/statusConfig';
 
 const TicketModal = ({
   isOpen,
   onClose,
   formData,
-  selectedSite,
   onTicketCreated,
 }: TicketModalProps) => {
-  const [ticketData, setTicketData] = useState({
+  const [parcialTicketData, setParcialTicketData] = useState<
+    Partial<Ticket>
+  >({
     description: '',
-    category: 'Support',
-    incidentDate: new Date().toISOString().split('T')[0],
-    driversName: '',
-    vehicleID: '',
+    category: '',
+    incident_date: new Date().toISOString().split('T')[0],
+    drivers_name: '',
+    vehicle_id: '',
     supported: '',
-    status: 'New',
+    status: 'To Do',
     email: '',
     priority: 'Medium',
-    platform: 'FleetXQ',
+    platform: 'FleetIQ',
     solution: '',
   });
   const [files, setFiles] = useState<FileList | null>(null);
@@ -56,8 +42,8 @@ const TicketModal = ({
     >
   ) => {
     const { name, value } = e.target;
-    setTicketData({
-      ...ticketData,
+    setParcialTicketData({
+      ...parcialTicketData,
       [name]: value,
     });
   };
@@ -72,7 +58,7 @@ const TicketModal = ({
     e.preventDefault();
 
     // Validate required fields
-    if (!ticketData.description.trim()) {
+    if (!(parcialTicketData.description ?? '').trim()) {
       toast.error('Description is required');
       return;
     }
@@ -81,25 +67,19 @@ const TicketModal = ({
 
     try {
       // Build your payload object
-      const ticketPayload = {
-        Title: `Support request from ${formData.customerName}`,
-        LocationCD: formData.site_id, // site id as number
-        SiteName: formData.siteName, // site name as string
-        Contact: formData.contactName,
-        Priority: ticketData.priority,
-        Status: ticketData.status,
-        Category: ticketData.category,
-        CustomerName: formData.customerName,
+      const ticketPayload: Partial<Ticket> = {
+        ...parcialTicketData,
+        title: `Support request from ${formData.customer_name}`,
+        site_id: formData.site_id, // site id as number
+        site_name: formData.site_name, // site name as string
+        customer_name: formData.customer_name ?? undefined,
         customer_id: formData.customer_id, // Include customer id if needed
-        Description: ticketData.description,
-        incidentDate: ticketData.incidentDate,
-        driversName: ticketData.driversName,
-        VehicleID: ticketData.vehicleID,
-        Supported: ticketData.supported,
-        Email: ticketData.email,
-        Platform: ticketData.platform,
-        Solution: ticketData.solution,
+        contact_name: formData.contact_name,
         phone: formData.phone,
+        vehicle_id:
+          selectedGMPTs.length > 0
+            ? selectedGMPTs.join(', ')
+            : parcialTicketData.vehicle_id,
       };
 
       console.log('Ticket Payload:', ticketPayload);
@@ -123,17 +103,17 @@ const TicketModal = ({
       });
 
       // Clear the form data (reset states)
-      setTicketData({
+      setParcialTicketData({
         description: '',
-        category: 'Support',
-        incidentDate: new Date().toISOString().split('T')[0],
-        driversName: '',
-        vehicleID: '',
+        category: '',
+        incident_date: new Date().toISOString().split('T')[0],
+        drivers_name: '',
+        vehicle_id: '',
         supported: '',
-        status: 'New',
+        status: 'To Do',
         email: '',
         priority: 'Medium',
-        platform: 'FleetXQ',
+        platform: 'FleetIQ',
         solution: '',
       });
       setFiles(null);
@@ -185,11 +165,11 @@ const TicketModal = ({
 
   useEffect(() => {
     const fetchGmptCodes = async () => {
-      if (!selectedSite) return;
+      if (!formData.site_id) return;
 
       try {
         const response = await fetch(
-          `http://localhost:8080/api/gmpt-codes?locationCD=${selectedSite.site}`
+          `http://localhost:8080/api/gmpt-codes?site_id=${formData.site_id}`
         );
         const data = await response.json();
         setAvailableGMPTs(data); // useState to store available GMPT codes
@@ -199,7 +179,7 @@ const TicketModal = ({
     };
 
     fetchGmptCodes();
-  }, [selectedSite]);
+  }, [formData.site_id]);
 
   return (
     <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
@@ -236,34 +216,17 @@ const TicketModal = ({
               </label>
               <select
                 name='category'
-                value={ticketData.category}
+                value={parcialTicketData.category}
                 onChange={handleChange}
                 className='w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50'
                 disabled={isSubmitting}
               >
                 <option value=''>Select a category</option>
-                <option value='Checklist issue'>Checklist issue</option>
-                <option value='Pin/card issue'>Pin/card Issue</option>
-                <option value='Software issue'>Software Issue</option>
-                <option value='Hardware issue'>Hardware Issue</option>
-                <option value='Dasbhoard issue'>Dashboard Issue</option>
-                <option value='Conectivity issue'>
-                  Connectivity Issue
-                </option>
-                <option value='User awareness'>User Awareness</option>
-                <option value='Team Request'>Team Request</option>
-                <option value='Impact calibrations'>
-                  Impact Calibrations
-                </option>
-                <option value='Polarity Idle timer Issue'>
-                  Polarity Idle Timer Issue
-                </option>
-                <option value='Gps issue'>Gps Issue</option>
-                <option value='Server down'>Server Down</option>
-                <option value='Improvement Request'>
-                  Improvement Request
-                </option>
-                <option value='Lockout'>Lockout</option>
+                {CATEGORY_OPTIONS.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -273,7 +236,7 @@ const TicketModal = ({
               </label>
               <select
                 name='priority'
-                value={ticketData.priority}
+                value={parcialTicketData.priority}
                 onChange={handleChange}
                 className='w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50'
                 disabled={isSubmitting}
@@ -291,66 +254,25 @@ const TicketModal = ({
               <div className='relative'>
                 <select
                   name='status'
-                  value={ticketData.status}
+                  value={parcialTicketData.status}
                   onChange={handleChange}
                   disabled={isSubmitting}
                   className='block w-full p-3 text-sm border border-teal-300 rounded-lg bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500'
                 >
-                  <option
-                    value='First Contact'
-                    style={{ backgroundColor: '#e6d856', color: 'white' }}
-                  >
-                    First Contact
-                  </option>
-                  <option
-                    value='Waiting information'
-                    style={{ backgroundColor: '#800080', color: 'white' }}
-                  >
-                    Waiting information
-                  </option>
-                  <option
-                    value='Warranty sent'
-                    style={{ backgroundColor: '#9932CC', color: 'white' }}
-                  >
-                    Warranty sent
-                  </option>
-                  <option
-                    value='Waiting confirmation'
-                    style={{ backgroundColor: '#8A2BE2', color: 'white' }}
-                  >
-                    Waiting confirmation
-                  </option>
-                  <option
-                    value='In progress'
-                    style={{ backgroundColor: '#e6d856', color: 'white' }}
-                  >
-                    In progress
-                  </option>
-                  <option
-                    value='Done'
-                    style={{ backgroundColor: '#92cc75', color: 'white' }}
-                  >
-                    Done
-                  </option>
-                  <option
-                    value='Scaled'
-                    style={{ backgroundColor: '#7ea6d3', color: 'white' }}
-                  >
-                    Scaled
-                  </option>
-                  <option
-                    value="Won't do"
-                    style={{ backgroundColor: '#a4a89e', color: 'white' }}
-                  >
-                    Won't do
-                  </option>
-                  <option
-                    value='To do'
-                    style={{ backgroundColor: '#9370DB', color: 'white' }}
-                  >
-                    To do
-                  </option>
+                  {STATUS_OPTIONS.map((status) => (
+                    <option
+                      key={status}
+                      value={status}
+                      style={{
+                        backgroundColor: getStatusColor(status),
+                        color: 'white',
+                      }}
+                    >
+                      {status}
+                    </option>
+                  ))}
                 </select>
+
                 {/* Custom arrow */}
                 <div className='pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3'>
                   <svg
@@ -375,7 +297,7 @@ const TicketModal = ({
               </label>
               <select
                 name='platform'
-                value={ticketData.platform}
+                value={parcialTicketData.platform || ''}
                 onChange={handleChange}
                 className='w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50'
                 disabled={isSubmitting}
@@ -393,8 +315,8 @@ const TicketModal = ({
               </label>
               <input
                 type='date'
-                name='incidentDate'
-                value={ticketData.incidentDate}
+                name='incident_date'
+                value={parcialTicketData.incident_date || ''}
                 onChange={handleChange}
                 className='w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50'
                 disabled={isSubmitting}
@@ -407,8 +329,8 @@ const TicketModal = ({
               </label>
               <input
                 type='text'
-                name='driversName'
-                value={ticketData.driversName}
+                name='drivers_name'
+                value={parcialTicketData.drivers_name || ''}
                 onChange={handleChange}
                 className='w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50'
                 placeholder="Enter driver's name"
@@ -489,7 +411,7 @@ const TicketModal = ({
               <input
                 type='text'
                 name='supported'
-                value={ticketData.supported}
+                value={parcialTicketData.supported}
                 onChange={handleChange}
                 className='w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50'
                 placeholder='Enter who is supporting'
@@ -504,10 +426,10 @@ const TicketModal = ({
               <input
                 type='string'
                 name='email'
-                value={ticketData.email}
+                value={parcialTicketData.email || ''}
                 onChange={handleChange}
                 className='w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50'
-                placeholder='Enter contact email'
+                placeholder='Enter contact_name email'
                 disabled={isSubmitting}
               />
             </div>
@@ -519,7 +441,7 @@ const TicketModal = ({
             </label>
             <textarea
               name='description'
-              value={ticketData.description}
+              value={parcialTicketData.description}
               onChange={handleChange}
               rows={4}
               className='w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50'
@@ -535,7 +457,7 @@ const TicketModal = ({
             </label>
             <textarea
               name='solution'
-              value={ticketData.solution}
+              value={parcialTicketData.solution || ''}
               onChange={handleChange}
               rows={3}
               className='w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50'

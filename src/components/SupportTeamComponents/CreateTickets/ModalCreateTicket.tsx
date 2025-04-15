@@ -12,15 +12,21 @@ import { useRouter } from 'next/router';
 import { useUser, withPageAuthRequired } from '@auth0/nextjs-auth0/client';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { STATUS_OPTIONS, getStatusColor } from '@/utils/statusConfig';
+import {
+  PRIORITY_OPTIONS,
+  getPriorityColor,
+} from '@/utils/priorityConfig';
+import { PLATFORM_OPTIONS } from '@/utils/platformConfig';
 
 interface ModalCreateTicketProps {
   handleModalTicket: (event: MouseEvent<HTMLButtonElement>) => void;
 }
 
-const fetchAttachments = async (token: string, ticketId: string) => {
+const fetchAttachments = async (token: string, ticket_id: string) => {
   try {
     const response = await axios.get(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/${ticketId}/attachments`,
+      `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/${ticket_id}/attachments`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -55,31 +61,31 @@ const ModalCreateTicket: FC<ModalCreateTicketProps> = ({
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    Status: '',
+    status: '',
     category: '',
     priority: '',
-    assignedUserId: '',
-    customerId: '',
-    site: '',
+    assigned_user_id: '',
+    customer_name: '',
+    customer_id: '',
+    site_name: '',
+    site_id: '',
     dealer: '',
-    Contact: '',
-    Supported: '',
+    contact_name: '',
+    supported: '',
     department: '',
-    incidentDate: '',
-    assignedUserID: '',
-    driversName: '',
-    VehicleID: '',
-    CustomerName: '',
-    Email: '',
-    Platform: '',
-    Reporter: '',
-    Solution: '',
+    incident_date: '',
+    drivers_name: '',
+    vehicle_id: '',
+    email: '',
+    platform: '',
+    reporter: '',
+    solution: '',
   });
 
   interface User {
-    Username: string;
-    Email: string;
-    IDUser: number;
+    user_name: string;
+    email: string;
+    id: number;
   }
 
   /**************************************ATTACHMENTS FUNCTIONS****************************************/
@@ -226,25 +232,26 @@ const ModalCreateTicket: FC<ModalCreateTicketProps> = ({
 
     setIsLoading(true);
     const dataToSend = {
-      Title: formData.title,
-      Description: formData.description,
-      Priority: selectedValue_4,
-      Status: selectedValue_3,
-      Department: formData.department,
-      Site: formData.site,
-      AssignedUserID: assignedUserID,
-      CustomerID: 1, // Default test value
-      incidentDate: new Date(formData.incidentDate),
-      Category: selectedValue,
-      Dealer: formData.dealer,
-      Contact: formData.Contact,
-      Supported: formData.Supported,
-      Platform: selectedValue_2,
-      CustomerName: formData.CustomerName,
-      Email: formData.Email,
-      VehicleID: formData.VehicleID,
-      Reporter: formData.Reporter,
-      Solution: formData.Solution,
+      title: formData.title,
+      description: formData.description,
+      priority: selectedValue_4,
+      status: selectedValue_3,
+      department: formData.department,
+      site_name: formData.site_name,
+      site_id: formData.site_id, // Default test value
+      assigned_user_id: assignedUserID,
+      customer_id: formData.customer_id, // Default test value
+      incident_date: new Date(formData.incident_date),
+      category: selectedValue,
+      dealer: formData.dealer,
+      contact_name: formData.contact_name,
+      supported: formData.supported,
+      platform: selectedValue_2,
+      customer_name: formData.customer_name,
+      email: formData.email,
+      vehicle_id: formData.vehicle_id,
+      reporter: formData.reporter,
+      solution: formData.solution,
     };
 
     console.log('Aca esta la data que se va a enviar');
@@ -276,11 +283,11 @@ const ModalCreateTicket: FC<ModalCreateTicketProps> = ({
 
       const Arrivetime = new Date(Date.now());
 
-      const createdTicket = response.data;
-      const ticketId = createdTicket.IDTicket;
+      const created_ticket = response.data;
+      const ticket_id = created_ticket.id;
 
-      console.log('Ticket created successfully:', createdTicket);
-      console.log('Ticket ID', ticketId);
+      console.log('Ticket created successfully:', created_ticket);
+      console.log('Ticket ID', ticket_id);
 
       toast('😁 Ticket Created Successfully!', {
         position: 'bottom-right',
@@ -306,7 +313,7 @@ const ModalCreateTicket: FC<ModalCreateTicketProps> = ({
 
         try {
           const attachmentResponse = await axios.post(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/${ticketId}/attachments`,
+            `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/${ticket_id}/attachments`,
             formData,
             {
               headers: {
@@ -322,7 +329,7 @@ const ModalCreateTicket: FC<ModalCreateTicketProps> = ({
 
           setFiles(null);
 
-          const attachmentsData = await fetchAttachments(token, ticketId);
+          const attachmentsData = await fetchAttachments(token, ticket_id);
           setAttachments(attachmentsData);
 
           const azureStorageUrls =
@@ -406,7 +413,7 @@ const ModalCreateTicket: FC<ModalCreateTicketProps> = ({
                     Customer
                   </label>
                   <input
-                    value={formData.CustomerName}
+                    value={formData.customer_name}
                     onChange={handleChangeCreate}
                     type='text'
                     name='CustomerName'
@@ -428,7 +435,7 @@ const ModalCreateTicket: FC<ModalCreateTicketProps> = ({
                     Site
                   </label>
                   <input
-                    value={formData.site}
+                    value={formData.site_name}
                     onChange={handleChangeCreate}
                     type='text'
                     name='site'
@@ -438,23 +445,19 @@ const ModalCreateTicket: FC<ModalCreateTicketProps> = ({
                     required
                   />
                 </div>
-                {/* <div className="col-span-2 sm:col-span-1">
-                                    <label htmlFor="department" className="block mb-1 font-normal text-teal-700">Deparment</label>
-                                    <input value={formData.department} onChange={handleChangeCreate} type="text" name="department" id="department" placeholder="Type deparment name" className="bg-gray-50 border border-teal-300 text-teal-900 font-normal placeholder:text-gray-400 text-sm rounded-lg focus:ring-teal-600 focus:border-teal-600 block w-full p-2.5" required />
-                                </div> */}
                 <div className='col-span-2 sm:col-span-1'>
                   <label
-                    htmlFor='Contact'
+                    htmlFor='contact_name'
                     className='block mb-1 font-normal text-teal-700'
                   >
                     Contact Name
                   </label>
                   <input
-                    value={formData.Contact}
+                    value={formData.contact_name}
                     onChange={handleChangeCreate}
                     type='text'
-                    name='Contact'
-                    id='Contact'
+                    name='contact_name'
+                    id='contact_name'
                     placeholder='Type contact name'
                     className='bg-gray-50 border border-teal-300 text-teal-900 font-normal placeholder:text-gray-400 text-sm rounded-lg focus:ring-teal-600 focus:border-teal-600 block w-full p-2.5'
                     required
@@ -469,7 +472,7 @@ const ModalCreateTicket: FC<ModalCreateTicketProps> = ({
                     Phone
                   </label>
                   <input
-                    value={formData.Reporter}
+                    value={formData.reporter}
                     onChange={handleChangeCreate}
                     type='text'
                     name='Reporter'
@@ -557,7 +560,7 @@ const ModalCreateTicket: FC<ModalCreateTicketProps> = ({
                     Incident Date
                   </label>
                   <input
-                    value={formData.incidentDate}
+                    value={formData.incident_date}
                     onChange={handleChangeCreate}
                     type='date'
                     name='incidentDate'
@@ -568,51 +571,51 @@ const ModalCreateTicket: FC<ModalCreateTicketProps> = ({
                 </div>
                 <div className='col-span-2 sm:col-span-1'>
                   <label
-                    htmlFor='driversName'
+                    htmlFor='drivers_name'
                     className='block mb-1 font-normal text-teal-700'
                   >
                     Driver name
                   </label>
                   <input
-                    value={formData.driversName}
+                    value={formData.drivers_name}
                     onChange={handleChangeCreate}
                     type='text'
-                    name='driversName'
-                    id='driversName'
+                    name='drivers_name'
+                    id='drivers_name'
                     placeholder='Type driver name'
                     className='bg-gray-50 border border-teal-300 text-teal-900 font-normal placeholder:text-gray-400 text-sm rounded-lg focus:ring-teal-600 focus:border-teal-600 block w-full p-2.5'
                   />
                 </div>
                 <div className='col-span-2 sm:col-span-1'>
                   <label
-                    htmlFor='VehicleID'
+                    htmlFor='vehicle_id'
                     className='block mb-1 font-normal text-teal-700'
                   >
                     Vehicle ID/Serial NO/GMPT ID
                   </label>
                   <input
-                    value={formData.VehicleID}
+                    value={formData.vehicle_id}
                     onChange={handleChangeCreate}
                     type='text'
-                    name='VehicleID'
-                    id='VehicleID'
+                    name='vehicle_id'
+                    id='vehicle_id'
                     placeholder='Type Vehicle identifier'
                     className='bg-gray-50 border border-teal-300 text-teal-900 font-normal placeholder:text-gray-400 text-sm rounded-lg focus:ring-teal-600 focus:border-teal-600 block w-full p-2.5'
                   />
                 </div>
                 <div className='col-span-2 sm:col-span-1'>
                   <label
-                    htmlFor='Supported'
+                    htmlFor='supported'
                     className='block mb-1 font-normal text-teal-700'
                   >
                     Supported by
                   </label>
                   <input
-                    value={formData.Supported}
+                    value={formData.supported}
                     onChange={handleChangeCreate}
                     type='text'
-                    name='Supported'
-                    id='Supported'
+                    name='supported'
+                    id='supported'
                     placeholder='Type supporter name'
                     className='bg-gray-50 border border-teal-300 text-teal-900 font-normal placeholder:text-gray-400 text-sm rounded-lg focus:ring-teal-600 focus:border-teal-600 block w-full p-2.5'
                   />
@@ -620,7 +623,7 @@ const ModalCreateTicket: FC<ModalCreateTicketProps> = ({
 
                 <div className='col-span-2 sm:col-span-1'>
                   <label
-                    htmlFor='Status'
+                    htmlFor='status'
                     className='block mb-1 font-normal text-teal-700'
                   >
                     Status
@@ -628,34 +631,38 @@ const ModalCreateTicket: FC<ModalCreateTicketProps> = ({
                   <select
                     value={selectedValue_3}
                     onChange={handleChange_3}
-                    name='Status'
-                    id='Status'
+                    name='status'
+                    id='status'
                     className='bg-gray-50 border border-teal-300 text-teal-900 font-normal text-sm rounded-lg focus:ring-teal-600 focus:border-teal-600 block w-full p-2.5'
                   >
                     <option value=''>Select status</option>
-                    <option value='In progress'>In progress</option>
-                    <option value='Done'>Done</option>
-                    <option value='Scaled'>Scaled</option>
-                    <option value='To do'>To do</option>
-                    <option value="Won't do">Won't do</option>
-                    <option value='Pending to call'>
-                      Pending to call
-                    </option>
+                    {STATUS_OPTIONS.map((status) => (
+                      <option
+                        key={status}
+                        value={status}
+                        style={{
+                          backgroundColor: getStatusColor(status),
+                          color: 'white',
+                        }}
+                      >
+                        {status}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div className='col-span-2 sm:col-span-1'>
                   <label
-                    htmlFor='Email'
+                    htmlFor='email'
                     className='block mb-1 font-normal text-teal-700'
                   >
                     Email Subject/Title
                   </label>
                   <input
-                    value={formData.Email}
+                    value={formData.email}
                     onChange={handleChangeCreate}
                     type='text'
-                    name='Email'
-                    id='Email'
+                    name='email'
+                    id='email'
                     placeholder='If any'
                     className='bg-gray-50 border border-teal-300 text-teal-900 font-normal placeholder:text-gray-400 text-sm rounded-lg focus:ring-teal-600 focus:border-teal-600 block w-full p-2.5'
                     required
@@ -673,19 +680,27 @@ const ModalCreateTicket: FC<ModalCreateTicketProps> = ({
                     onChange={handleChange_4}
                     name='priority'
                     id='priority'
-                    className={`text-sm rounded-lg focus:ring-teal-600 focus:border-teal-600 block w-full p-2.5`}
+                    className='bg-gray-50 border border-teal-300 text-teal-900 font-normal text-sm rounded-lg focus:ring-teal-600 focus:border-teal-600 block w-full p-2.5'
                   >
                     <option value=''>Select Priority</option>
-                    <option value='Highest'>Highest</option>
-                    <option value='High'>High</option>
-                    <option value='Medium'>Medium</option>
-                    <option value='Low'>Low</option>
-                    <option value='Lowest'>Lowest</option>
+                    {PRIORITY_OPTIONS.map((priority) => (
+                      <option
+                        key={priority}
+                        value={priority}
+                        style={{
+                          backgroundColor: getPriorityColor(priority),
+                          color: '#333333',
+                        }}
+                      >
+                        {priority}
+                      </option>
+                    ))}
                   </select>
                 </div>
+
                 <div className='col-span-2 sm:col-span-1'>
                   <label
-                    htmlFor='Platform'
+                    htmlFor='platform'
                     className='block mb-1 font-normal text-teal-700'
                   >
                     Platform
@@ -693,17 +708,16 @@ const ModalCreateTicket: FC<ModalCreateTicketProps> = ({
                   <select
                     value={selectedValue_2}
                     onChange={handleChange_2}
-                    name='Platform'
-                    id='Platform'
+                    name='platform'
+                    id='platform'
                     className='bg-gray-50 border border-teal-300 text-teal-900 font-normal text-sm rounded-lg focus:ring-teal-600 focus:border-teal-600 block w-full p-2.5'
                   >
                     <option value=''>Select Platform</option>
-                    <option value='FleetIQ'>FleetIQ</option>
-                    <option value='FleetFocus UK'>FleetFocus UK</option>
-                    <option value='FleetFocus AUS'>FleetFocus AUS</option>
-                    <option value='ForkliftIQ'>ForkliftIQ</option>
-                    <option value='RentalIQ'>RentalIQ</option>
-                    <option value='All platforms'>All platforms</option>
+                    {PLATFORM_OPTIONS.map((platform) => (
+                      <option key={platform} value={platform}>
+                        {platform}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -715,7 +729,7 @@ const ModalCreateTicket: FC<ModalCreateTicketProps> = ({
                     Solution
                   </label>
                   <input
-                    value={formData.Solution}
+                    value={formData.solution}
                     onChange={handleChangeCreate}
                     type='text'
                     name='Solution'

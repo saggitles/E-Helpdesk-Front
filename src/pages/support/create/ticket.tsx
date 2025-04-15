@@ -7,87 +7,34 @@ import 'react-toastify/dist/ReactToastify.css';
 import Navbar from '@/generic_comp/navbar';
 import { PendingTickets } from '../../../components/filtros';
 import TicketModal from '../../../components/modalCreate'; // Importa el componente modal
-
-interface Customer {
-  USER_CD: number;
-  USER_NAME: string;
-}
-
-interface Site {
-  LOCATION_CD: number;
-  NAME: string;
-}
-
-interface Ticket {
-  IDTicket: number;
-  Title: string;
-  Description: string;
-  Status: string;
-  Category: string;
-  Priority: string;
-  AssignedUserID?: number;
-  CustomerID?: number;
-  Site?: string;
-  LocationCD?: number;
-  Department?: string;
-  createdAt: string;
-  updatedAt: string;
-  VehicleID?: string;
-  Dealer: string;
-  Contact: string;
-  Supported: string;
-  isEscalated?: string;
-  Solution?: string;
-  Platform?: string;
-  CustomerName: string;
-  Email?: string;
-  Reporter?: string;
-  Comments?: string;
-}
-
-interface FormData {
-  customerName: string | null;
-  customer_id: number | null;
-  siteName: string | null;
-  site_id: number | null;
-  contactName: string;
-  phone: string;
-}
+import {
+  Ticket,
+  Site,
+  Customer,
+  CreateTicketFormData,
+} from '@/types/tickets.types';
 
 const CreateTicketPage = () => {
   const router = useRouter();
   const { user } = useUser();
 
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>(
-    []
-  );
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
-  const [selectedCustomerId, setSelectedCustomerId] = useState<
-    number | null
-  >(null);
-
-  const [sites, setSites] = useState<Site[]>([]);
   const [showSiteDropdown, setShowSiteDropdown] = useState(false);
   const [customerOptions, setCustomerOptions] = useState<Customer[]>([]);
   const [siteOptions, setSiteOptions] = useState<Site[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState<string>('');
-  const [selectedSite, setSelectedSite] = useState<Site | string>('');
-
   const [filteredTickets, setFilteredTickets] = useState<Ticket[]>([]);
-
-  // Estado para controlar la visibilidad del modal
   const [showTicketModal, setShowTicketModal] = useState(false);
 
-  const [formData, setFormData] = useState<FormData>({
-    customerName: null,
+  const [formData, setFormData] = useState<CreateTicketFormData>({
+    customer_name: '',
     customer_id: null,
-    siteName: null,
+    site_name: '',
     site_id: null,
-    contactName: '',
+    contact_name: '',
     phone: '',
   });
 
+  // Load saved data from localStorage on mount
   useEffect(() => {
     const savedSiteString = localStorage.getItem('selectedSite');
     const savedSite = savedSiteString ? JSON.parse(savedSiteString) : null;
@@ -95,35 +42,31 @@ const CreateTicketPage = () => {
     const savedCustomer = savedCustomerString
       ? JSON.parse(savedCustomerString)
       : null;
-    console.log('setting the saved customer', savedCustomer);
 
     setFormData((prev) => ({
       ...prev,
-      customerName: savedCustomer ? savedCustomer.USER_NAME : null,
-      customer_id: savedCustomer ? savedCustomer.USER_CD : null,
-      site: savedSite,
+      customer_name: savedCustomer ? savedCustomer.customer_name : '',
+      customer_id: savedCustomer ? savedCustomer.customer_id : null,
+      site_name: savedSite ? savedSite.site_name : '',
+      site_id: savedSite ? savedSite.site_id : null,
     }));
-    setSelectedCustomer(savedCustomer ? savedCustomer.USER_NAME : '');
   }, []);
 
+  // Fetch customers
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
         const res = await fetch('http://localhost:8080/api/customers');
         const data = await res.json();
         setCustomerOptions(data);
-
-        // Set selectedCustomer if localStorage has value
-        const savedCustomer = localStorage.getItem('selectedCustomer');
-        if (savedCustomer) setSelectedCustomer(savedCustomer);
       } catch (err) {
         console.error('Error fetching customers:', err);
       }
     };
-
     fetchCustomers();
   }, []);
 
+  // Fetch sites when customer changes
   useEffect(() => {
     if (!formData.customer_id) {
       setSiteOptions([]);
@@ -135,169 +78,134 @@ const CreateTicketPage = () => {
         const res = await fetch(
           `http://localhost:8080/api/sites?customer=${formData.customer_id}`
         );
+        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
         const data = await res.json();
-        setSiteOptions(data);
-        console.log('Fetched sites:', data);
 
-        // Set selectedSite if localStorage has value AND belongs to customer
-        const savedSite = localStorage.getItem('selectedSite');
-        console.log('Saved site from localStorage:', savedSite);
-        interface SavedSiteChecker {
-          (site: Site): boolean;
+        if (!Array.isArray(data)) {
+          console.error(
+            'Expected sites to be an array but received:',
+            data
+          );
+          setSiteOptions([]);
+          return;
         }
 
-        if (
-          savedSite &&
-          data.find(
-            (site: Site): boolean => String(site.LOCATION_CD) === savedSite
-          )
-        ) {
-          setSelectedSite(savedSite);
-        } else {
-          console.log("Saved site doesn't match current customer");
-          setSelectedSite(''); // Reset if it doesn't match
-          localStorage.removeItem('selectedSite');
+        setSiteOptions(data);
+
+        // Check if saved site belongs to this customer
+        const savedSiteString = localStorage.getItem('selectedSite');
+        if (savedSiteString) {
+          const parsedSite = JSON.parse(savedSiteString);
+          const matchingSite = data.find(
+            (site: Site) =>
+              String(site.site_id) === String(parsedSite.site_id)
+          );
+
+          if (!matchingSite) {
+            // Site doesn't belong to current customer, clear it
+            setFormData((prev) => ({
+              ...prev,
+              site_name: '',
+              site_id: null,
+            }));
+            localStorage.removeItem('selectedSite');
+          }
         }
       } catch (err) {
         console.error('Error fetching sites:', err);
+        setSiteOptions([]);
       }
     };
 
     fetchSites();
   }, [formData.customer_id]);
 
+  // Customer selection handler
   const handleCustomerChange = (
     e: React.ChangeEvent<HTMLSelectElement>
   ) => {
-    // Get the selected customer ID as a number
     const value = Number(e.target.value);
-    // Find the customer object from customerOptions
-    const customer = customerOptions.find((c) => c.USER_CD === value);
+    const customer = customerOptions.find((c) => c.customer_id === value);
 
     if (customer) {
+      // Update formData with customer and clear site
       setFormData((prev) => ({
         ...prev,
-        customerName: customer.USER_NAME,
-        customer_id: customer.USER_CD,
-        // Optionally, reset site fields:
-        siteName: null,
+        customer_name: customer.customer_name,
+        customer_id: customer.customer_id,
+        site_name: '', // Reset site fields
         site_id: null,
       }));
-      setSelectedCustomer(customer.USER_NAME);
-      setSelectedCustomerId(customer.USER_CD);
-      console.log(
-        'Selected customer, name, number:',
-        customer.USER_NAME,
-        customer.USER_CD
-      );
+
+      // Save customer to localStorage
       localStorage.setItem(
         'selectedCustomer',
         JSON.stringify({
-          USER_NAME: customer.USER_NAME,
-          USER_CD: customer.USER_CD,
+          customer_name: customer.customer_name,
+          customer_id: customer.customer_id,
         })
       );
 
-      // When customer changes, also clear any saved site data.
+      // Clear site from localStorage
       localStorage.removeItem('selectedSite');
-      setSelectedSite('');
       window.dispatchEvent(new Event('storage'));
     } else {
-      // If none found, you may want to clear fields
       setFormData((prev) => ({
         ...prev,
-        customerName: null,
+        customer_name: '',
         customer_id: null,
       }));
     }
   };
 
+  // Site selection handler
   const handleSiteChange = async (
     e: React.ChangeEvent<HTMLSelectElement>
   ) => {
-    const value = e.target.value; // The site's LOCATION_CD as a string.
-    const selectedObj = siteOptions.find(
-      (site) => String(site.LOCATION_CD) === value
+    const value = e.target.value;
+    const selectedSite = siteOptions.find(
+      (site) => String(site.site_id) === value
     );
 
-    if (selectedObj && selectedObj.LOCATION_CD) {
-      console.log('Selecting site:', selectedObj);
-      console.log('LOCATION_CD:', selectedObj.LOCATION_CD);
-
-      // Update formData to include both siteName and site_id:
+    if (selectedSite && selectedSite.site_id) {
+      // Update formData with site
       setFormData((prev) => ({
         ...prev,
-        siteName: selectedObj.NAME,
-        site_id: Number(selectedObj.LOCATION_CD),
+        site_name: selectedSite.site_name,
+        site_id: Number(selectedSite.site_id),
       }));
-      // Store the full site object in selectedSite as well.
-      setSelectedSite(selectedObj);
-      localStorage.setItem('selectedSite', JSON.stringify(selectedObj));
+
+      // Save site to localStorage
+      localStorage.setItem('selectedSite', JSON.stringify(selectedSite));
       window.dispatchEvent(new Event('storage'));
 
-      console.log('Selected Site Object:', selectedObj);
-      console.log(
-        'LocationCD to be used:',
-        Number(selectedObj.LOCATION_CD)
-      );
-
+      // Fetch tickets for this site
       try {
-        const locationCD = Number(selectedObj.LOCATION_CD);
-        if (!isNaN(locationCD) && locationCD !== 0) {
+        const site_id = Number(selectedSite.site_id);
+        if (!isNaN(site_id) && site_id !== 0) {
           const response = await fetch(
-            `http://localhost:8080/api/ticket/site?locationCD=${locationCD}`
+            `http://localhost:8080/api/ticket/site?site_id=${site_id}`
           );
-          console.log('API Response:', response);
 
           if (!response.ok) {
             throw new Error('Error fetching tickets');
           }
 
           const tickets = await response.json();
-          console.log('Received tickets:', tickets.length);
-          console.log('Received tickets:', tickets);
           setFilteredTickets(tickets);
-        } else {
-          throw new Error('Invalid locationCD');
         }
       } catch (error) {
         console.error('Error loading tickets:', error);
-        // Optionally display a toast error.
       }
     } else {
-      // Reset if no valid site is selected
-      setFormData((prev) => ({ ...prev, siteName: null, site_id: null }));
-      console.log('No valid site selected');
-      setSelectedSite('');
+      // Reset site fields
+      setFormData((prev) => ({ ...prev, site_name: '', site_id: null }));
       localStorage.removeItem('selectedSite');
       window.dispatchEvent(new Event('storage'));
     }
   };
 
-  const handleCustomerSelect = (customer: Customer) => {
-    setFormData((prev) => ({
-      ...prev,
-      customerName: customer.USER_NAME,
-      customer_id: customer.USER_CD, // Ensure this is a number
-      siteName: null,
-      site_id: null,
-    }));
-    setSelectedCustomer(customer.USER_NAME);
-    setSelectedCustomerId(customer.USER_CD);
-    localStorage.setItem(
-      'selectedCustomer',
-      JSON.stringify({
-        USER_NAME: customer.USER_NAME,
-        USER_CD: customer.USER_CD,
-      })
-    );
-
-    // Clear saved site data
-    localStorage.removeItem('selectedSite');
-    setSelectedSite('');
-    window.dispatchEvent(new Event('storage'));
-  };
-
+  // Form input change handler
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
@@ -305,24 +213,24 @@ const CreateTicketPage = () => {
     });
   };
 
+  // Form submit handler
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted');
     console.log('Form Data that is being saved', formData);
 
     if (
-      !formData.customerName ||
+      !formData.customer_name ||
       !formData.site_id ||
-      !formData.contactName
+      !formData.contact_name
     ) {
       toast.error('Please fill out all required fields');
       return;
     }
 
-    // Abrimos el modal
     setShowTicketModal(true);
   };
 
+  // render JSX remains mostly the same, but now uses formData directly
   return (
     <>
       <Navbar />
@@ -358,27 +266,11 @@ const CreateTicketPage = () => {
                     >
                       <option value=''>Select Customer</option>
                       {customerOptions.map((c) => (
-                        <option key={c.USER_CD} value={c.USER_CD}>
-                          {c.USER_NAME}
+                        <option key={c.customer_id} value={c.customer_id}>
+                          {c.customer_name}
                         </option>
                       ))}
                     </select>
-                    {showCustomerDropdown &&
-                      filteredCustomers.length > 0 && (
-                        <div className='absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto'>
-                          {filteredCustomers.map((customer) => (
-                            <div
-                              key={customer.USER_CD}
-                              className='px-4 py-2 hover:bg-teal-50 cursor-pointer'
-                              onClick={() =>
-                                handleCustomerSelect(customer)
-                              }
-                            >
-                              {customer.USER_NAME}
-                            </div>
-                          ))}
-                        </div>
-                      )}
                   </div>
 
                   <div className='relative'>
@@ -394,37 +286,25 @@ const CreateTicketPage = () => {
                     >
                       <option value=''>Select Site</option>
                       {siteOptions.map((s) => (
-                        <option key={s.LOCATION_CD} value={s.LOCATION_CD}>
-                          {s.NAME}
+                        <option key={s.site_id} value={s.site_id}>
+                          {s.site_name}
                         </option>
                       ))}
                     </select>
-                    {showSiteDropdown && sites.length > 0 && (
-                      <div className='absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto'>
-                        {sites.map((site) => (
-                          <option
-                            key={site.LOCATION_CD}
-                            value={site.LOCATION_CD}
-                          >
-                            {site.NAME}
-                          </option>
-                        ))}
-                      </div>
-                    )}
                   </div>
 
                   <div>
                     <label
-                      htmlFor='contactName'
+                      htmlFor='Contact Name'
                       className='block text-sm font-normal text-teal-700 mb-1'
                     >
-                      Contact Name
+                      Contact name
                     </label>
                     <input
                       type='text'
-                      id='contactName'
-                      name='contactName'
-                      value={formData.contactName}
+                      id='contact_name'
+                      name='contact_name'
+                      value={formData.contact_name}
                       onChange={handleChange}
                       placeholder='Type contact name'
                       className='w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50 placeholder-gray-400'
@@ -465,33 +345,20 @@ const CreateTicketPage = () => {
         </div>
 
         {/* Tabla de tickets */}
-        {selectedSite && (
-          <PendingTickets
-            locationCD={
-              typeof selectedSite === 'object'
-                ? selectedSite.LOCATION_CD
-                : Number(selectedSite)
-            }
-          />
-        )}
+        {formData.site_id && <PendingTickets site_id={formData.site_id} />}
 
         {showTicketModal && (
           <TicketModal
             isOpen={showTicketModal}
             onClose={() => setShowTicketModal(false)}
             formData={{
-              customerName: formData.customerName || '',
+              customer_name: formData.customer_name || '',
               customer_id: formData.customer_id || 0,
-              siteName: formData.siteName || '',
+              site_name: formData.site_name || '',
               site_id: formData.site_id || 0,
-              contactName: formData.contactName,
+              contact_name: formData.contact_name,
               phone: formData.phone,
             }}
-            selectedSite={
-              formData.site_id
-                ? { site: formData.site_id, NAME: formData.siteName || '' }
-                : null
-            }
           />
         )}
 

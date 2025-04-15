@@ -4,42 +4,19 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
 import { TicketRowItem } from '@/components/SupportTeamComponents';
+import { Ticket, PendingTicketsProps } from '@/types/tickets.types';
+import { STATUS_OPTIONS, getStatusColor } from '@/utils/statusConfig';
 
-type Ticket = {
-  IDTicket: number;
-  Title: string;
-  Description: string;
-  Status: string;
-  Category: string;
-  Priority: string;
-  AssignedUserID?: number;
-  CustomerID: number;
-  Site?: string;
-  Department?: string;
-  createdAt: string;
-  updatedAt: string;
-  incidentDate?: string;
-  driversName?: string;
-  VehicleID: string;
-  Dealer: string;
-  Contact: string;
-  Supported: string;
-  isEscalated?: string;
-  Solution?: string;
-  Platform?: string;
-  Companyname: string;
-  Email?: string;
-  Reporter?: string;
-  Comments?: string;
-};
-
-export const PendingTickets: React.FC = () => {
+export const PendingTickets: React.FC<PendingTicketsProps> = ({
+  site_id,
+}) => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [searchResults, setSearchResults] = useState<Ticket[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const statusDropdownRef = useRef<HTMLDivElement>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const TICKETS_PER_PAGE = 100;
@@ -90,21 +67,41 @@ export const PendingTickets: React.FC = () => {
 
   const handleExportTickets = async () => {
     console.log('Exporting tickets...');
-    console.log('API URL:', process.env.NEXT_PUBLIC_API_URL);
+
     const token = localStorage.getItem('accessToken');
+    if (!token) {
+      console.error('No access token found!');
+      return;
+    }
+
     try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/export`, // updated endpoint (plural "tickets")
+      // For exporting all tickets - check your API structure
+      const exportUrl = 'http://localhost:8080/api/tickets/export';
+      // OR if your API expects a different format:
+      // const exportUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/export/tickets`;
 
-        {
-          responseType: 'blob', // important for file downloads
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      console.log('Export URL:', exportUrl);
+      console.log('Using token:', token.substring(0, 15) + '...');
 
-      const url = window.URL.createObjectURL(response.data);
+      const response = await fetch(exportUrl, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(
+          `Export failed with status ${response.status}: ${errorText}`
+        );
+        throw new Error(`Export failed: ${response.statusText}`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
       const a = document.createElement('a');
       a.href = url;
       a.download = 'tickets.csv';
@@ -134,7 +131,7 @@ export const PendingTickets: React.FC = () => {
 
       // Sort the tickets by ID in descending order
       const sorted = response.data.sort(
-        (a: Ticket, b: Ticket) => b.IDTicket - a.IDTicket
+        (a: Ticket, b: Ticket) => b.id - a.id
       );
 
       setTickets(sorted);
@@ -162,11 +159,14 @@ export const PendingTickets: React.FC = () => {
         }
       );
       const sorted = response.data.sort(
-        (a: Ticket, b: Ticket) => b.IDTicket - a.IDTicket
+        (a: Ticket, b: Ticket) => b.id - a.id
       );
       setTickets(sorted);
-      const filtered = sorted.filter((ticket) =>
-        ticket.Title?.toLowerCase().includes(searchQuery.toLowerCase())
+      const filtered: Ticket[] = sorted.filter(
+        (ticket: Ticket): boolean =>
+          ticket.title
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ?? false
       );
       setSearchResults(filtered);
     } catch (err) {
@@ -175,26 +175,57 @@ export const PendingTickets: React.FC = () => {
   };
 
   useEffect(() => {
-    const fetchInitialTickets = async () => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        statusDropdownRef.current &&
+        !statusDropdownRef.current.contains(event.target as Node) &&
+        statusDropdownOpen
+      ) {
+        setStatusDropdownOpen(false);
+      }
+    };
+
+    // Add event listener when dropdown is open
+    if (statusDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    // Cleanup function
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [statusDropdownOpen]);
+  useEffect(() => {
+    const fetchAllTickets = async () => {
       const token = localStorage.getItem('accessToken');
+
       try {
-        const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/tickets`,
+        console.log('Fetching all tickets...');
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/tickets`, // Remove the /site?site_id=${site_id} part
           {
-            headers: { Authorization: `Bearer ${token}` },
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
           }
         );
-        const sorted = res.data.sort(
-          (a: Ticket, b: Ticket) => b.IDTicket - a.IDTicket
+        console.log('API response status:', response.status);
+        console.log('Raw response data:', response.data);
+
+        // Process response
+        const sorted = response.data.sort(
+          (a: Ticket, b: Ticket) => b.id - a.id
         );
         setTickets(sorted);
         setSearchResults(sorted);
-      } catch (err) {
-        console.error('Initial fetch failed:', err);
+      } catch (error: any) {
+        console.error('Error loading tickets:', error);
       }
     };
-    fetchInitialTickets();
-  }, []);
+
+    fetchAllTickets(); // Always fetch all tickets
+  }, []); // Remove site_id dependency
 
   return (
     <div className='bg-teal-50 min-h-screen px-6'>
@@ -250,28 +281,33 @@ export const PendingTickets: React.FC = () => {
               Filter by Status
             </button>
             {statusDropdownOpen && (
-              <div className='absolute z-10 bg-white border rounded shadow p-4'>
-                {[
-                  'Pending',
-                  'First Contact',
-                  'In progress',
-                  'Warranty sent',
-                  'Done',
-                  'Scaled',
-                  "Won't do",
-                ].map((status) => (
-                  <label key={status} className='block'>
+              <div
+                ref={statusDropdownRef}
+                className='absolute z-10 bg-white border rounded shadow p-4'
+                style={{ width: '300px', right: 0 }}
+              >
+                {STATUS_OPTIONS.map((status) => (
+                  <div key={status} className='flex items-center mb-2'>
                     <input
                       type='checkbox'
+                      id={`status-${status}`}
                       checked={selectedStatuses.includes(status)}
                       onChange={() => toggleStatus(status)}
                       className='mr-2'
                     />
-                    {status}
-                  </label>
+                    <label
+                      htmlFor={`status-${status}`}
+                      className='flex-1 whitespace-nowrap'
+                      style={{
+                        fontWeight: 500,
+                      }}
+                    >
+                      {status}
+                    </label>
+                  </div>
                 ))}
                 <button
-                  className='mt-2 bg-teal-500 text-white px-3 py-1 rounded'
+                  className='mt-2 bg-teal-500 text-white px-3 py-1 rounded w-full'
                   onClick={() => handleStatusFilter(selectedStatuses)}
                 >
                   Apply
@@ -291,7 +327,7 @@ export const PendingTickets: React.FC = () => {
                 <th className='px-4 py-2'>Priority</th>
                 <th className='px-4 py-2'>Company</th>
                 <th className='px-4 py-2'>Site</th>
-                <th className='px-4 py-2'>Contact</th>
+                <th className='px-4 py-2'>Contact name</th>
                 <th className='px-4 py-2'>Subject</th>
                 <th className='px-4 py-2'>Supported By</th>
                 <th className='px-4 py-2'>Category</th>
@@ -301,8 +337,12 @@ export const PendingTickets: React.FC = () => {
             <tbody className='divide-y divide-gray-200'>
               {paginatedTickets.map((ticket, index) => (
                 <TicketRowItem
-                  key={ticket.IDTicket}
-                  ticket={ticket}
+                  key={ticket.id}
+                  ticket={{
+                    ...ticket,
+                    user: ticket.assigned_user_id?.toString() || '',
+                    reporter: ticket.reporter || '',
+                  }}
                   style={{
                     backgroundColor: index % 2 === 0 ? '#f9fafb' : 'white',
                   }}

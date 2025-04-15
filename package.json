@@ -38,7 +38,7 @@
     "@tiptap/starter-kit": "^2.4.0",
     "@types/auth0": "^3.3.4",
     "aws-sdk": "^2.1641.0",
-    "axios": "^1.6.2",
+    "axios": "^1.8.4",
     "bcryptjs": "^2.4.3",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",

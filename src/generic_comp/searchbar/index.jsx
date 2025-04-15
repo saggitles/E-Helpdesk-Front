@@ -13,7 +13,7 @@ const Searchbar = ({ data, setData }) => {
       const filteredData = data.filter((item) => {
         return (
           item.Title.toLowerCase().includes(trimmedQuery) ||
-          item.Contact.toLowerCase().includes(trimmedQuery) ||
+          item.contact_name.toLowerCase().includes(trimmedQuery) ||
           item.Dealer.toLowerCase().includes(trimmedQuery) ||
           item.Companyname.toLowerCase().includes(trimmedQuery)||
           item.Supported.toLowerCase().includes(trimmedQuery) ||

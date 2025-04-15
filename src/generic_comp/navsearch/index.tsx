@@ -1,30 +1,13 @@
-'use client';
+'use customer';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-
-// Define Types for Filters
-interface Filters {
-  client: string;
-  site: string;
-  gmptCode: string;
-}
-
-// Define Types for API Data
-interface Customer {
-  USER_CD: string;
-  USER_NAME: string;
-}
-
-interface Site {
-  LOCATION_CD: string;
-  NAME: string;
-}
-
-interface VehicleData {
-  customer: string;
-  site: string;
-}
+import {
+  Filters,
+  Customer,
+  Site,
+  VehicleData,
+} from '@/types/tickets.types';
 
 // Define Props Type for Navbar
 interface NavbarProps {
@@ -34,7 +17,7 @@ interface NavbarProps {
 const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
   // Define state for filters
   const [filters, setFilters] = useState<Filters>({
-    client: '',
+    customer: '',
     site: '',
     gmptCode: '',
   });
@@ -52,13 +35,13 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
     if (typeof window !== 'undefined') {
       setLoadingData(true);
       try {
-        const storedClient =
+        const storedcustomer =
           localStorage.getItem('selectedCustomer') || '';
         const storedSite = localStorage.getItem('selectedSite') || '';
         const storedGmptCode = localStorage.getItem('selectedGmpt') || '';
 
         setFilters({
-          client: storedClient,
+          customer: storedcustomer,
           site: storedSite,
           gmptCode: storedGmptCode,
         });
@@ -92,7 +75,7 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
         if (storedCustomer) {
           setFilters((prevFilters) => ({
             ...prevFilters,
-            client: storedCustomer,
+            customer: storedCustomer,
           }));
         }
       } catch (error) {
@@ -106,9 +89,9 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
     fetchCustomers();
   }, []);
 
-  // Fetch Sites when a Client is Selected
+  // Fetch Sites when a customer is Selected
   useEffect(() => {
-    if (!filters.client) {
+    if (!filters.customer) {
       setSites([]);
       return;
     }
@@ -117,7 +100,7 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
       setLoadingSites(true);
       try {
         const response = await fetch(
-          `http://localhost:8080/api/sites?customer=${filters.client}`
+          `http://localhost:8080/api/sites?customer=${filters.customer}`
         );
         if (!response.ok)
           throw new Error(`HTTP error! Status: ${response.status}`);
@@ -136,13 +119,13 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
     };
 
     fetchSites();
-  }, [filters.client]);
+  }, [filters.customer]);
 
   // Fetch Customer & Site Info When GMPT Code is Entered
   useEffect(() => {
     const fetchVehicleByGmpt = async () => {
       if (!filters.gmptCode) return;
-
+      console.log('Fetching vehicle by GMPT code:', filters.gmptCode);
       try {
         const response = await fetch(
           `http://localhost:8080/api/vehicles?gmptCode=${filters.gmptCode}`
@@ -160,7 +143,7 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
 
           setFilters((prevFilters) => ({
             ...prevFilters,
-            client: data.customer,
+            customer: data.customer,
             site: data.site,
           }));
         }
@@ -190,10 +173,10 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
         gmptCode: value,
       }));
       localStorage.setItem('selectedGmpt', value);
-    } else if (name === 'client') {
+    } else if (name === 'customer') {
       setFilters((prev) => ({
         ...prev,
-        client: value,
+        customer: value,
         site: '',
       }));
       localStorage.removeItem('selectedSite');
@@ -214,18 +197,18 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
 
   // Handle Search Button Click - mantener esta funcionalidad del compañero
   const handleSearch = () => {
-    if (!filters.client) {
+    if (!filters.customer) {
       console.error('Customer is required for search.');
       return;
     }
 
     console.log('Saving to local storage:');
-    console.log('Customer:', filters.client);
+    console.log('Customer:', filters.customer);
     console.log('Site:', filters.site || 'None selected');
     console.log('GMPT:', filters.gmptCode || 'None input');
 
     // Store customer and site in local storage
-    localStorage.setItem('selectedCustomer', filters.client);
+    localStorage.setItem('selectedCustomer', filters.customer);
     localStorage.setItem('selectedSite', filters.site || '');
     localStorage.setItem('selectedGmpt', filters.gmptCode || '');
 
@@ -235,6 +218,29 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
       console.warn(
         'onFilterChange is not defined, skipping function call.'
       );
+    }
+  };
+
+  const clearFilters = () => {
+    // Reset filters state
+    setFilters({
+      customer: '',
+      site: '',
+      gmptCode: '',
+    });
+
+    // Clear localStorage
+    localStorage.removeItem('selectedCustomer');
+    localStorage.removeItem('selectedSite');
+    localStorage.removeItem('selectedGmpt');
+    localStorage.removeItem('siteData');
+
+    // Reset sites list
+    setSites([]);
+
+    // Trigger callback if provided
+    if (typeof onFilterChange === 'function') {
+      onFilterChange();
     }
   };
 
@@ -286,22 +292,24 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
             </label>
             <div className='flex items-center justify-center h-12 bg-white border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 rounded-lg'>
               <select
-                name='client'
-                value={filters.client}
+                name='customer'
+                value={filters.customer}
                 onChange={handleFilterChange}
                 disabled={loadingCustomers}
                 className='block w-full h-full sm:text-sm text-black focus:outline-none rounded-lg'
               >
                 <option value=''>Select a Customer</option>
                 {customers.map((customer) => (
-                  <option key={customer.USER_CD} value={customer.USER_CD}>
-                    {customer.USER_NAME}
+                  <option
+                    key={customer.customer_id}
+                    value={customer.customer_id}
+                  >
+                    {customer.customer_name}
                   </option>
                 ))}
               </select>
             </div>
           </div>
-
           {/* Site Filter */}
           <div>
             <label className='block text-base font-medium text-gray-700 mb-1 flex items-center'>
@@ -312,19 +320,18 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
                 name='site'
                 value={filters.site}
                 onChange={handleFilterChange}
-                disabled={!filters.client || loadingSites}
+                disabled={!filters.customer || loadingSites}
                 className='block w-full h-full sm:text-sm text-black focus:outline-none rounded-lg'
               >
                 <option value=''>Select a Site</option>
                 {sites.map((site) => (
-                  <option key={site.LOCATION_CD} value={site.LOCATION_CD}>
-                    {site.NAME}
+                  <option key={site.site_id} value={site.site_id}>
+                    {site.site_name}
                   </option>
                 ))}
               </select>
             </div>
           </div>
-
           {/* GMPT Code Filter */}
           <div>
             <label className='block text-sm font-medium text-gray-700 mb-1'>
@@ -340,8 +347,13 @@ const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
               />
             </div>
           </div>
-          {/* Search Button */}
-          <div className='col-span-3 flex justify-end'>
+          <div className='col-span-3 flex justify-end space-x-4'>
+            <button
+              className='bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition'
+              onClick={clearFilters}
+            >
+              Clear Filters
+            </button>
             <button
               className='bg-teal-600 text-white px-4 py-2 rounded-md hover:bg-teal-700 transition'
               onClick={handleSearch}

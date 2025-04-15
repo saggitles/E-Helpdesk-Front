@@ -9,51 +9,57 @@ import ChatWidget from '../../components/chat/ChatWidget';
 
 import { useUser, withPageAuthRequired } from '@auth0/nextjs-auth0/client';
 import Image from 'next/image';
+import {
+  Ticket,
+  Comment,
+  PendingTicketsProps,
+} from '@/types/tickets.types';
 
-type Ticket = {
-  IDTicket: number;
-  Title: string;
-  Description: string;
-  Status: string;
-  Category: string;
-  Priority: string;
-  AssignedUserID?: number;
-  CustomerID: number;
-  Site?: string;
-  Department?: string;
-  createdAt: string;
-  updatedAt: string;
-  incidentDate?: string; // Fecha del incidente (opcional)
-  driversName?: string; // Nombre del conductor (opcional)
-  VehicleID: string; // ID del vehículo (opcional)
-  Dealer: string;
-  Contact: string;
-  Supported: string;
-  isEscalated?: string;
-  Solution?: string;
-  Platform?: string;
-  Companyname: string;
-  Email?: string;
-  Reporter?: string;
-  Comments?: string;
-};
+// type Ticket = {
+//   id: number;
+//   title: string;
+//   description: string;
+//   status: string;
+//   category: string;
+//   priority: string;
+//   assigned_user_id?: number;
+//   customer_id: number;
+//   site_name?: string;
+//   site_id?: number;
+//   department?: string;
+//   created_at: string;
+//   updated_at: string;
+//   incident_date?: string; // Fecha del incidente (opcional)
+//   drivers_name?: string; // Nombre del conductor (opcional)
+//   vehicle_id: string; // ID del vehículo (opcional)
+//   dealer: string;
+//   contact_name: string;
+//   supported: string;
+//   is_escalated?: string;
+//   solution?: string;
+//   platform?: string;
+//   customer_name: string;
+//   email?: string;
+//   reporter?: string;
+//   comments?: string;
+// };
 
-type Comment = {
-  Content: string;
-  TicketIndex: number;
-  TicketID?: number; // Optional initially, will be set later
-};
+// type Comment = {
+//   content: string;
+//   ticket_index: number;
+//   ticket_id?: number; // Optional initially, will be set later
+// };
 
-interface PendingTicketsProps {
-  option?: string;
-}
+// interface PendingTicketsProps {
+//   option?: string;
+// }
 
-interface PendingTicketsProps {
-  locationCD: number;
-}
+// interface PendingTicketsProps {
+//   site_id: number;
+// }
 
 export const PendingTickets: React.FC<PendingTicketsProps> = ({
-  locationCD,
+  site_id,
 }) => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [page, setPage] = useState(1); // Estado para la página actual
@@ -63,7 +69,7 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
   const ticketsPerPage = 12;
   const [totalPages, setTotalPages] = useState(0);
   const [searchResults, setSearchResults] = useState<Ticket[]>([]);
-  const [sortField, setSortField] = useState('IDTicket'); // Campo por defecto para ordenar
+  const [sortField, setSortField] = useState('id'); // Campo por defecto para ordenar
   const [sortOrder, setSortOrder] = useState('asc');
   const [showOnlyInProgress, setShowOnlyInProgress] = useState(false);
 
@@ -171,22 +177,22 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
               console.log(correctedDate);
 
               const ticket = {
-                createdAt:
+                created_at:
                   correctedDate !== undefined ? correctedDate : '',
-                Dealer: row[2] !== undefined ? row[2] : '',
-                Companyname: row[3] !== undefined ? row[3] : '',
-                Reporter: row[4] !== undefined ? row[4] : '',
-                Title: truncatedTitle,
-                Description: row[5] !== undefined ? row[5] : '',
-                VehicleID: row[6] !== undefined ? row[6] : '',
-                Supported: row[7] !== undefined ? row[7] : '',
-                Priority: row[8] !== undefined ? row[8] : '',
-                Solution: row[9] !== undefined ? row[9] : '',
-                Category: row[11] !== undefined ? row[11] : '',
-                Status: row[12] !== undefined ? row[12] : '',
-                isEscalated: row[13] !== undefined ? row[13] : '',
-                Platform: row[14] !== undefined ? row[14] : '',
-                Email: row[15] !== undefined ? row[15] : '',
+                dealer: row[2] !== undefined ? row[2] : '',
+                customer_name: row[3] !== undefined ? row[3] : '',
+                reporter: row[4] !== undefined ? row[4] : '',
+                title: truncatedTitle,
+                description: row[5] !== undefined ? row[5] : '',
+                id: row[6] !== undefined ? row[6] : '',
+                supported: row[7] !== undefined ? row[7] : '',
+                priority: row[8] !== undefined ? row[8] : '',
+                solution: row[9] !== undefined ? row[9] : '',
+                category: row[11] !== undefined ? row[11] : '',
+                status: row[12] !== undefined ? row[12] : '',
+                is_escalated: row[13] !== undefined ? row[13] : '',
+                platform: row[14] !== undefined ? row[14] : '',
+                email: row[15] !== undefined ? row[15] : '',
               } as Ticket;
 
               ticketList.push(ticket);
@@ -194,8 +200,11 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
               // Check if there is a non-empty comment
               if (row[10] !== undefined && row[10] !== null) {
                 commentsList.push({
-                  Content: row[10],
-                  TicketIndex: ticketList.length - 1, // This will be updated with IDTicket after creation
+                  id: 0, // default id value
+                  content: row[10],
+                  ticket_id: ticketList.length - 1, // This will be updated with IDTicket after creation
+                  author: '', // default author
+                  created_at: new Date().toISOString(), // default creation date
                 });
               }
             });
@@ -203,7 +212,7 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
           console.log('Total tickets: ', ticketList);
           console.log('Total comments: ', commentsList);
 
-          const createdTickets: { IDTicket: number; index: number }[] = [];
+          const createdTickets: { id: number; index: number }[] = [];
 
           try {
             // Process tickets in batches
@@ -231,7 +240,7 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
               response.data.createdTickets.forEach(
                 (createdTicket: any, idx: number) => {
                   createdTickets.push({
-                    IDTicket: createdTicket.value.IDTicket,
+                    id: createdTicket.value.id,
                     index: i + idx,
                   });
                 }
@@ -241,10 +250,10 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
             // Update commentsList with the correct TicketID
             for (let comment of commentsList) {
               const associatedTicket = createdTickets.find(
-                (ticket) => ticket.index === comment.TicketIndex
+                (ticket) => ticket.index === comment.ticket_id
               );
               if (associatedTicket) {
-                comment.TicketID = associatedTicket.IDTicket;
+                comment.ticket_id = associatedTicket.id;
               }
             }
 
@@ -253,19 +262,19 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
             // Send comments to the other endpoint
             for (let comment of commentsList) {
               if (
-                comment.TicketID !== undefined &&
-                comment.Content !== null
+                comment.ticket_id !== undefined &&
+                comment.content !== null
               ) {
                 console.log(
-                  `Posting comment for TicketID ${comment.TicketID}:`,
-                  comment.Content
+                  `Posting comment for TicketID ${comment.ticket_id}:`,
+                  comment.content
                 );
                 try {
                   const response = await axios.post(
                     `${process.env.NEXT_PUBLIC_API_URL}/api/comments`,
                     {
-                      Content: comment.Content,
-                      TicketID: comment.TicketID, // Use the correct ID field from your API response
+                      content: comment.content,
+                      ticket_id: comment.ticket_id, // Use the correct ID field from your API response
                     },
                     {
                       headers: {
@@ -301,30 +310,31 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
 
   const exportToExcel = () => {
     const ticketsForExport = tickets.map((ticket) => ({
-      IDTicket: ticket.IDTicket,
-      Title: ticket.Title,
-      Description: ticket.Description,
-      Status: ticket.Status,
-      Category: ticket.Category,
-      Priority: ticket.Priority,
-      AssignedUserID: ticket.AssignedUserID,
-      CustomerID: ticket.CustomerID,
-      Site: ticket.Site,
-      Department: ticket.Department,
-      createdAt: ticket.createdAt,
-      updatedAt: ticket.updatedAt,
-      incidentDate: ticket.incidentDate || '',
-      driversName: ticket.driversName || '',
-      VehicleID: ticket.VehicleID || '',
-      Dealer: ticket.Dealer || '',
-      Contact: ticket.Contact || '',
-      Supported: ticket.Supported || '',
-      isEscalated: ticket.isEscalated || '',
-      Solution: ticket.Solution || '',
-      Platform: ticket.Platform || '',
-      Companyname: ticket.Companyname || '',
-      Email: ticket.Email || '',
-      Reporter: ticket.Reporter || '',
+      id: ticket.id,
+      title: ticket.title,
+      description: ticket.description,
+      status: ticket.status,
+      category: ticket.category,
+      priority: ticket.priority,
+      assigned_user_id: ticket.assigned_user_id,
+      customerID: ticket.customer_id,
+      site_name: ticket.site_name,
+      site_id: ticket.site_id,
+      department: ticket.department,
+      created_at: ticket.created_at,
+      updated_at: ticket.updated_at,
+      incident_date: ticket.incident_date || '',
+      drivers_name: ticket.drivers_name || '',
+      vehicle_id: ticket.vehicle_id || '',
+      dealer: ticket.dealer || '',
+      contact_name: ticket.contact_name || '',
+      supported: ticket.supported || '',
+      is_escalated: ticket.is_escalated || '',
+      solution: ticket.solution || '',
+      platform: ticket.platform || '',
+      customer_name: ticket.customer_name || '',
+      email: ticket.email || '',
+      reporter: ticket.reporter || '',
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(ticketsForExport);
@@ -338,8 +348,8 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
       const prevTicket = prevTicketsRef.current[index];
       return (
         prevTicket &&
-        ticket.Status === 'Done' &&
-        prevTicket.Status !== 'Done'
+        ticket.status === 'Done' &&
+        prevTicket.status !== 'Done'
       );
     });
 
@@ -350,7 +360,7 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
   }, [tickets]);
 
   useEffect(() => {
-    // alert("El ticket es: " + locationCD)
+    // alert("El ticket es: " + site_id)
     const fetchTickets = async () => {
       const token = localStorage.getItem('accessToken'); // Obtener el token de autenticación
 
@@ -361,7 +371,7 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
 
       try {
         const response = await fetch(
-          `http://localhost:8080/api/ticket/site?locationCD=${locationCD}`,
+          `http://localhost:8080/api/ticket/site?site_id=${site_id}`,
           {
             method: 'GET',
             headers: {
@@ -374,7 +384,9 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
         if (!response.ok) throw new Error('Error fetching tickets');
 
         const data = await response.json();
-        setTickets(data);
+        console.log('Data que quiero leer:', data);
+
+        setTickets(data.tickets);
       } catch (error) {
         console.error('Error loading tickets:', error);
       } finally {
@@ -382,10 +394,10 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
       }
     };
 
-    if (locationCD) {
+    if (site_id) {
       fetchTickets();
     }
-  }, [locationCD]);
+  }, [site_id]);
 
   useEffect(() => {
     setTotalPages(Math.ceil(searchResults.length / ticketsPerPage));
@@ -394,7 +406,7 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
   useEffect(() => {
     if (showOnlyInProgress) {
       const filteredTickets = tickets.filter(
-        (ticket) => ticket.Status === 'In progress'
+        (ticket) => ticket.status === 'In progress'
       );
       setSearchResults(filteredTickets);
     } else {
@@ -405,7 +417,7 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
   useEffect(() => {
     if (showOnlyPendingCall) {
       const filteredTickets = tickets.filter(
-        (ticket) => ticket.Status === 'Pending to call'
+        (ticket) => ticket.status === 'Pending to call'
       );
       setSearchResults(filteredTickets);
     } else {
@@ -418,12 +430,15 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
 
     const filteredData = tickets.filter((item: Ticket) => {
       return (
-        item.Title.toLowerCase().includes(trimmedQuery) ||
-        item.Contact.toLowerCase().includes(trimmedQuery) ||
-        item.Dealer.toLowerCase().includes(trimmedQuery) ||
-        item.Companyname.toLowerCase().includes(trimmedQuery) ||
-        item.Supported.toLowerCase().includes(trimmedQuery) ||
-        item.VehicleID.toLowerCase().includes(trimmedQuery)
+        item.title.toLowerCase().includes(trimmedQuery) ||
+        item.contact_name.toLowerCase().includes(trimmedQuery) ||
+        (item.dealer &&
+          item.dealer.toLowerCase().includes(trimmedQuery)) ||
+        item.customer_name.toLowerCase().includes(trimmedQuery) ||
+        item.supported.toLowerCase().includes(trimmedQuery) ||
+        (item.vehicle_id ? item.vehicle_id.toLowerCase() : '').includes(
+          trimmedQuery
+        )
       );
     });
     setSearchResults(filteredData);
@@ -482,49 +497,49 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
                   <tr className='bg-teal-500 text-white'>
                     <th
                       className='px-6 py-3 text-center text-sm font-semibold'
-                      onClick={() => handleSort('IDTicket')}
+                      onClick={() => handleSort('id')}
                     >
                       ID
                     </th>
                     <th
                       className='px-6 py-3 text-center text-sm font-semibold'
-                      onClick={() => handleSort('createdAt')}
+                      onClick={() => handleSort('created_at')}
                     >
                       Date
                     </th>
                     <th
                       className='px-6 py-3 text-center text-sm font-semibold'
-                      onClick={() => handleSort('Dealer')}
+                      onClick={() => handleSort('dealer')}
                     >
                       Priority
                     </th>
                     <th
                       className='px-6 py-3 text-center text-sm font-semibold'
-                      onClick={() => handleSort('Customerame')}
+                      onClick={() => handleSort('customer_name')}
                     >
                       Customer
                     </th>
                     <th
                       className='px-6 py-3 text-center text-sm font-semibold'
-                      onClick={() => handleSort('Sitename')}
+                      onClick={() => handleSort('site_name')}
                     >
                       Site
                     </th>
                     <th
                       className='px-6 py-3 text-center text-sm font-semibold'
-                      onClick={() => handleSort('Contact')}
+                      onClick={() => handleSort('contact_name')}
                     >
-                      Contact name
+                      contact name
                     </th>
                     <th
                       className='px-6 py-3 text-center text-sm font-semibold'
-                      onClick={() => handleSort('VehicleID')}
+                      onClick={() => handleSort('vehicle_id')}
                     >
                       Email Subject
                     </th>
                     <th
                       className='px-6 py-3 text-center text-sm font-semibold'
-                      onClick={() => handleSort('Supported')}
+                      onClick={() => handleSort('supported')}
                     >
                       Supported by
                     </th>

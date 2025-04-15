@@ -53,7 +53,7 @@ export interface UserRole {
 export interface Customer {
   IDCustomer: number;
   CustomerName: string;
-  ContactName: string;
+  Contact Name: string;
   Email: string;
   Tickets: Ticket[];
 }
