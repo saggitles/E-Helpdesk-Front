@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
-import { useRouter } from 'next/router';
 import LoadingScreen from '@/components/generalComponents/LoadingScreen';
 import { TicketRowItemProps } from '@/types/tickets.types';
+import { CATEGORY_OPTIONS } from '@/utils/categoryConfig';
 import {
   STATUS_OPTIONS,
   getStatusColor,
@@ -14,30 +14,20 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
   style,
   index,
 }) => {
-  const router = useRouter();
-  const [selectedTicketId, setSelectedTicketId] = useState<number | null>(
-    null
-  );
   const [hover, setHover] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState<string>(
-    ticket.status
-  );
   const [category, setCategory] = useState(ticket.category);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [is_Y, setis_y] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [showDonePopup, setShowDonePopup] = useState(false); // New state for done popup
-
+  const [showDonePopup, setShowDonePopup] = useState(false);
   const [conclusion, setConclusion] = useState('');
 
   const handleCategoryChange = async (newCategory: string) => {
     setCategory(newCategory);
-    console.log('New category url:', process.env.NEXT_PUBLIC_API_URL);
-
     try {
       const token = localStorage.getItem('accessToken');
       await axios.put(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/${ticket.id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api//tickets/update/${ticket.id}`,
         { Category: newCategory },
         {
           headers: {
@@ -45,10 +35,7 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
           },
         }
       );
-
       window.location.reload();
-
-      console.log(`Ticket category updated successfully: ${ticket.id}`);
     } catch (error) {
       console.error('Error updating ticket category:', error);
     }
@@ -56,7 +43,7 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
 
   const handleConfirm = async () => {
     setis_y(true);
-    await new Promise((resolve) => setTimeout(resolve, 100)); // Wait 100ms
+    await new Promise((resolve) => setTimeout(resolve, 100));
     handleDel();
     setTimeout(() => {
       setis_y(false);
@@ -77,27 +64,25 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
     setIsLoading(true);
     try {
       const token = localStorage.getItem('accessToken');
-      const headers = {
-        Authorization: `Bearer ${token}`,
-      };
-
-      const response = await axios.delete(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/${ticket.id}`,
-        { headers }
+      await axios.delete(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/delete/${ticket.id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
-
-      console.log(response.data);
-      console.log('Ticket eliminado con éxito:', ticket.id);
-
       window.location.href = '/support/tickets/pending';
     } catch (error) {
-      console.error('Error al eliminar el ticket:', error);
+      console.error('Error deleting ticket:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleRowClick = (e: React.MouseEvent<HTMLTableRowElement>) => {
+    console.log('Row clicked:', ticket.id);
+
     const isSelectOrOption =
       e.target instanceof HTMLSelectElement ||
       (e.target instanceof HTMLElement && e.target.closest('select'));
@@ -106,68 +91,10 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
       return;
     }
     setIsLoading(true);
-    setSelectedTicketId(ticket.id);
 
-    const fechaUpdatedISO = ticket.updated_at;
-    const fechaUpdated = new Date(fechaUpdatedISO);
-
-    const opciones: Intl.DateTimeFormatOptions = {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false,
-      timeZone: 'UTC',
-    };
-
-    const fechaUpdate = fechaUpdated
-      .toLocaleDateString('es-ES', opciones)
-      .replace(/\//g, '/')
-      .replace(',', '');
-
-    const fechaCreatedISO = ticket.created_at;
-    const fechaCreated = new Date(fechaCreatedISO);
-    const fechaCreate = fechaCreated
-      .toLocaleDateString('es-ES', opciones)
-      .replace(/\//g, '/')
-      .replace(',', '');
-
-    const fechaIncidentISO = ticket.incident_date;
-    const fechaIncident = new Date(fechaIncidentISO ?? Date.now());
-    const fechaIncidentFormatted = fechaIncident
-      .toLocaleDateString('es-ES', opciones)
-      .replace(/\//g, '/')
-      .replace(',', '');
-
-    window.open(
-      `/support/tickets/${ticket.id}?` +
-        new URLSearchParams({
-          title: ticket.title,
-          description: ticket.description,
-          priority: ticket.priority,
-          status: ticket.status,
-          department: ticket.department || '',
-          created_at: fechaCreate,
-          updated_at: fechaUpdate,
-          category: ticket.category,
-          platform: ticket.platform || '',
-          email: ticket.email || '',
-          customer: ticket.customer_name || '',
-          site_name: ticket.site_name || '',
-          contact_name: ticket.contact_name,
-          vehicle_id: ticket.vehicle_id || '',
-          reporter: ticket.reporter || '',
-          supported: ticket.supported || '',
-          id: ticket.id.toString(),
-          solution: ticket.solution || '',
-          incident_date: fechaIncidentFormatted || '',
-          ticket_number: ticket.ticket_number || '',
-          open_since: ticket.open_since || '',
-        }).toString(),
-      '_blank'
-    );
+    // Simply navigate to the details page with just the ID
+    window.open(`/support/tickets/${ticket.id}`, '_blank');
+    console.log('Ticket ID:', ticket.id);
 
     setIsLoading(false);
   };
@@ -177,12 +104,11 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
       setShowDonePopup(true);
       return;
     }
-    setSelectedStatus(newStatus);
 
     try {
       const token = localStorage.getItem('accessToken');
       await axios.put(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/${ticket.id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api//tickets/update/${ticket.id}`,
         { status: newStatus },
         {
           headers: {
@@ -190,41 +116,18 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
           },
         }
       );
-
       window.location.reload();
-
-      console.log(`Ticket status updated successfully: ${ticket.id}`);
     } catch (error) {
       console.error('Error updating ticket status:', error);
     }
   };
 
-  // const getStatusColor = (status: string): string => {
-  //   switch (status) {
-  //     case 'In progress':
-  //       return '#e6d856';
-  //     case 'Done':
-  //       return '#92cc75';
-  //     case 'Scaled':
-  //       return '#7ea6d3';
-  //     case 'To Do':
-  //       return '#ea7d7d';
-  //     case "Won't do":
-  //       return '#a4a89e';
-  //     case 'Pending to call':
-  //       return '#a909e9';
-  //     default:
-  //       return '#e6d856';
-  //   }
-  // };
-
   const handleDoneConfirm = async () => {
     setShowDonePopup(false);
-    setSelectedStatus('Done');
     try {
       const token = localStorage.getItem('accessToken');
-      const put = await axios.put(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/${ticket.id}`,
+      await axios.put(
+        `${process.env.NEXT_PUBLIC_API_URL}/api//tickets/update/${ticket.id}`,
         { Status: 'Done', Solution: conclusion },
         {
           headers: {
@@ -233,9 +136,6 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
         }
       );
       window.location.reload();
-
-      console.log(put);
-      console.log(`Ticket status updated successfully: ${ticket.id}`);
     } catch (error) {
       console.error('Error updating ticket status:', error);
     }
@@ -252,7 +152,7 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
         style={{
           ...style,
           border: '1px solid #eaecef',
-          borderRadius: '20px 20px 20px 20px',
+          borderRadius: '20px',
           backgroundColor: hover
             ? '#acc637'
             : index % 2 === 0
@@ -261,9 +161,7 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
         }}
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
-        onDoubleClick={(e: React.MouseEvent<HTMLTableRowElement>) =>
-          handleRowClick(e)
-        }
+        onDoubleClick={(e) => handleRowClick(e)}
       >
         <td className='text-center text-xs font-Lato text-gray-900'>
           # {ticket.id}
@@ -313,26 +211,19 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
               boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
             }}
           >
-            <option value={ticket.category}>{ticket.category}</option>
-            <option value='Checklist issue'>Checklist issue</option>
-            <option value='Software Issue'>Software Issue</option>
-            <option value='Hardware Issue'>Hardware Issue</option>
-            <option value='Pin/card Issue'>Pin/card Issue</option>
-            <option value='Dashboard Issue'>Dashboard Issue</option>
-            <option value='Improvement Request'>
-              Improvement Request
-            </option>
-            <option value='Connectivity Issue'>Connectivity Issue</option>
-            <option value='User Unawareness'>User Unawareness</option>
-            <option value='Team Request'>Team Request</option>
-            <option value='Server Down'>Server Down</option>
-            <option value='Impact Calibrations'>
-              Impact Calibrations
-            </option>
-            <option value='Polarity Idle Timer Issue'>
-              Polarity Idle Timer Issue
-            </option>
-            <option value='GPS Issue'>GPS Issue</option>
+            {/* Only show current category if it's not in the options list */}
+            {!CATEGORY_OPTIONS.includes(
+              ticket.category as (typeof CATEGORY_OPTIONS)[number]
+            ) && (
+              <option value={ticket.category}>{ticket.category}</option>
+            )}
+
+            {/* Map through category options from config */}
+            {CATEGORY_OPTIONS.map((categoryOption) => (
+              <option key={categoryOption} value={categoryOption}>
+                {categoryOption}
+              </option>
+            ))}
           </select>
         </td>
 
@@ -365,10 +256,6 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
             ))}
           </select>
         </td>
-
-        {/* <td>
-          {ticket.Status} 
-        </td> */}
       </tr>
 
       {showDonePopup && (
@@ -388,7 +275,7 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
               <button
                 className='bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded mr-2 transition duration-300 ease-in-out'
                 onClick={handleDoneConfirm}
-                disabled={!conclusion.trim()} // Disable if conclusion is empty
+                disabled={!conclusion.trim()}
               >
                 Confirm
               </button>

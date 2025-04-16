@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Editor, EditorContent, useEditor } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit'
-import { Comment } from '../../../reducers/Comments/types';
+import StarterKit from '@tiptap/starter-kit';
+import { Comment } from '@/types/tickets.types';
 import Bold from '@tiptap/extension-bold';
 import Italic from '@tiptap/extension-italic';
 import Underline from '@tiptap/extension-underline';
@@ -12,102 +12,117 @@ import CharacterCount from '@tiptap/extension-character-count';
 import ListItem from '@tiptap/extension-list-item';
 import axios from 'axios';
 
-
 interface CommentProps {
   comment: Comment;
   onEdit: (commentId: number, updatedContent: string) => void;
   onDelete: (commentId: number) => void;
 }
 
-interface UserInfo {
-  name: string;
-  // Add other properties from the response if needed
-}
-
-const CommentComponent: React.FC<CommentProps> = ({ comment, onEdit, onDelete }) => {
+const CommentComponent: React.FC<CommentProps> = ({
+  comment,
+  onEdit,
+  onDelete,
+}) => {
   const [isEditing, setIsEditing] = useState(false);
-  const editor = useEditor({
-    extensions: [StarterKit, Bold, Italic, Underline,BulletList,Blockquote,Link.configure({
-      openOnClick: false,
-      autolink: true,
-      
-    }),ListItem],
-    content: comment.Content,
-  });
+  const [editContent, setEditContent] = useState(comment.content || '');
   const [userInfo, setUserInfo] = useState<string | null>(null);
 
   const handleEditClick = () => {
+    setEditContent(comment.content || '');
     setIsEditing(true);
   };
 
   const handleSaveClick = () => {
-    // @ts-ignore
-    onEdit(comment.IDComment, editor.getHTML() || '');
+    onEdit(comment.id, editContent);
     setIsEditing(false);
   };
 
   const handleCancelClick = () => {
-    // @ts-ignore
-    editor.commands.setContent(comment.Content);
+    setEditContent(comment.content || '');
     setIsEditing(false);
   };
 
   const handleDeleteClick = () => {
-    onDelete(comment.IDComment);
+    onDelete(comment.id);
   };
 
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
-        const userID = comment.UserID; // Get the UserID from the comment
+        const userID = comment.id;
         if (!userID) {
-          throw new Error('UserID is missing.');
+          throw new Error('id is missing.');
         }
         const token = localStorage.getItem('accessToken');
         if (!token) {
           throw new Error('Access token is missing.');
         }
-    
+
         const config = {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         };
-    
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/users/${userID}`, config);
+
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/users/${userID}`,
+          config
+        );
         const userData = response.data;
-        // Assuming your backend API returns the user's firstName and lastName
-        const userFullName = `${userData.FirstName} ${userData.LastName}`;
+        const userFullName = `${userData.first_name || ''} ${
+          userData.last_name || ''
+        }`;
         setUserInfo(userFullName);
       } catch (error) {
         console.error('Error fetching user info:', error);
       }
     };
-  
+
     fetchUserInfo();
-  }, []);
+  }, [comment.id]);
 
   return (
-    <div>
+    <div className='border-b border-gray-200 py-3'>
       {isEditing ? (
-        <div className="py-2 border-b-2 border-slate-100 flex">
-          <EditorContent className="ml-4" editor={editor} />
-          <div className="ml-4 ml-auto mr-4">
-            <button className='mr-2' onClick={handleSaveClick}>Save</button>
-            <button onClick={handleCancelClick}>Cancel</button>
+        <div className='py-2 flex'>
+          <textarea
+            className='ml-4 flex-grow border rounded p-2'
+            value={editContent}
+            onChange={(e) => setEditContent(e.target.value)}
+          />
+          <div className='ml-4 flex items-start'>
+            <button
+              className='mr-2 px-3 py-1 bg-blue-500 text-white rounded'
+              onClick={handleSaveClick}
+            >
+              Save
+            </button>
+            <button
+              className='px-3 py-1 bg-gray-300 rounded'
+              onClick={handleCancelClick}
+            >
+              Cancel
+            </button>
           </div>
         </div>
       ) : (
-        <div className="flex">
-          {userInfo !== null && ( // Check if userInfo is not null
-            <div className="mr-2 whitespace-nowrap">{userInfo}:</div> // Render user's full name followed by a colon
+        <div className='flex'>
+          {userInfo && (
+            <div className='mr-2 font-semibold whitespace-nowrap'>
+              {userInfo}:
+            </div>
           )}
-          {/* <EditorContent editor={editor} /> */}
-          <div className='comment-container' dangerouslySetInnerHTML={{ __html: comment.Content }} />
-          {/* Buttons for editing and deleting */}
-          <div className="ml-4 ml-auto mr-4 flex items-start">
-            <button className='mr-2' onClick={handleEditClick}>Edit</button>
-            <button onClick={handleDeleteClick}>Delete</button>
+          <div className='flex-grow break-words'>{comment.content}</div>
+          <div className='ml-auto flex items-start'>
+            <button
+              className='mr-2 text-blue-500'
+              onClick={handleEditClick}
+            >
+              Edit
+            </button>
+            <button className='text-red-500' onClick={handleDeleteClick}>
+              Delete
+            </button>
           </div>
         </div>
       )}

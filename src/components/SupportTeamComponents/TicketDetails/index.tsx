@@ -1,53 +1,35 @@
-import React, {
-  useEffect,
-  useState,
-  useRef,
-  ChangeEvent,
-  FormEvent,
-} from 'react';
+import React, { useEffect, useState, useRef, ChangeEvent } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faImages } from '@fortawesome/free-solid-svg-icons';
-import { useRouter } from 'next/router';
-import Link from 'next/link';
-import axios from 'axios';
-import CommentList from '../TicketComments/CommentList';
-import { Comment as CommentType } from '../../../reducers/Comments/types';
-import PopJira from '@/components/generalComponents/PopJira';
-import styles from './styles.module.css';
-import Image from 'next/image';
 import {
+  faImages,
   faSpinner,
   faCheckCircle,
-  faTimesCircle,
   faCircleNotch,
   faBan,
 } from '@fortawesome/free-solid-svg-icons';
+import { useRouter } from 'next/router';
+import axios from 'axios';
+import CommentList from '../TicketComments/CommentList';
+import PopJira from '@/components/generalComponents/PopJira';
+import Image from 'next/image';
 import LoadingScreen from '@/components/generalComponents/LoadingScreen';
 import { STATUS_OPTIONS, getStatusColor } from '@/utils/statusConfig';
-import { format, parse, isValid, parseISO } from 'date-fns';
-// FIX ME: NOTHING WORKS HERE AND INTERFACES HAVE TO GO TO THE INTERFACES, JIRA TICKET DOESNT WOK NOR DO COMMENTS
+import { Ticket, Comment as CommentType } from '@/types/tickets.types';
+
 interface User {
-  IDUser: number;
-  Username: string;
-  FirstName: string;
-  LastName: string;
+  id: number;
+  username: string;
+  first_name: string;
+  last_name: string;
 }
 
 type JiraTicket = {
   id: number;
-  key?: string; // Optional string field
-  creation_date?: string; // Optional string field, assuming date is stored as a string
-  description?: string; // Optional string field
-  project_key?: string; // Optional string field
-  project_name?: string; // Optional string field
-  project_type?: string; // Optional string field
-  status?: string; // Optional string field
-  status_category?: string; // Optional string field
-  type?: string; // Optional string field
-  self?: string; // Optional string field, usually a URL or a reference
+  key?: string;
+  self?: string;
+  // Other fields removed for simplicity
 };
 
-// Aca se encuentra la informacion actualizada
 interface JiraTicketOfficial {
   id: string;
   key: string;
@@ -58,11 +40,11 @@ interface JiraTicketOfficial {
       name: string;
       id: string;
       description: string;
-      iconUrl: string;
-      statusCategory: {
+      icon_url: string;
+      status_category: {
         id: number;
         key: string;
-        colorName: string;
+        color_name: string;
         name: string;
       };
     };
@@ -70,52 +52,19 @@ interface JiraTicketOfficial {
       id: string;
       key: string;
       name: string;
-      projectTypeKey: string;
+      project_type_key: string;
       simplified: boolean;
-      avatarUrls: {
-        '48x48': string;
-        '24x24': string;
-        '16x16': string;
-        '32x32': string;
-      };
-    };
-    issuetype: {
-      id: string;
-      name: string;
-      description: string;
-      iconUrl: string;
-      subtask: boolean;
-      avatarId: number;
-    };
-    created: string;
-    updated: string;
-    creator: {
-      self: string;
-      accountId: string;
-      emailAddress: string;
-      avatarUrls: {
-        '48x48': string;
-        '24x24': string;
-        '16x16': string;
-        '32x32': string;
-      };
-      displayName: string;
-      active: boolean;
-      timeZone: string;
+      avatar_urls: Record<string, string>;
     };
     assignee?: {
       self: string;
-      accountId: string;
-      avatarUrls: {
-        '48x48': string;
-        '24x24': string;
-        '16x16': string;
-        '32x32': string;
-      };
-      displayName: string;
+      account_id: string;
+      avatar_urls: Record<string, string>;
+      display_name: string;
       active: true;
-      timeZone: string;
+      time_zone: string;
     };
+    // Other fields removed for simplicity
   };
 }
 
@@ -123,44 +72,36 @@ const fetchComments = async (
   token: string,
   ticketId: string | undefined
 ) => {
-  // Guard against undefined ticketId
   if (!ticketId) {
     console.log('No ticket ID provided for comment fetch');
     return [];
   }
 
   try {
-    console.log(`Fetching comments for ticket ${ticketId}`);
-
-    const url = `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/${ticketId}/comments`;
-    console.log(`Request URL: ${url}`);
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token || ''}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    console.log('Fetching comments for ticket ID:', ticketId);
+    console.log(
+      `this is the link used to access fetch tickets: ${process.env.NEXT_PUBLIC_API_URL}/api/tickets/${ticketId}/comments`
+    );
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/${ticketId}/comments`,
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token || ''}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
 
     if (!response.ok) {
-      // Get more details about the error
-      const errorText = await response.text();
-      console.error(
-        `Error fetching comments: ${response.status} ${response.statusText}`
-      );
-      console.error(`Response body: ${errorText}`);
-
-      // Return empty array instead of throwing
       return [];
     }
 
     const commentsData = await response.json();
-    console.log(`Successfully fetched ${commentsData.length} comments`);
     return commentsData || [];
   } catch (error) {
     console.error('Error in fetchComments:', error);
-    return []; // Return empty array rather than throwing
+    return [];
   }
 };
 
@@ -175,52 +116,56 @@ const fetchAttachments = async (token: string, ticketId: string) => {
       }
     );
 
-    console.log('Attachments Response:', response.data); // Log the response
-
     if (response.data) {
-      const attachmentsData = response.data; // Assuming your response directly contains the attachments
-
-      return attachmentsData;
+      return response.data;
     }
+    return [];
   } catch (error) {
     console.error('Error fetching attachments:', error);
-    throw error;
+    return [];
   }
 };
 
 export const TicketDetails = () => {
+  const emptyTicket: Ticket = {
+    id: 0,
+    title: '',
+    description: '',
+    status: '',
+    category: '',
+    priority: '',
+    created_at: '',
+    updated_at: '',
+    assigned_user_id: null,
+    customer_id: null,
+    site_name: null,
+    site_id: null,
+    department: null,
+    incident_date: null,
+    drivers_name: null,
+    vehicle_id: null,
+    dealer: null,
+    contact_name: '',
+    supported: '',
+    is_escalated: null,
+    solution: null,
+    platform: null,
+    customer_name: '',
+    email: null,
+    reporter: null,
+    comments: null,
+    ticket_number: null,
+    open_since: null,
+    user: null,
+    jira_ticket_id: null,
+    phone: null,
+  };
+
+  const [ticket, setTicket] = useState<Ticket>(emptyTicket);
+  const [error, setError] = useState<string | null>(null);
+
   const router = useRouter();
-  const [comments, setComments] = React.useState<CommentType[]>([]);
-  const {
-    title,
-    description,
-    supported,
-    category,
-    priority,
-    reporter,
-    platform,
-    email,
-    contact_name,
-    customer_name,
-    status,
-    customer_id,
-    department,
-    site_id,
-    site_name,
-    created_at,
-    updated_at,
-    id,
-    dealer,
-    vehicle_id,
-    jira_ticket_id,
-    solution,
-    incident_date,
-    ticket_number,
-    open_since,
-  } = router.query;
-  const [commentContent, setCommentContent] = useState<string>(''); // Assuming you have an input for comment content
-  const [selectedAction, setSelectedAction] =
-    useState<string>('unassigned');
+  const [comments, setComments] = useState<CommentType[]>([]);
   const [isPopJiraVisible, setPopJiraVisibility] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [selectedProjectForEscalation, setSelectedProjectForEscalation] =
@@ -235,283 +180,300 @@ export const TicketDetails = () => {
   const [isSolutionPopupVisible, setSolutionPopupVisibility] =
     useState(false);
   const [solutionText, setSolutionText] = useState('');
-
-  const [selectedAssignee, setSelectedAssignee] = useState(() => {
-    // Initialize selectedAssignee from localStorage if available, otherwise set it to an empty string
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('selectedAssignee') || '';
-    } else {
-      return '';
-    }
-  });
-  const [SelectedOption, setSelectedOption] = useState<string>('');
+  const [selectedAssignee, setSelectedAssignee] = useState('');
+  const [selectedOption, setSelectedOption] = useState<string>('');
   const [attachments, setAttachments] = useState<File[]>([]);
   const [files, setFiles] = useState<File[] | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedValues, setEditedValues] = useState<{
-    [key: string]: string;
-  }>({});
+  const [editedValues, setEditedValues] = useState<Record<string, string>>(
+    {}
+  );
   const [assignee, setAssignee] = useState<any | null>(null);
-  const [assigneeId, setAssigneeId] = useState<number | null>(null); // State variable to hold assigneeId
-  const ticketId = router?.query?.IDTicket;
+  const [assigneeId, setAssigneeId] = useState<number | null>(null);
+  const { id } = router.query;
   const [timeSinceCreated, setTimeSinceCreated] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  console.log('check out my router query', router.query.id);
+  useEffect(() => {
+    const fetchTicketById = async () => {
+      // Only fetch if we have an ID
+      if (!router.isReady || !router.query.id) {
+        return;
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        // Get auth token
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+          setError('Authentication token not found');
+          return;
+        }
+
+        // Debug the endpoint
+        const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/${router.query.id}`;
+        console.log('Attempting to fetch ticket from:', endpoint);
+
+        // Fetch ticket data by ID
+        const response = await axios.get(endpoint, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        // Log full response for debugging
+        console.log('Full ticket API response:', response);
+
+        // Update state with fetched ticket
+        setTicket(response.data);
+        console.log('Fetched ticket data:', response.data);
+
+        // Fetch related data (comments, attachments, etc.)
+        if (response.data && response.data.id) {
+          const ticketId = response.data.id.toString();
+
+          // Fetch in parallel for better performance
+          const [commentsData, attachmentsData] = await Promise.all([
+            fetchComments(token, ticketId),
+            fetchAttachments(token, ticketId),
+          ]);
+          console.log('Fetched comments:', commentsData);
+          setComments(commentsData);
+          if (attachmentsData.length > 0) {
+            setAttachments(attachmentsData);
+          }
+
+          // Calculate time since creation if created_at is available
+          if (response.data.created_at) {
+            const createdDate = new Date(response.data.created_at);
+            const now = new Date();
+            const diffMs = now.getTime() - createdDate.getTime();
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const days = Math.floor(diffHours / 24);
+            const remainingHours = diffHours % 24;
+
+            if (days > 0) {
+              setTimeSinceCreated(
+                `${days} day${days > 1 ? 's' : ''}${
+                  remainingHours > 0
+                    ? ` and ${remainingHours} hour${
+                        remainingHours > 1 ? 's' : ''
+                      }`
+                    : ''
+                } ago`
+              );
+            } else {
+              setTimeSinceCreated(
+                `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`
+              );
+            }
+          }
+        }
+      } catch (err: any) {
+        console.error('Error fetching ticket:', err);
+
+        if (err.response) {
+          console.error('Error response data:', err.response.data);
+          console.error('Error response status:', err.response.status);
+          setError(
+            `Error ${err.response.status}: ${
+              err.response.data.message || 'Failed to load ticket'
+            }`
+          );
+        } else if (err.request) {
+          console.error('No response received:', err.request);
+          setError(
+            'No response received from server. Please check your connection.'
+          );
+        } else {
+          setError(
+            'An unexpected error occurred when loading ticket details.'
+          );
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTicketById();
+  }, [router.isReady, router.query.id]);
 
   useEffect(() => {
     const urlSearchParams = new URLSearchParams(window.location.search);
     const createdAtString = urlSearchParams.get('createdAt');
 
-    if (createdAtString) {
-      // Parse the date string "15/08/2024 14:43:20" into a Date object
+    if (!createdAtString) {
+      setTimeSinceCreated('N/A');
+      return;
+    }
+
+    try {
       const [datePart, timePart] = createdAtString.split(' ');
       const [day, month, year] = datePart.split('/').map(Number);
       const [hours, minutes, seconds] = timePart.split(':').map(Number);
 
-      // Create the date in UTC
       const createdAt = new Date(
         Date.UTC(year, month - 1, day, hours, minutes, seconds)
       );
-
-      // Get the current time in UTC
       const currentTime = new Date();
-
       const difference = currentTime.getTime() - createdAt.getTime();
 
       const totalHours = Math.floor(difference / (1000 * 60 * 60));
       const days = Math.floor(totalHours / 24);
       const remainingHours = totalHours % 24;
 
-      if (days === 1) {
-        if (remainingHours === 1) {
-          setTimeSinceCreated(`1 day and 1 hour ago`);
-        } else if (remainingHours > 1) {
-          setTimeSinceCreated(`1 day and ${remainingHours} hours ago`);
-        } else {
-          setTimeSinceCreated(`1 day ago`);
-        }
-      } else if (days > 1) {
-        if (remainingHours === 1) {
-          setTimeSinceCreated(`${days} days and 1 hour ago`);
-        } else if (remainingHours > 1) {
-          setTimeSinceCreated(
-            `${days} days and ${remainingHours} hours ago`
-          );
-        } else {
-          setTimeSinceCreated(`${days} days ago`);
-        }
+      if (days > 0) {
+        setTimeSinceCreated(
+          `${days} day${days > 1 ? 's' : ''}${
+            remainingHours > 0
+              ? ` and ${remainingHours} hour${
+                  remainingHours > 1 ? 's' : ''
+                }`
+              : ''
+          } ago`
+        );
       } else {
-        if (totalHours === 1) {
-          setTimeSinceCreated(`1 hour ago`);
-        } else {
-          setTimeSinceCreated(`${totalHours} hours ago`);
-        }
+        setTimeSinceCreated(
+          `${totalHours} hour${totalHours !== 1 ? 's' : ''} ago`
+        );
       }
-    } else {
+    } catch (error) {
+      console.error('Error calculating time since creation:', error);
       setTimeSinceCreated('N/A');
     }
   }, []);
 
   useEffect(() => {
-    const fetchAssigneeId = async () => {
-      try {
-        const token = localStorage.getItem('accessToken'); // Assuming you have an access token stored in localStorage
-        const config = {
-          headers: {
-            Authorization: `Bearer ${token}`, // Include the authorization token in the request headers
-          },
-        };
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/${ticketId}/assigneduser`,
-          config
-        );
-        setAssigneeId(response.data.assigneeId); // Assuming the response contains the assigneeId
-        console.log('Response:', response);
-      } catch (error) {
-        console.error('Error fetching assigneeId:', error);
-      }
-    };
+    if (id) {
+      const fetchAssigneeData = async () => {
+        try {
+          const token = localStorage.getItem('accessToken');
+          const config = { headers: { Authorization: `Bearer ${token}` } };
+          const response = await axios.get(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/${id}/assigneduser`,
+            config
+          );
 
-    if (ticketId) {
-      fetchAssigneeId();
+          const newAssigneeId = response.data.assigneeId;
+          setAssigneeId(newAssigneeId);
+
+          if (newAssigneeId) {
+            const userResponse = await axios.get(
+              `${process.env.NEXT_PUBLIC_API_URL}/api/users/${newAssigneeId}`,
+              config
+            );
+            setAssignee(userResponse.data);
+          }
+        } catch (error) {
+          console.error('Error fetching assignee data:', error);
+        }
+      };
+
+      fetchAssigneeData();
     }
-  }, [ticketId]);
+  }, [id]);
 
   useEffect(() => {
-    const fetchUsersData = async () => {
+    const loadUsers = async () => {
       try {
-        const token = localStorage.getItem('accessToken'); // Assuming you have an access token stored in localStorage
-        const config = {
-          headers: {
-            Authorization: `Bearer ${token}`, // Include the authorization token in the request headers
-          },
-        };
+        const token = localStorage.getItem('accessToken');
         const response = await axios.get<User[]>(
           `${process.env.NEXT_PUBLIC_API_URL}/api/users`,
-          config
+          { headers: { Authorization: `Bearer ${token}` } }
         );
         setUsers(response.data);
       } catch (error) {
-        console.error('Error fetching users data:', error);
+        console.error('Error loading users:', error);
       }
     };
 
-    fetchUsersData();
-
-    const fetchJiraTicket = async (JiraTicketID: number) => {
-      try {
-        const token = localStorage.getItem('accessToken');
-        const config = {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        };
-
-        const url = `${process.env.NEXT_PUBLIC_API_URL}/api/jiratickets/${JiraTicketID}`;
-        console.log('Aca debe estar la respuesta del ticket');
-
-        const response = await axios.get<JiraTicket>(url, config);
-
-        console.log('Aca esta la informacion del JiraTicket');
-        console.log(response);
-        console.log(response.data);
-        setJiraTicket(response.data);
-
-        console.log('Link para la informacion actualizada');
-        console.log(response.data.self);
-
-        const urlNew: string | undefined = response.data.self;
-
-        if (urlNew) {
-          console.log('URL:', urlNew);
-          const segments = urlNew.split('/');
-          const jiraIssueNumber = segments.pop() || ''; // Obtiene el último segmento que debería ser el número de Jira
-
-          if (jiraIssueNumber) {
-            console.log('El número de Jira aquí fue:', jiraIssueNumber);
-
-            // Prepara la URL para la solicitud API al servidor local
-            const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/jiratissue/${jiraIssueNumber}`;
-
-            const config = {
-              headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-              },
-            };
-
-            // Realiza la solicitud GET
-            const respuestaJiraDetails = axios
-              .get(apiUrl, config)
-              .then((response) => {
-                console.log(
-                  'Respuesta del servidor para el issue de Jira:',
-                  response.data
-                );
-                console.log('response.data', response);
-                setJiraTicketOfficial(response.data);
-              })
-              .catch((error) => {
-                console.error(
-                  'Error al hacer la solicitud al servidor local:',
-                  error
-                );
-              });
-
-            console.log('JIRA DETAILS');
-            console.log(respuestaJiraDetails);
-          }
-        } else {
-          console.error('URL is undefined. Check your API response.');
-        }
-      } catch (error) {
-        console.error('Error fetching JiraTicket:', error);
-      }
-    };
-
-    if (typeof jira_ticket_id === 'string') {
-      const IDTicketNumber = parseInt(jira_ticket_id, 10);
-      console.log('Aca esta el ticket number');
-      console.log(IDTicketNumber);
-      if (!isNaN(IDTicketNumber)) {
-        fetchJiraTicket(IDTicketNumber);
-        console.log(fetchJiraTicket);
-      } else {
-        console.error('Invalid ticket number');
-      }
-    } else if (Array.isArray(id)) {
-      console.error('IDTicket must not be an array');
-    } else {
-      console.error('IDTicket is undefined or has an invalid type');
-    }
-
-    // Aca obtenemos la informacion del ticket que fue creado, pero lo unico que nos importa es sacar la propiedad self, esto para sacar la version
-    // mas actulizada que tenemos en jira
-  }, [jira_ticket_id]);
+    loadUsers();
+  }, []);
 
   useEffect(() => {
-    const fetchAssigneeId = async () => {
-      try {
-        const token = localStorage.getItem('accessToken'); // Assuming you have an access token stored in localStorage
-        const config = {
-          headers: {
-            Authorization: `Bearer ${token}`, // Include the authorization token in the request headers
-          },
-        };
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/${ticketId}/assigneduser`,
-          config
-        );
-        setAssigneeId(response.data.assigneeId); // Assuming the response contains the assigneeId
-        console.log('Assignee ID:', assigneeId);
-        // Fetch the user corresponding to the assigneeId
-        if (assigneeId) {
-          const token = localStorage.getItem('accessToken'); // Assuming you have an access token stored in localStorage
-          const config = {
-            headers: {
-              Authorization: `Bearer ${token}`, // Include the authorization token in the request headers
-            },
-          };
-          const userResponse = await axios.get(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/users/${assigneeId}`,
+    if (
+      typeof ticket.jira_ticket_id === 'string' &&
+      ticket.jira_ticket_id
+    ) {
+      const fetchJiraData = async () => {
+        try {
+          const token = localStorage.getItem('accessToken');
+          const config = { headers: { Authorization: `Bearer ${token}` } };
+
+          const jiraId = ticket.jira_ticket_id
+            ? parseInt(ticket.jira_ticket_id.toString(), 10)
+            : NaN;
+          if (isNaN(jiraId)) return;
+
+          const response = await axios.get<JiraTicket>(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/jiratickets/${jiraId}`,
             config
           );
-          setAssignee(userResponse.data); // Set the fetched user in state
-          console.log('Assignee:', userResponse.data);
+
+          setJiraTicket(response.data);
+
+          const jiraUrl = response.data.self;
+          if (!jiraUrl) return;
+
+          const segments = jiraUrl.split('/');
+          const issueNumber = segments.pop() || '';
+
+          if (issueNumber) {
+            const detailsResponse = await axios.get(
+              `${process.env.NEXT_PUBLIC_API_URL}/api/jiratissue/${issueNumber}`,
+              config
+            );
+            setJiraTicketOfficial(detailsResponse.data);
+          }
+        } catch (error) {
+          console.error('Error fetching Jira data:', error);
+        }
+      };
+
+      fetchJiraData();
+    }
+  }, [ticket.jira_ticket_id]);
+
+  useEffect(() => {
+    localStorage.setItem('selectedAssignee', selectedAssignee);
+  }, [selectedAssignee]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem('accessToken');
+
+        const commentsData = await fetchComments(
+          token || '',
+          id as string
+        );
+        setComments(commentsData);
+
+        const attachmentsData = await fetchAttachments(
+          token || '',
+          id as string
+        );
+        if (attachmentsData.length > 0) {
+          setAttachments(attachmentsData);
         }
       } catch (error) {
-        console.error('Error fetching assigneeId or user:', error);
+        console.error('Error fetching data:', error);
       }
     };
 
-    if (ticketId) {
-      fetchAssigneeId();
-    }
-  }, [ticketId, assigneeId]);
-
-  useEffect(() => {
-    // Save selectedAssignee to localStorage whenever it changes
-    localStorage.setItem('selectedAssignee', selectedAssignee);
-    console.log('Aca deberia estar!');
-    console.log('selectedAssignee');
-  }, [selectedAssignee]);
-
-  // Function to find and return the selected assignee's name
-  const getSelectedAssigneeName = () => {
-    const selectedAssigneeUser = users.find(
-      (user) => user.IDUser.toString() === selectedAssignee
-    );
-    return selectedAssigneeUser
-      ? `${selectedAssigneeUser.FirstName} ${selectedAssigneeUser.LastName}`
-      : 'N/A';
-  };
+    fetchData();
+  }, [router.query.IDTicket]);
 
   const handleEditClick = () => {
     setIsEditing(true);
 
-    const filteredValues: { [key: string]: string } = {};
-    for (const key in router.query) {
-      const value = router.query[key];
+    const filteredValues: Record<string, string> = {};
+    Object.entries(router.query).forEach(([key, value]) => {
       if (typeof value === 'string') {
         filteredValues[key] = value;
       } else if (
@@ -521,236 +483,127 @@ export const TicketDetails = () => {
       ) {
         filteredValues[key] = value[0];
       }
-    }
+    });
 
     setEditedValues(filteredValues);
   };
 
-  const statusStyles = {
-    'In progress': { color: 'blue', icon: faSpinner, text: 'En progreso' },
-    Done: { color: 'green', icon: faCheckCircle, text: 'Completado' },
-    'To Do': { color: 'gray', icon: faCircleNotch, text: 'Por hacer' },
-    "Won't do": { color: '#c9ccc4', icon: faBan, text: 'No se hará' },
-    // Agrega más estados según necesites
-  };
-
   const handleSaveClick = async () => {
-    // setIsEditing(false);
-
-    const ticket: Record<string, any> = {}; // Cambio para permitir cualquier tipo
+    const ticket: Record<string, any> = {};
 
     Object.entries(editedValues).forEach(([key, value]) => {
       if (key === 'JiraTicketID' && value) {
-        // Convertir JiraTicketID a un entero si existe
         ticket[key] = parseInt(value, 10);
-      } else if (!value) {
-        // Assign null if the value doesn't exist
-        ticket[key] = null;
       } else {
-        ticket[key] = value;
+        ticket[key] = value || null;
       }
     });
 
-    // Eliminar propiedades que no deberían ser enviadas a la API
-    if ('ticketNumber' in ticket) {
-      delete ticket['ticketNumber'];
+    // Remove properties not needed by API
+    delete ticket.id;
+
+    // Calculate openSince for Done status
+    if (ticket.status === 'Done' && router.query.createdAt) {
+      const createdAtStr = router.query.createdAt as string;
+      const [datePart, timePart] = createdAtStr.split(' ');
+      const [day, month, year] = datePart.split('/').map(Number);
+      const [hours, minutes, seconds] = timePart.split(':').map(Number);
+
+      const createdAt = new Date(
+        Date.UTC(year, month - 1, day, hours, minutes, seconds)
+      );
+      const now = new Date();
+      const diff = now.getTime() - createdAt.getTime();
+
+      const totalHours = Math.floor(diff / (1000 * 60 * 60));
+      const days = Math.floor(totalHours / 24);
+      const remainingHours = totalHours % 24;
+
+      ticket.openSince =
+        days > 0
+          ? `${days} day(s) ${remainingHours} hour(s)`
+          : `${remainingHours} hour(s)`;
     }
-    if ('IDTicket' in ticket) {
-      delete ticket['IDTicket'];
-    }
-
-    // Si el estado es "Done", calcular la diferencia de tiempo entre createdAt y ahora
-    if (ticket.status === 'Done') {
-      const createdAtString = router.query.createdAt as string;
-
-      if (createdAtString) {
-        const [datePart, timePart] = createdAtString.split(' ');
-        const [day, month, year] = datePart.split('/').map(Number);
-        const [hours, minutes, seconds] = timePart.split(':').map(Number);
-
-        const createdAtDate = new Date(
-          Date.UTC(year, month - 1, day, hours, minutes, seconds)
-        );
-        const currentTime = new Date();
-
-        // Calcular la diferencia en milisegundos
-        const difference = currentTime.getTime() - createdAtDate.getTime();
-
-        // Convertir la diferencia en días y horas
-        const totalHours = Math.floor(difference / (1000 * 60 * 60));
-        const days = Math.floor(totalHours / 24);
-        const remainingHours = totalHours % 24;
-
-        // Almacenar el tiempo en el campo `openSince`
-        if (days > 0) {
-          ticket.openSince = `${days} day(s) ${remainingHours} hour(s)`;
-        } else {
-          ticket.openSince = `${remainingHours} hour(s)`;
-        }
-      }
-    }
-
-    const token = localStorage.getItem('accessToken');
-    const IDTicket = router.query.IDTicket as string;
 
     try {
+      const token = localStorage.getItem('accessToken');
+      const IDTicket = router.query.IDTicket as string;
+
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/${IDTicket}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api//tickets/update/${IDTicket}`,
         {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token || ''}`,
           },
           body: JSON.stringify(ticket),
         }
       );
 
-      console.log('Aca esta la propiedad de mierda esa');
-      console.log(ticket);
-
-      console.log('Aca esta el valor del ticket editado!');
-      console.log(response);
-
-      const ticketDetails = await response.json();
-
-      if (ticketDetails.jiraTicket) {
-        console.log('JiraTicket Details:', ticketDetails.jiraTicket);
-      } else {
-        console.log('No JiraTicket linked');
-      }
-
       if (response.ok) {
-        // Resto de la funcionalidad existente
-        const fechaUpdatedISO = ticket.updatedAt;
-        const fechaUpdated = new Date(fechaUpdatedISO);
-
-        const opciones: Intl.DateTimeFormatOptions = {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: false,
-          timeZone: 'UTC',
-        };
-
-        const fechaUpdate = fechaUpdated
-          .toLocaleDateString('es-ES', opciones)
-          .replace(/\//g, '-')
-          .replace(',', '');
-
-        const fechaCreatedISO = ticket.createdAt;
-        const fechaCreated = new Date(fechaCreatedISO);
-
-        const fechaCreate = fechaCreated
-          .toLocaleDateString('es-ES', opciones)
-          .replace(/\//g, '-')
-          .replace(',', '');
-
+        // Update URL with new values
         router.replace({
           pathname: router.pathname,
-          query: {
-            ...router.query,
-            ...ticket, // Actualizar los parámetros con los valores editados
-          },
+          query: { ...router.query, ...ticket },
         });
-      } else {
-        console.error('Failed to update ticket: ', response.statusText);
       }
     } catch (error) {
-      console.error('Error updating ticket: ', error);
+      console.error('Error updating ticket:', error);
     } finally {
       setIsEditing(false);
     }
   };
 
-  const handleCancelClick = () => {
-    setIsEditing(false);
-    setEditedValues({});
-  };
+  const handleCancelClick = () => {};
 
   const handleInputChange = (
     key: string,
     value: string | string[] | undefined
   ) => {
     const stringValue = Array.isArray(value) ? value.join(', ') : value;
-    setEditedValues((prevValues) => ({
-      ...prevValues,
-      [key]: stringValue || '',
-    }));
+    setEditedValues((prev) => ({ ...prev, [key]: stringValue || '' }));
+    console.log('Edited values:', editedValues);
 
     if (key === 'status' && value === 'Done') {
       setSolutionPopupVisibility(true);
     }
   };
 
-  const handleCancelSolution = () => {
-    setSolutionPopupVisibility(false);
-    // Otras acciones necesarias si el usuario cancela
-  };
-
-  /**************************************ATTACHMENTS FUNCTIONS****************************************/
-  const handleEscalateClick = () => {
-    setPopJiraVisibility(true);
-  };
-
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const filesArray: File[] = Array.from(e.target.files); // Convert FileList to an array
+      const filesArray = Array.from(e.target.files);
       setFiles(filesArray);
-
-      // Inmediatamente después de establecer los archivos, llamamos a handleFileUpload
-      await handleFileUpload(filesArray); // Asumiendo que modificas handleFileUpload para aceptar un array de archivos directamente
+      await handleFileUpload(filesArray);
     }
   };
 
   const handleFileUpload = async (filesToUpload: File[]) => {
-    if (!filesToUpload || filesToUpload.length === 0) {
-      return; // Retorna si no hay archivos seleccionados.
-    }
+    if (!filesToUpload.length) return;
 
     const formData = new FormData();
     filesToUpload.forEach((file) => formData.append('files', file));
 
     try {
       const token = localStorage.getItem('accessToken');
-      const ticketId = router.query.IDTicket;
-
-      // if (!token || !ticketId) {
-      //   console.error('Authentication or ticket ID missing.');
-      //   return;
-      // }
+      const ticketId = router.query.IDTicket as string;
 
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/${ticketId}/attachments`,
         formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${token || ''}` } }
       );
 
-      // Asegúrate de que la API devuelve los nuevos archivos adjuntos como un array
-      const newAttachments = Array.isArray(response.data)
-        ? response.data
-        : [response.data];
-
-      // Si la respuesta es exitosa, actualiza la lista de archivos adjuntos.
       if (response.status === 200) {
-        setAttachments((prevAttachments) => [
-          ...prevAttachments,
-          ...newAttachments,
-        ]);
-      }
+        const newAttachments = Array.isArray(response.data)
+          ? response.data
+          : [response.data];
+        setAttachments((prev) => [...prev, ...newAttachments]);
 
-      // Limpiar el input del archivo
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-        // Refresh the page after successful upload
-        router.reload();
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+          router.reload();
+        }
       }
     } catch (error) {
       console.error('Error uploading files:', error);
@@ -759,15 +612,13 @@ export const TicketDetails = () => {
 
   const handleDownloadAttachment = async (attachmentUrl: string) => {
     try {
-      // Extract the file name from the URL
       const fileName = attachmentUrl.substring(
         attachmentUrl.lastIndexOf('/') + 1
       );
+      const sasToken =
+        'sp=r&st=2024-09-06T08:50:17Z&se=2124-09-06T16:50:17Z&spr=https&sv=2022-11-02&sr=c&sig=XRcpFIGhI%2B2295A60llboreJ4ZT8RfcsI8kD0xdLglM%3D';
+      const urlWithSas = `${attachmentUrl}?${sasToken}`;
 
-      // Append the SAS token to the blob URL
-      const urlWithSas = `${attachmentUrl}?sp=r&st=2024-09-06T08:50:17Z&se=2124-09-06T16:50:17Z&spr=https&sv=2022-11-02&sr=c&sig=XRcpFIGhI%2B2295A60llboreJ4ZT8RfcsI8kD0xdLglM%3D`;
-      console.log(urlWithSas, 'URL WITH SAS');
-      // Fetch the blob data from Azure Storage using the URL with SAS
       const response = await fetch(urlWithSas, {
         mode: 'cors',
         credentials: 'include',
@@ -781,11 +632,8 @@ export const TicketDetails = () => {
         return;
       }
 
-      // Convert the blob data to a Blob object
       const blob = await response.blob();
-
-      // Create a Blob URL and trigger a download
-      const downloadUrl = window.URL.createObjectURL(new Blob([blob]));
+      const downloadUrl = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = downloadUrl;
       link.download = fileName;
@@ -806,33 +654,18 @@ export const TicketDetails = () => {
     if (!selectedFileIdToDelete) return;
 
     try {
-      // const token = localStorage.getItem('accessToken');
-
-      const token = '1234';
-
       const ticketId = router.query.IDTicket as string;
-
-      // if (!token || !ticketId) {
-      //   console.error('Token or ticketId is missing.');
-      //   return;
-      // }
+      const token = localStorage.getItem('accessToken') || '1234'; // Using default token is not secure
 
       const response = await axios.delete(
         `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/${ticketId}/attachments/${selectedFileIdToDelete}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (response.status === 204) {
-        // Actualiza los attachments después de una eliminación exitosa
         const attachmentsData = await fetchAttachments(token, ticketId);
         setAttachments(attachmentsData);
         setDeleteConfirmVisible(false);
-      } else {
-        console.error('Error deleting attachment:', response.statusText);
       }
     } catch (error) {
       console.error('Error deleting attachment:', error);
@@ -841,69 +674,31 @@ export const TicketDetails = () => {
     }
   };
 
-  /**************************************************************************************************/
-
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedOption = e.target.value;
-
-    setSelectedProjectForEscalation(selectedOption);
+    setSelectedProjectForEscalation(e.target.value);
     setShowConfirmation(true);
   };
 
   const handleConfirmEscalate = () => {
-    setShowConfirmation(false); // Cierra el pop-up de confirmación
-    handlePopJiraEscalate(selectedProjectForEscalation); // Procede al escalado
+    setShowConfirmation(false);
+    escalateToDeveloper({
+      title: ticket.title as string,
+      description: ticket.description as string,
+      project: selectedProjectForEscalation,
+    });
   };
 
   const handleClosePopJira = () => {
     setPopJiraVisibility(false);
   };
 
-  const handleEscalate = async () => {
-    console.log('Escalate');
-    await handleActionChange({
-      target: {
-        value: 'escalateToDev',
-      },
-    } as ChangeEvent<HTMLSelectElement>);
-    setPopJiraVisibility(false);
-  };
-
-  const handleActionChange = async (e: ChangeEvent<HTMLSelectElement>) => {
-    const selectedValue = e.target.value;
-    setSelectedAction(selectedValue);
-
-    if (selectedValue === 'escalateToDev') {
-      setPopJiraVisibility(true); // Show PopJira component
-    }
-  };
-
-  const handlePopJiraEscalate = (selectedProject: string) => {
-    console.log('Proyecto seleccionado para escalado:', selectedProject);
-
-    // Aquí puedes incluir lógica adicional si necesitas, antes de llamar a escalateToDeveloper
-    escalateToDeveloper({
-      title: title as string,
-      description: description as string,
-      project: selectedProject,
-    });
-
-    // Cierra el popup después de iniciar el escalado
-    setPopJiraVisibility(false);
-  };
-
-  const escalateToDeveloper = async (ticketData: TicketData) => {
+  const escalateToDeveloper = async (ticketData: {
+    title: string;
+    description: string;
+    project?: string;
+  }) => {
     try {
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/jira`;
-
       const token = localStorage.getItem('accessToken');
-
-      // if (!token) {
-      //   console.error('Access token not available.');
-      //   return;
-      // }
-
-      console.log(ticketData, 'TICKET DATA');
 
       const requestData = {
         title: ticketData.title,
@@ -912,153 +707,74 @@ export const TicketDetails = () => {
         idTicket: parseInt(id as string, 10),
       };
 
-      console.log(requestData, 'REQUEST DATA');
-
-      const response = await axios.post(apiUrl, requestData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      console.log('ACA ESTA LA DATA');
-      console.log('Server Response:', response.data);
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/jira`,
+        requestData,
+        {
+          headers: {
+            Authorization: `Bearer ${token || ''}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       const { IDJiraTicket } = response.data.data;
-      console.log('IDJiraTicket', IDJiraTicket);
 
-      const fechaUpdatedISO = router.query.updatedAt as string;
-      const fechaUpdated = new Date(fechaUpdatedISO);
-
-      const opciones: Intl.DateTimeFormatOptions = {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-        timeZone: 'UTC',
-      };
-
-      const fechaUpdate = fechaUpdated
-        .toLocaleDateString('es-ES', opciones)
-        .replace(/\//g, '-')
-        .replace(',', '');
-
-      const fechaCreatedISO = router.query.createdAt as string;
-      const fechaCreated = new Date(fechaCreatedISO);
-
-      const fechaCreate = fechaCreated
-        .toLocaleDateString('es-ES', opciones)
-        .replace(/\//g, '-')
-        .replace(',', '');
-
-      router.push(
-        `/support/tickets/${requestData.idTicket}?Title=${router.query.Title}&Description=${router.query.Description}&Priority=${router.query.Priority}&Dealer=${router.query.Dealer}&Status=${router.query.Status}&Department=${router.query.Department}&Site=${router.query.Site}&createdAt=${fechaCreate}&updatedAt=${fechaUpdate}&Category=${router.query.Category}&Platform=${router.query.Platform}&Email=${router.query.Email}&Companyname=${router.query.Companyname}&contact_name=${router.query.contact_name}&VehicleID=${router.query.VehicleID}&Reporter=${router.query.Reporter}&Supported=${router.query.Supported}&IDTicket=${router.query.IDTicket}&JiraTicketID=${IDJiraTicket}&Solution=${router.query.Solution}&openSince=${router.query.openSince}&TicketNumber=${router.query.TicketNumber}`
-      );
+      // Update URL with new Jira ticket ID
+      router.push({
+        pathname: `/support/tickets/${requestData.idTicket}`,
+        query: { ...router.query, JiraTicketID: IDJiraTicket },
+      });
     } catch (error) {
       console.error('Error escalating to Jira:', error);
     }
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const token = localStorage.getItem('accessToken');
-        const ticketId = router?.query?.IDTicket;
-
-        console.log(ticketId, 'ticketId');
-
-        // if (!token || !ticketId) {
-        //   console.error('Token or ticketId is missing.');
-        //   return;
-        // }
-        // @ts-ignore
-        const commentsData = await fetchComments(token, ticketId);
-        setComments(commentsData);
-        // @ts-ignore
-        const attachmentsData = await fetchAttachments(token, ticketId);
-        console.log('Fetched Attachments:', attachmentsData);
-
-        // Only update the state if there are attachments
-        if (attachmentsData.length > 0) {
-          setAttachments(attachmentsData);
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
-
-    fetchData();
-  }, [router.query.IDTicket]);
-
-  interface TicketData {
-    title: string;
-    description: string;
-    project?: string; // Add the project property with an optional modifier (?)
-  }
-
   const handleAddComment = async (content: string) => {
-    console.log('Ticket ID:', id, 'Content', content);
     try {
       const token = localStorage.getItem('accessToken');
 
-      // if (!token) {
-      //   console.error('Token is missing.');
-      //   return;
-      // }
-
-      // Fetch user info from Auth0
+      // Get user info from Auth0
       const userInfoResponse = await axios.get(
         'https://dev-so03q0yu6n6ltwg2.us.auth0.com/userinfo',
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${token || ''}` } }
       );
-      const userEmail = userInfoResponse.data.email;
 
-      // Fetch user info from your backend using the email
+      // Get user ID from backend
       const userResponse = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/users/?email=${userEmail}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        `${
+          process.env.NEXT_PUBLIC_API_URL
+        }/api/users/?email=${encodeURIComponent(
+          userInfoResponse.data.email
+        )}`,
+        { headers: { Authorization: `Bearer ${token || ''}` } }
       );
 
-      console.log('USERRESPONSE', userResponse.data[0].IDUser);
-      // Extract userID from the response
-      const userID = userResponse.data[0].IDUser;
-
-      if (!userID) {
-        console.error('UserID is missing.');
-        return;
+      let userID;
+      if (userResponse.data && userResponse.data.length > 0) {
+        userID = userResponse.data[0].id;
+      } else {
+        userID = 1; // Default user ID as fallback
       }
 
+      // Add the comment
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/api/comments`,
         {
           Content: content,
-          // @ts-ignore
-          TicketID: parseInt(IDTicket),
+          TicketID: parseInt(router.query.id as string, 10),
           UserID: userID,
         },
         {
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token || ''}`,
           },
         }
       );
 
-      const newComment = response.data;
-
-      // Update the comments state to include the new comment
-      setComments((prevComments) => [...prevComments, newComment]);
+      // Update comments list
+      setComments((prev) => [...prev, response.data]);
     } catch (error) {
       console.error('Error adding comment:', error);
     }
@@ -1071,30 +787,20 @@ export const TicketDetails = () => {
     try {
       const token = localStorage.getItem('accessToken');
 
-      // if (!token) {
-      //   console.error('Token is missing.');
-      //   return;
-      // }
-
       const response = await axios.put(
         `${process.env.NEXT_PUBLIC_API_URL}/api/comments/${commentId}`,
-        {
-          Content: updatedContent,
-        },
+        { Content: updatedContent },
         {
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token || ''}`,
           },
         }
       );
 
-      const updatedComment = response.data;
-
-      // Update the comments state to reflect the edited comment
-      setComments((prevComments) =>
-        prevComments.map((comment) =>
-          comment.IDComment === commentId ? updatedComment : comment
+      setComments((prev) =>
+        prev.map((comment) =>
+          comment.id === commentId ? response.data : comment
         )
       );
     } catch (error) {
@@ -1106,138 +812,58 @@ export const TicketDetails = () => {
     try {
       const token = localStorage.getItem('accessToken');
 
-      // if (!token) {
-      //   console.error('Token is missing.');
-      //   return;
-      // }
-
       await axios.delete(
         `${process.env.NEXT_PUBLIC_API_URL}/api/comments/${commentId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${token || ''}` } }
       );
 
-      // Update the comments state to exclude the deleted comment
-      setComments((prevComments) =>
-        prevComments.filter((comment) => comment.IDComment !== commentId)
+      setComments((prev) =>
+        prev.filter((comment) => comment.id !== commentId)
       );
     } catch (error) {
       console.error('Error deleting comment:', error);
     }
   };
 
-  let formattedDate = '';
-  let formattedTime = '';
-
-  if (created_at) {
-    try {
-      // Try to parse the date safely with multiple format handling
-      let createDate: Date | null = null;
-
-      // Try different parsing approaches
-      if (typeof created_at === 'string') {
-        // First, check if the string contains slashes (DD/MM/YYYY format)
-        if (created_at.includes('/')) {
-          const parts = created_at.split(' ');
-          const datePart = parts[0];
-          const timePart = parts[1] || '';
-
-          const [day, month, year] = datePart.split('/').map(Number);
-
-          if (timePart) {
-            const [hours, minutes, seconds] = timePart
-              .split(':')
-              .map(Number);
-            createDate = new Date(
-              Date.UTC(
-                year,
-                month - 1,
-                day,
-                hours || 0,
-                minutes || 0,
-                seconds || 0
-              )
-            );
-          } else {
-            createDate = new Date(Date.UTC(year, month - 1, day));
-          }
-        } else {
-          // Try standard date parsing (ISO format)
-          createDate = new Date(created_at);
-        }
-
-        // Check if we have a valid date
-        if (createDate && !isNaN(createDate.getTime())) {
-          try {
-            formattedDate = createDate.toISOString().split('T')[0];
-            formattedTime = createDate
-              .toTimeString()
-              .split(' ')[0]
-              .substring(0, 5);
-          } catch (formatError) {
-            console.error('Error formatting date:', formatError);
-            formattedDate = 'Invalid format';
-            formattedTime = '--:--';
-          }
-        } else {
-          console.error('Could not parse date from:', created_at);
-          formattedDate = 'Invalid date';
-          formattedTime = '--:--';
-        }
-      }
-    } catch (error) {
-      console.error('Error processing date:', error, created_at);
-      formattedDate = 'Error';
-      formattedTime = '--:--';
-    }
-  }
-
-  let idUser = '';
-
   const idUserAssingUser = (id: string) => {
-    idUser = id;
+    return id; // Return instead of using global variable
   };
 
-  const AssignUser = async (
-    e: React.FormEvent<HTMLFormElement> | ChangeEvent<HTMLSelectElement>
+  const handleAssignUser = async (
+    e: React.ChangeEvent<HTMLSelectElement>
   ) => {
     e.preventDefault();
+    const userId = e.target.value;
 
     try {
       const token = localStorage.getItem('accessToken');
-      const userIdToAssign = parseInt(idUser, 10);
+      const userIdToAssign = parseInt(userId, 10);
 
       if (!userIdToAssign) {
-        console.error('Debe seleccionar un usuario antes de asignar.');
+        console.error('Must select a user before assigning');
         return;
       }
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/assign/${router?.query?.IDTicket}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/assign/${router.query.IDTicket}`,
         {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token || ''}`,
           },
-          body: JSON.stringify({
-            AssignedUserID: userIdToAssign,
-          }),
+          body: JSON.stringify({ AssignedUserID: userIdToAssign }),
         }
       );
 
       if (response.ok) {
         console.log(
-          `Usuario ${userIdToAssign} asignado al ticket con éxito`
+          `User ${userIdToAssign} assigned to ticket successfully`
         );
-      } else {
-        console.error('Error al asignar el usuario al ticket');
+        setSelectedAssignee(userId);
       }
     } catch (error) {
-      console.error('Error al realizar la solicitud:', error);
+      console.error('Error assigning user:', error);
     }
   };
 
@@ -1252,60 +878,37 @@ export const TicketDetails = () => {
       const token = localStorage.getItem('accessToken');
       const IDTicket = router.query.IDTicket as string;
 
-      // if (!token || !IDTicket) {
-      //   console.error('Token or ticket ID is missing.');
-      //   return;
-      // }
-
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/${IDTicket}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api//tickets/update/${IDTicket}`,
         {
-          method: 'PUT', // Usar PATCH para actualizar solo un campo
+          method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token || ''}`,
           },
-          body: JSON.stringify({ solution: solutionText, status: 'Done' }), // Solo enviamos el campo Solution
+          body: JSON.stringify({ solution: solutionText, status: 'Done' }),
         }
       );
 
-      if (!response.ok) {
-        console.error('Error updating the solution:', response.statusText);
-        return;
+      if (response.ok) {
+        setSolutionPopupVisibility(false);
+        router.push('/support/tickets/pending');
       }
-
-      console.log('Solution updated successfully');
-      setSolutionPopupVisibility(false);
-
-      router.push(`/support/tickets/pending`);
     } catch (error) {
-      console.error('Error updating the solution:', error);
+      console.error('Error updating solution:', error);
     }
   };
 
-  useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    axios
-      .get(`${process.env.NEXT_PUBLIC_API_URL}/api/users`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      .then((response) => setUsers(response.data))
-      .catch((error) => console.error(error));
-
-    // Aca se debe poner lo de jira
-
-    // Entonces aca debemos sacar el id, y con ese id pues
-  }, []);
-
-  const [isLoading, setIsLoading] = useState(false);
-  const router_ = useRouter();
+  const handleCancelSolution = () => {
+    setSolutionPopupVisibility(false);
+  };
 
   const handleRedirect = (url: string) => {
     setIsLoading(true);
     router.push(url);
   };
+
+  // Render component (UI remains mostly the same)
   return (
     <>
       <div className='bg-teal-50 min-h-screen'>
@@ -1313,7 +916,7 @@ export const TicketDetails = () => {
           <h1 className='text-gray-600 text-center text-3xl mb-8'>
             Welcome to{' '}
             <span className='text-[#14b8a6] font-bold'>
-              Ticket Number: {router?.query?.IDTicket}
+              Ticket Number: {router?.query?.id}
             </span>
           </h1>
 
@@ -1324,12 +927,12 @@ export const TicketDetails = () => {
               <div className='bg-gray-100 p-5 flex flex-col gap-y-5 rounded'>
                 <div>
                   <p className='text-[#14b8a6] text-sm'>Title</p>
-                  <p className='text-md'>{title}</p>
+                  <p className='text-md'>{ticket.title}</p>
                 </div>
 
                 <div>
                   <p className='text-[#14b8a6] text-sm'>Description</p>
-                  <p className='text-md'>{description}</p>
+                  <p className='text-md'>{ticket.description}</p>
                 </div>
               </div>
 
@@ -1401,7 +1004,7 @@ export const TicketDetails = () => {
                     <h3 className='text-lg font-bold mb-2'>Solution</h3>
                     <div className='bg-white rounded-md p-4 shadow-md'>
                       <p className='text-gray-700'>
-                        {solution || 'No solution provided yet.'}
+                        {ticket.solution || 'No solution provided yet.'}
                       </p>
                     </div>
                   </div>
@@ -1424,6 +1027,253 @@ export const TicketDetails = () => {
               >
                 <p className='text-white text-md'>Details</p>
               </div>
+
+              {/* start of new add */}
+              <div className='grid grid-cols-2 gap-4 bg-white p-6 rounded-lg shadow-sm'>
+                <div className='col-span-2'>
+                  <h3 className='text-lg font-bold text-teal-700 mb-3 pb-2 border-b border-teal-100'>
+                    Ticket Information
+                  </h3>
+                </div>
+
+                {/* Basic Info */}
+                <div className='mb-4'>
+                  <p className='text-sm font-medium text-gray-600'>ID</p>
+                  <p className='text-base'>{ticket.id}</p>
+                </div>
+
+                <div className='mb-4'>
+                  <p className='text-sm font-medium text-gray-600'>
+                    Title
+                  </p>
+                  <p className='text-base'>{ticket.title}</p>
+                </div>
+
+                <div className='mb-4'>
+                  <p className='text-sm font-medium text-gray-600'>
+                    Status
+                  </p>
+                  <p
+                    className='text-base px-2 py-1 inline-block rounded-full'
+                    style={{
+                      backgroundColor: getStatusColor(ticket.status),
+                      color: 'white',
+                    }}
+                  >
+                    {ticket.status}
+                  </p>
+                </div>
+
+                <div className='mb-4'>
+                  <p className='text-sm font-medium text-gray-600'>
+                    Priority
+                  </p>
+                  <p
+                    className={`text-base font-medium ${
+                      ticket.priority === 'High'
+                        ? 'text-red-600'
+                        : ticket.priority === 'Medium'
+                        ? 'text-yellow-600'
+                        : 'text-green-600'
+                    }`}
+                  >
+                    {ticket.priority}
+                  </p>
+                </div>
+
+                <div className='mb-4'>
+                  <p className='text-sm font-medium text-gray-600'>
+                    Category
+                  </p>
+                  <p className='text-base'>{ticket.category}</p>
+                </div>
+
+                <div className='mb-4'>
+                  <p className='text-sm font-medium text-gray-600'>
+                    Platform
+                  </p>
+                  <p className='text-base'>{ticket.platform || 'N/A'}</p>
+                </div>
+
+                {/* Customer Info */}
+                <div className='col-span-2'>
+                  <h3 className='text-lg font-bold text-teal-700 mt-4 mb-3 pb-2 border-b border-teal-100'>
+                    Customer Information
+                  </h3>
+                </div>
+
+                <div className='mb-4'>
+                  <p className='text-sm font-medium text-gray-600'>
+                    Customer
+                  </p>
+                  <p className='text-base'>{ticket.customer_name}</p>
+                </div>
+
+                <div className='mb-4'>
+                  <p className='text-sm font-medium text-gray-600'>
+                    Contact Name
+                  </p>
+                  <p className='text-base'>
+                    {ticket.contact_name || 'N/A'}
+                  </p>
+                </div>
+
+                <div className='mb-4'>
+                  <p className='text-sm font-medium text-gray-600'>Site</p>
+                  <p className='text-base'>{ticket.site_name || 'N/A'}</p>
+                </div>
+
+                <div className='mb-4'>
+                  <p className='text-sm font-medium text-gray-600'>
+                    Email
+                  </p>
+                  <p className='text-base'>{ticket.email || 'N/A'}</p>
+                </div>
+
+                <div className='mb-4'>
+                  <p className='text-sm font-medium text-gray-600'>
+                    Phone
+                  </p>
+                  <p className='text-base'>{ticket.phone || 'N/A'}</p>
+                </div>
+
+                <div className='mb-4'>
+                  <p className='text-sm font-medium text-gray-600'>
+                    Department
+                  </p>
+                  <p className='text-base'>{ticket.department || 'N/A'}</p>
+                </div>
+
+                {/* Vehicle Info */}
+                <div className='col-span-2'>
+                  <h3 className='text-lg font-bold text-teal-700 mt-4 mb-3 pb-2 border-b border-teal-100'>
+                    Vehicle Information
+                  </h3>
+                </div>
+
+                <div className='mb-4'>
+                  <p className='text-sm font-medium text-gray-600'>
+                    Vehicle ID
+                  </p>
+                  <p className='text-base'>{ticket.vehicle_id || 'N/A'}</p>
+                </div>
+
+                <div className='mb-4'>
+                  <p className='text-sm font-medium text-gray-600'>
+                    Driver's Name
+                  </p>
+                  <p className='text-base'>
+                    {ticket.drivers_name || 'N/A'}
+                  </p>
+                </div>
+
+                <div className='mb-4'>
+                  <p className='text-sm font-medium text-gray-600'>
+                    Dealer
+                  </p>
+                  <p className='text-base'>{ticket.dealer || 'N/A'}</p>
+                </div>
+
+                <div className='mb-4'>
+                  <p className='text-sm font-medium text-gray-600'>
+                    Incident Date
+                  </p>
+                  <p className='text-base'>
+                    {ticket.incident_date
+                      ? new Date(ticket.incident_date).toLocaleDateString()
+                      : 'N/A'}
+                  </p>
+                </div>
+
+                {/* Support Info */}
+                <div className='col-span-2'>
+                  <h3 className='text-lg font-bold text-teal-700 mt-4 mb-3 pb-2 border-b border-teal-100'>
+                    Support Information
+                  </h3>
+                </div>
+
+                <div className='mb-4'>
+                  <p className='text-sm font-medium text-gray-600'>
+                    Opened
+                  </p>
+                  <p className='text-base'>
+                    {ticket.created_at
+                      ? new Date(ticket.created_at).toLocaleString()
+                      : 'N/A'}
+                  </p>
+                </div>
+
+                <div className='mb-4'>
+                  <p className='text-sm font-medium text-gray-600'>
+                    Updated
+                  </p>
+                  <p className='text-base'>
+                    {ticket.updated_at
+                      ? new Date(ticket.updated_at).toLocaleString()
+                      : 'N/A'}
+                  </p>
+                </div>
+
+                <div className='mb-4'>
+                  <p className='text-sm font-medium text-gray-600'>
+                    Supported By
+                  </p>
+                  <p className='text-base'>{ticket.supported || 'N/A'}</p>
+                </div>
+
+                <div className='mb-4'>
+                  <p className='text-sm font-medium text-gray-600'>
+                    Escalated
+                  </p>
+                  <p className='text-base'>
+                    {ticket.is_escalated === true
+                      ? 'Yes'
+                      : ticket.is_escalated === false
+                      ? 'No'
+                      : 'N/A'}
+                  </p>
+                </div>
+
+                <div className='mb-4'>
+                  <p className='text-sm font-medium text-gray-600'>
+                    Reporter
+                  </p>
+                  <p className='text-base'>{ticket.reporter || 'N/A'}</p>
+                </div>
+
+                <div className='mb-4'>
+                  <p className='text-sm font-medium text-gray-600'>
+                    Open Since
+                  </p>
+                  <p className='text-base'>
+                    {ticket.open_since || timeSinceCreated || 'N/A'}
+                  </p>
+                </div>
+
+                <div className='col-span-2 mb-4'>
+                  <p className='text-sm font-medium text-gray-600'>
+                    Description
+                  </p>
+                  <div className='bg-gray-50 p-3 rounded border border-gray-200 mt-1'>
+                    <p className='text-base whitespace-pre-wrap'>
+                      {ticket.description}
+                    </p>
+                  </div>
+                </div>
+
+                <div className='col-span-2 mb-4'>
+                  <p className='text-sm font-medium text-gray-600'>
+                    Solution
+                  </p>
+                  <div className='bg-gray-50 p-3 rounded border border-gray-200 mt-1'>
+                    <p className='text-base whitespace-pre-wrap'>
+                      {ticket.solution || 'No solution provided yet.'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              {/* end of new add */}
+
               <div
                 className='grid grid-cols-2'
                 style={{ marginLeft: '15px' }}
@@ -1437,7 +1287,7 @@ export const TicketDetails = () => {
                         value={selectedAssignee}
                         onChange={(e) => {
                           idUserAssingUser(e.target.value);
-                          AssignUser(e);
+                          handleAssignUser(e);
                           setSelectedAssignee(e.target.value);
                         }}
                         style={{ fontSize: '14px', width: '163px' }}
@@ -1448,11 +1298,8 @@ export const TicketDetails = () => {
                             : 'Assign to'}
                         </option>
                         {users.map((user) => (
-                          <option
-                            key={user.IDUser}
-                            value={user.IDUser.toString()}
-                          >
-                            {user.FirstName} {user.LastName}
+                          <option key={user.id} value={user.id.toString()}>
+                            {user.first_name} {user.last_name}
                           </option>
                         ))}
                       </select>
@@ -1469,6 +1316,7 @@ export const TicketDetails = () => {
                     )}
                   </div>
                 </div>
+
                 <div
                   className='flex flex-row mt-4'
                   style={{ fontSize: '14px' }}
@@ -1513,15 +1361,16 @@ export const TicketDetails = () => {
                                   handleInputChange(key, e.target.value)
                                 }
                               >
-                                {[
-                                  'In progress',
-                                  'Done',
-                                  'Scaled',
-                                  'To Do',
-                                  "Won't do",
-                                  'Pending to call',
-                                ].map((option) => (
-                                  <option key={option} value={option}>
+                                {STATUS_OPTIONS.map((option) => (
+                                  <option
+                                    key={option}
+                                    value={option}
+                                    style={{
+                                      backgroundColor:
+                                        getStatusColor(option),
+                                      color: 'white',
+                                    }}
+                                  >
                                     {option}
                                   </option>
                                 ))}
@@ -1644,7 +1493,7 @@ export const TicketDetails = () => {
                           <Image
                             src={
                               jiraTicketOfficial.fields.assignee
-                                .avatarUrls['48x48']
+                                .avatar_urls['48x48']
                             }
                             alt='Avatar'
                             width={18}
@@ -1654,7 +1503,7 @@ export const TicketDetails = () => {
                           <span className='absolute hidden group-hover:block w-32 bg-black text-white text-center text-xs rounded py-1 px-2 z-10 -bottom-8 left-1/2 transform -translate-x-1/2'>
                             {
                               jiraTicketOfficial.fields.assignee
-                                .displayName
+                                .display_name
                             }
                           </span>
                         </div>
@@ -1714,7 +1563,7 @@ export const TicketDetails = () => {
           <select
             className='border-[#14b8a6] text-[#14b8a6] text-md font-semibold rounded-full block outline-none py-2.5 px-5 mr-5 hover:bg-[#14b8a6] hover:text-white transition-colors'
             onChange={handleChange}
-            value={SelectedOption}
+            value={selectedOption}
           >
             <option value='' disabled>
               Escalate to
@@ -1810,7 +1659,7 @@ export const TicketDetails = () => {
         {isPopJiraVisible && (
           <PopJira
             onClose={handleClosePopJira}
-            escalate={handlePopJiraEscalate}
+            escalate={handleConfirmEscalate}
           />
         )}
         {isLoading && <LoadingScreen />}

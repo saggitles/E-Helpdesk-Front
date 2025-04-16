@@ -7,8 +7,6 @@ const TicketsPage = () => {
 
   return (
     <div>
-      {/* <p>TICKET NUMBER: {router?.query?.ticketNumber}</p>
-      <p>Ticket details below: </p> */}
       <TicketDetails />
     </div>
   );
