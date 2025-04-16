@@ -472,90 +472,98 @@ export const TicketDetails = () => {
   const handleEditClick = () => {
     setIsEditing(true);
 
-    const filteredValues: Record<string, string> = {};
-    Object.entries(router.query).forEach(([key, value]) => {
-      if (typeof value === 'string') {
-        filteredValues[key] = value;
-      } else if (
-        Array.isArray(value) &&
-        value.length > 0 &&
-        typeof value[0] === 'string'
-      ) {
-        filteredValues[key] = value[0];
-      }
-    });
+    // Initialize with values from ticket object instead of router.query
+    const initialValues: Record<string, string> = {
+      title: ticket.title || '',
+      description: ticket.description || '',
+      status: ticket.status || '',
+      priority: ticket.priority || '',
+      category: ticket.category || '',
+      platform: ticket.platform || '',
+      customer_name: ticket.customer_name || '',
+      contact_name: ticket.contact_name || '',
+      site_name: ticket.site_name || '',
+      email: ticket.email || '',
+      phone: ticket.phone || '',
+      department: ticket.department || '',
+      vehicle_id: ticket.vehicle_id || '',
+      drivers_name: ticket.drivers_name || '',
+      dealer: ticket.dealer || '',
+      incident_date: ticket.incident_date || '',
+      supported: ticket.supported || '',
+      is_escalated: ticket.is_escalated?.toString() || '',
+      reporter: ticket.reporter || '',
+      solution: ticket.solution || '',
+    };
 
-    setEditedValues(filteredValues);
+    setEditedValues(initialValues);
   };
 
   const handleSaveClick = async () => {
-    const ticket: Record<string, any> = {};
+    const updatedTicket: Record<string, any> = {};
 
     Object.entries(editedValues).forEach(([key, value]) => {
-      if (key === 'JiraTicketID' && value) {
-        ticket[key] = parseInt(value, 10);
+      if (key === 'jira_ticket_id' && value) {
+        updatedTicket[key] = parseInt(value, 10);
+      } else if (key === 'is_escalated') {
+        updatedTicket[key] = value === 'true';
       } else {
-        ticket[key] = value || null;
+        updatedTicket[key] = value || null;
       }
     });
 
-    // Remove properties not needed by API
-    delete ticket.id;
-
-    // Calculate openSince for Done status
-    if (ticket.status === 'Done' && router.query.createdAt) {
-      const createdAtStr = router.query.createdAt as string;
-      const [datePart, timePart] = createdAtStr.split(' ');
-      const [day, month, year] = datePart.split('/').map(Number);
-      const [hours, minutes, seconds] = timePart.split(':').map(Number);
-
-      const createdAt = new Date(
-        Date.UTC(year, month - 1, day, hours, minutes, seconds)
-      );
-      const now = new Date();
-      const diff = now.getTime() - createdAt.getTime();
-
-      const totalHours = Math.floor(diff / (1000 * 60 * 60));
-      const days = Math.floor(totalHours / 24);
-      const remainingHours = totalHours % 24;
-
-      ticket.openSince =
-        days > 0
-          ? `${days} day(s) ${remainingHours} hour(s)`
-          : `${remainingHours} hour(s)`;
-    }
-
     try {
       const token = localStorage.getItem('accessToken');
-      const IDTicket = router.query.IDTicket as string;
+
+      // Use the correct ID for the API call
+      const ticketId = ticket.id.toString();
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api//tickets/update/${IDTicket}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/update/${ticketId}`,
         {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token || ''}`,
           },
-          body: JSON.stringify(ticket),
+          body: JSON.stringify(updatedTicket),
         }
       );
 
       if (response.ok) {
-        // Update URL with new values
-        router.replace({
-          pathname: router.pathname,
-          query: { ...router.query, ...ticket },
-        });
+        // Fetch updated ticket data to refresh the UI
+        const updatedTicketResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/${ticketId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token || ''}`,
+            },
+          }
+        );
+
+        if (updatedTicketResponse.ok) {
+          const refreshedTicket = await updatedTicketResponse.json();
+          setTicket(refreshedTicket);
+        }
+
+        // Show success message
+        alert('Ticket updated successfully!');
+      } else {
+        // Show error message
+        alert('Failed to update ticket. Please try again.');
       }
     } catch (error) {
       console.error('Error updating ticket:', error);
+      alert('An error occurred while updating the ticket.');
     } finally {
       setIsEditing(false);
     }
   };
 
-  const handleCancelClick = () => {};
+  const handleCancelClick = () => {
+    setIsEditing(false);
+    setEditedValues({}); // Reset edited values
+  };
 
   const handleInputChange = (
     key: string,
@@ -1029,6 +1037,7 @@ export const TicketDetails = () => {
               </div>
 
               {/* start of new add */}
+              {/* Replace the ticket information section with this editable version */}
               <div className='grid grid-cols-2 gap-4 bg-white p-6 rounded-lg shadow-sm'>
                 <div className='col-span-2'>
                   <h3 className='text-lg font-bold text-teal-700 mb-3 pb-2 border-b border-teal-100'>
@@ -1039,60 +1048,131 @@ export const TicketDetails = () => {
                 {/* Basic Info */}
                 <div className='mb-4'>
                   <p className='text-sm font-medium text-gray-600'>ID</p>
-                  <p className='text-base'>{ticket.id}</p>
+                  <p className='text-base'>{ticket.id}</p>{' '}
+                  {/* ID is never editable */}
                 </div>
 
                 <div className='mb-4'>
                   <p className='text-sm font-medium text-gray-600'>
                     Title
                   </p>
-                  <p className='text-base'>{ticket.title}</p>
+                  {isEditing ? (
+                    <input
+                      type='text'
+                      value={editedValues.title || ''}
+                      onChange={(e) =>
+                        handleInputChange('title', e.target.value)
+                      }
+                      className='w-full px-3 py-1.5 text-sm border border-teal-200 rounded-md focus:ring-2 focus:ring-[#14b8a6]'
+                    />
+                  ) : (
+                    <p className='text-base'>{ticket.title}</p>
+                  )}
                 </div>
 
                 <div className='mb-4'>
                   <p className='text-sm font-medium text-gray-600'>
                     Status
                   </p>
-                  <p
-                    className='text-base px-2 py-1 inline-block rounded-full'
-                    style={{
-                      backgroundColor: getStatusColor(ticket.status),
-                      color: 'white',
-                    }}
-                  >
-                    {ticket.status}
-                  </p>
+                  {isEditing ? (
+                    <select
+                      className='w-full px-3 py-1.5 text-sm border border-teal-200 rounded-md focus:ring-2 focus:ring-[#14b8a6]'
+                      value={editedValues.status || ''}
+                      onChange={(e) =>
+                        handleInputChange('status', e.target.value)
+                      }
+                    >
+                      {STATUS_OPTIONS.map((option) => (
+                        <option
+                          key={option}
+                          value={option}
+                          style={{
+                            backgroundColor: getStatusColor(option),
+                            color: 'white',
+                          }}
+                        >
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p
+                      className='text-base px-2 py-1 inline-block rounded-full'
+                      style={{
+                        backgroundColor: getStatusColor(ticket.status),
+                        color: 'white',
+                      }}
+                    >
+                      {ticket.status}
+                    </p>
+                  )}
                 </div>
 
                 <div className='mb-4'>
                   <p className='text-sm font-medium text-gray-600'>
                     Priority
                   </p>
-                  <p
-                    className={`text-base font-medium ${
-                      ticket.priority === 'High'
-                        ? 'text-red-600'
-                        : ticket.priority === 'Medium'
-                        ? 'text-yellow-600'
-                        : 'text-green-600'
-                    }`}
-                  >
-                    {ticket.priority}
-                  </p>
+                  {isEditing ? (
+                    <select
+                      className='w-full px-3 py-1.5 text-sm border border-teal-200 rounded-md focus:ring-2 focus:ring-[#14b8a6]'
+                      value={editedValues.priority || ''}
+                      onChange={(e) =>
+                        handleInputChange('priority', e.target.value)
+                      }
+                    >
+                      <option value='Low'>Low</option>
+                      <option value='Medium'>Medium</option>
+                      <option value='High'>High</option>
+                    </select>
+                  ) : (
+                    <p
+                      className={`text-base font-medium ${
+                        ticket.priority === 'High'
+                          ? 'text-red-600'
+                          : ticket.priority === 'Medium'
+                          ? 'text-yellow-600'
+                          : 'text-green-600'
+                      }`}
+                    >
+                      {ticket.priority}
+                    </p>
+                  )}
                 </div>
 
                 <div className='mb-4'>
                   <p className='text-sm font-medium text-gray-600'>
                     Category
                   </p>
-                  <p className='text-base'>{ticket.category}</p>
+                  {isEditing ? (
+                    <input
+                      type='text'
+                      value={editedValues.category || ''}
+                      onChange={(e) =>
+                        handleInputChange('category', e.target.value)
+                      }
+                      className='w-full px-3 py-1.5 text-sm border border-teal-200 rounded-md focus:ring-2 focus:ring-[#14b8a6]'
+                    />
+                  ) : (
+                    <p className='text-base'>{ticket.category}</p>
+                  )}
                 </div>
 
                 <div className='mb-4'>
                   <p className='text-sm font-medium text-gray-600'>
                     Platform
                   </p>
-                  <p className='text-base'>{ticket.platform || 'N/A'}</p>
+                  {isEditing ? (
+                    <input
+                      type='text'
+                      value={editedValues.platform || ''}
+                      onChange={(e) =>
+                        handleInputChange('platform', e.target.value)
+                      }
+                      className='w-full px-3 py-1.5 text-sm border border-teal-200 rounded-md focus:ring-2 focus:ring-[#14b8a6]'
+                    />
+                  ) : (
+                    <p className='text-base'>{ticket.platform || 'N/A'}</p>
+                  )}
                 </div>
 
                 {/* Customer Info */}
@@ -1106,42 +1186,112 @@ export const TicketDetails = () => {
                   <p className='text-sm font-medium text-gray-600'>
                     Customer
                   </p>
-                  <p className='text-base'>{ticket.customer_name}</p>
+                  {isEditing ? (
+                    <input
+                      type='text'
+                      value={editedValues.customer_name || ''}
+                      onChange={(e) =>
+                        handleInputChange('customer_name', e.target.value)
+                      }
+                      className='w-full px-3 py-1.5 text-sm border border-teal-200 rounded-md focus:ring-2 focus:ring-[#14b8a6]'
+                    />
+                  ) : (
+                    <p className='text-base'>{ticket.customer_name}</p>
+                  )}
                 </div>
 
                 <div className='mb-4'>
                   <p className='text-sm font-medium text-gray-600'>
                     Contact Name
                   </p>
-                  <p className='text-base'>
-                    {ticket.contact_name || 'N/A'}
-                  </p>
+                  {isEditing ? (
+                    <input
+                      type='text'
+                      value={editedValues.contact_name || ''}
+                      onChange={(e) =>
+                        handleInputChange('contact_name', e.target.value)
+                      }
+                      className='w-full px-3 py-1.5 text-sm border border-teal-200 rounded-md focus:ring-2 focus:ring-[#14b8a6]'
+                    />
+                  ) : (
+                    <p className='text-base'>
+                      {ticket.contact_name || 'N/A'}
+                    </p>
+                  )}
                 </div>
 
                 <div className='mb-4'>
                   <p className='text-sm font-medium text-gray-600'>Site</p>
-                  <p className='text-base'>{ticket.site_name || 'N/A'}</p>
+                  {isEditing ? (
+                    <input
+                      type='text'
+                      value={editedValues.site_name || ''}
+                      onChange={(e) =>
+                        handleInputChange('site_name', e.target.value)
+                      }
+                      className='w-full px-3 py-1.5 text-sm border border-teal-200 rounded-md focus:ring-2 focus:ring-[#14b8a6]'
+                    />
+                  ) : (
+                    <p className='text-base'>
+                      {ticket.site_name || 'N/A'}
+                    </p>
+                  )}
                 </div>
 
                 <div className='mb-4'>
                   <p className='text-sm font-medium text-gray-600'>
                     Email
                   </p>
-                  <p className='text-base'>{ticket.email || 'N/A'}</p>
+                  {isEditing ? (
+                    <input
+                      type='email'
+                      value={editedValues.email || ''}
+                      onChange={(e) =>
+                        handleInputChange('email', e.target.value)
+                      }
+                      className='w-full px-3 py-1.5 text-sm border border-teal-200 rounded-md focus:ring-2 focus:ring-[#14b8a6]'
+                    />
+                  ) : (
+                    <p className='text-base'>{ticket.email || 'N/A'}</p>
+                  )}
                 </div>
 
                 <div className='mb-4'>
                   <p className='text-sm font-medium text-gray-600'>
                     Phone
                   </p>
-                  <p className='text-base'>{ticket.phone || 'N/A'}</p>
+                  {isEditing ? (
+                    <input
+                      type='text'
+                      value={editedValues.phone || ''}
+                      onChange={(e) =>
+                        handleInputChange('phone', e.target.value)
+                      }
+                      className='w-full px-3 py-1.5 text-sm border border-teal-200 rounded-md focus:ring-2 focus:ring-[#14b8a6]'
+                    />
+                  ) : (
+                    <p className='text-base'>{ticket.phone || 'N/A'}</p>
+                  )}
                 </div>
 
                 <div className='mb-4'>
                   <p className='text-sm font-medium text-gray-600'>
                     Department
                   </p>
-                  <p className='text-base'>{ticket.department || 'N/A'}</p>
+                  {isEditing ? (
+                    <input
+                      type='text'
+                      value={editedValues.department || ''}
+                      onChange={(e) =>
+                        handleInputChange('department', e.target.value)
+                      }
+                      className='w-full px-3 py-1.5 text-sm border border-teal-200 rounded-md focus:ring-2 focus:ring-[#14b8a6]'
+                    />
+                  ) : (
+                    <p className='text-base'>
+                      {ticket.department || 'N/A'}
+                    </p>
+                  )}
                 </div>
 
                 {/* Vehicle Info */}
@@ -1155,34 +1305,88 @@ export const TicketDetails = () => {
                   <p className='text-sm font-medium text-gray-600'>
                     Vehicle ID
                   </p>
-                  <p className='text-base'>{ticket.vehicle_id || 'N/A'}</p>
+                  {isEditing ? (
+                    <input
+                      type='text'
+                      value={editedValues.vehicle_id || ''}
+                      onChange={(e) =>
+                        handleInputChange('vehicle_id', e.target.value)
+                      }
+                      className='w-full px-3 py-1.5 text-sm border border-teal-200 rounded-md focus:ring-2 focus:ring-[#14b8a6]'
+                    />
+                  ) : (
+                    <p className='text-base'>
+                      {ticket.vehicle_id || 'N/A'}
+                    </p>
+                  )}
                 </div>
 
                 <div className='mb-4'>
                   <p className='text-sm font-medium text-gray-600'>
                     Driver's Name
                   </p>
-                  <p className='text-base'>
-                    {ticket.drivers_name || 'N/A'}
-                  </p>
+                  {isEditing ? (
+                    <input
+                      type='text'
+                      value={editedValues.drivers_name || ''}
+                      onChange={(e) =>
+                        handleInputChange('drivers_name', e.target.value)
+                      }
+                      className='w-full px-3 py-1.5 text-sm border border-teal-200 rounded-md focus:ring-2 focus:ring-[#14b8a6]'
+                    />
+                  ) : (
+                    <p className='text-base'>
+                      {ticket.drivers_name || 'N/A'}
+                    </p>
+                  )}
                 </div>
 
                 <div className='mb-4'>
                   <p className='text-sm font-medium text-gray-600'>
                     Dealer
                   </p>
-                  <p className='text-base'>{ticket.dealer || 'N/A'}</p>
+                  {isEditing ? (
+                    <input
+                      type='text'
+                      value={editedValues.dealer || ''}
+                      onChange={(e) =>
+                        handleInputChange('dealer', e.target.value)
+                      }
+                      className='w-full px-3 py-1.5 text-sm border border-teal-200 rounded-md focus:ring-2 focus:ring-[#14b8a6]'
+                    />
+                  ) : (
+                    <p className='text-base'>{ticket.dealer || 'N/A'}</p>
+                  )}
                 </div>
 
                 <div className='mb-4'>
                   <p className='text-sm font-medium text-gray-600'>
                     Incident Date
                   </p>
-                  <p className='text-base'>
-                    {ticket.incident_date
-                      ? new Date(ticket.incident_date).toLocaleDateString()
-                      : 'N/A'}
-                  </p>
+                  {isEditing ? (
+                    <input
+                      type='date'
+                      value={
+                        editedValues.incident_date
+                          ? new Date(editedValues.incident_date)
+                              .toISOString()
+                              .split('T')[0]
+                          : ''
+                      }
+                      onChange={(e) =>
+                        handleInputChange('incident_date', e.target.value)
+                      }
+                      className='w-full px-3 py-1.5 text-sm border border-teal-200 rounded-md focus:ring-2 focus:ring-[#14b8a6]'
+                    />
+                  ) : (
+                    <p className='text-base'>
+                      {ticket.incident_date
+                        ? new Date(
+                            ticket.incident_date
+                          ).toLocaleDateString()
+                        : 'N/A'}
+                    </p>
+                  )}
                 </div>
 
                 {/* Support Info */}
@@ -1218,27 +1422,64 @@ export const TicketDetails = () => {
                   <p className='text-sm font-medium text-gray-600'>
                     Supported By
                   </p>
-                  <p className='text-base'>{ticket.supported || 'N/A'}</p>
+                  {isEditing ? (
+                    <input
+                      type='text'
+                      value={editedValues.supported || ''}
+                      onChange={(e) =>
+                        handleInputChange('supported', e.target.value)
+                      }
+                      className='w-full px-3 py-1.5 text-sm border border-teal-200 rounded-md focus:ring-2 focus:ring-[#14b8a6]'
+                    />
+                  ) : (
+                    <p className='text-base'>
+                      {ticket.supported || 'N/A'}
+                    </p>
+                  )}
                 </div>
 
                 <div className='mb-4'>
                   <p className='text-sm font-medium text-gray-600'>
                     Escalated
                   </p>
-                  <p className='text-base'>
-                    {ticket.is_escalated === true
-                      ? 'Yes'
-                      : ticket.is_escalated === false
-                      ? 'No'
-                      : 'N/A'}
-                  </p>
+                  {isEditing ? (
+                    <select
+                      className='w-full px-3 py-1.5 text-sm border border-teal-200 rounded-md focus:ring-2 focus:ring-[#14b8a6]'
+                      value={editedValues.is_escalated || ''}
+                      onChange={(e) =>
+                        handleInputChange('is_escalated', e.target.value)
+                      }
+                    >
+                      <option value='true'>Yes</option>
+                      <option value='false'>No</option>
+                    </select>
+                  ) : (
+                    <p className='text-base'>
+                      {ticket.is_escalated === true
+                        ? 'Yes'
+                        : ticket.is_escalated === false
+                        ? 'No'
+                        : 'N/A'}
+                    </p>
+                  )}
                 </div>
 
                 <div className='mb-4'>
                   <p className='text-sm font-medium text-gray-600'>
                     Reporter
                   </p>
-                  <p className='text-base'>{ticket.reporter || 'N/A'}</p>
+                  {isEditing ? (
+                    <input
+                      type='text'
+                      value={editedValues.reporter || ''}
+                      onChange={(e) =>
+                        handleInputChange('reporter', e.target.value)
+                      }
+                      className='w-full px-3 py-1.5 text-sm border border-teal-200 rounded-md focus:ring-2 focus:ring-[#14b8a6]'
+                    />
+                  ) : (
+                    <p className='text-base'>{ticket.reporter || 'N/A'}</p>
+                  )}
                 </div>
 
                 <div className='mb-4'>
@@ -1254,22 +1495,42 @@ export const TicketDetails = () => {
                   <p className='text-sm font-medium text-gray-600'>
                     Description
                   </p>
-                  <div className='bg-gray-50 p-3 rounded border border-gray-200 mt-1'>
-                    <p className='text-base whitespace-pre-wrap'>
-                      {ticket.description}
-                    </p>
-                  </div>
+                  {isEditing ? (
+                    <textarea
+                      value={editedValues.description || ''}
+                      onChange={(e) =>
+                        handleInputChange('description', e.target.value)
+                      }
+                      className='w-full px-3 py-1.5 text-sm border border-teal-200 rounded-md focus:ring-2 focus:ring-[#14b8a6] min-h-[100px]'
+                    />
+                  ) : (
+                    <div className='bg-gray-50 p-3 rounded border border-gray-200 mt-1'>
+                      <p className='text-base whitespace-pre-wrap'>
+                        {ticket.description}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className='col-span-2 mb-4'>
                   <p className='text-sm font-medium text-gray-600'>
                     Solution
                   </p>
-                  <div className='bg-gray-50 p-3 rounded border border-gray-200 mt-1'>
-                    <p className='text-base whitespace-pre-wrap'>
-                      {ticket.solution || 'No solution provided yet.'}
-                    </p>
-                  </div>
+                  {isEditing ? (
+                    <textarea
+                      value={editedValues.solution || ''}
+                      onChange={(e) =>
+                        handleInputChange('solution', e.target.value)
+                      }
+                      className='w-full px-3 py-1.5 text-sm border border-teal-200 rounded-md focus:ring-2 focus:ring-[#14b8a6] min-h-[100px]'
+                    />
+                  ) : (
+                    <div className='bg-gray-50 p-3 rounded border border-gray-200 mt-1'>
+                      <p className='text-base whitespace-pre-wrap'>
+                        {ticket.solution || 'No solution provided yet.'}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
               {/* end of new add */}
@@ -1338,64 +1599,6 @@ export const TicketDetails = () => {
                     </div>
                   </div>
                 </div>
-
-                {Object.entries(router.query).map(([key, value]) => {
-                  if (key !== 'ticketNumber' && key !== 'IDTicket') {
-                    return (
-                      <div
-                        key={key}
-                        className='flex flex-row mt-4 items-center py-3 border-b border-teal-100 hover:bg-teal-50 transition-all duration-200'
-                      >
-                        <div className='w-1/3'>
-                          <span className='text-sm text-gray-600 font-medium'>
-                            {key}
-                          </span>
-                        </div>
-                        <div className='w-2/3'>
-                          {isEditing ? (
-                            key === 'status' ? (
-                              <select
-                                className='w-48 px-3 py-1.5 text-sm border border-teal-200 rounded-md focus:ring-2 focus:ring-[#14b8a6]'
-                                value={editedValues[key] || ''}
-                                onChange={(e) =>
-                                  handleInputChange(key, e.target.value)
-                                }
-                              >
-                                {STATUS_OPTIONS.map((option) => (
-                                  <option
-                                    key={option}
-                                    value={option}
-                                    style={{
-                                      backgroundColor:
-                                        getStatusColor(option),
-                                      color: 'white',
-                                    }}
-                                  >
-                                    {option}
-                                  </option>
-                                ))}
-                              </select>
-                            ) : (
-                              <input
-                                type='text'
-                                value={editedValues[key] || ''}
-                                onChange={(e) =>
-                                  handleInputChange(key, e.target.value)
-                                }
-                                className='w-48 px-3 py-1.5 text-sm border border-teal-200 rounded-md focus:ring-2 focus:ring-[#14b8a6]'
-                              />
-                            )
-                          ) : (
-                            <p className='text-md font-medium text-gray-800'>
-                              {value || 'N/A'}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  }
-                  return null;
-                })}
               </div>
 
               <div className='border-2 border-gray-200 mt-20'>
