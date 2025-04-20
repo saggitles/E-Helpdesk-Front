@@ -42,6 +42,9 @@ interface VehicleInfo {
   fullLockoutTimeout: number;
   customerName: string;
   siteName: string;
+  hasWifi: boolean;
+  lastDlistTimestamp: string;
+  lastPreopTimestamp: string;
 }
 
 interface MasterCode {
@@ -102,6 +105,9 @@ interface SnapshotRow {
   snapshot_id: number;
   vehicle_cd: number;
   snapshot_time: string | null;
+  hasWifi: boolean;
+  lastDlistTimestamp: string | null;
+  lastPreopTimestamp: string | null;
 }
 
 //TODO: check if snapshot can be a singular object and not an array
@@ -905,6 +911,14 @@ const VehicleDashboard: React.FC = () => {
                       <p className='text-base text-gray-600'>
                         <strong>Last Connection:</strong>{' '}
                         {vehicle.vehicle_info.lastConnection}
+                      </p>
+                      <p className='text-base text-gray-600'>
+                        <strong>Last Driver List:</strong>{' '}
+                        {vehicle.vehicle_info.lastDlistTimestamp}
+                      </p>
+                      <p className='text-base text-gray-600'>
+                        <strong>Last Checklist:</strong>{' '}
+                        {vehicle.vehicle_info.lastPreopTimestamp}
                       </p>
                     </div>
                   </div>
