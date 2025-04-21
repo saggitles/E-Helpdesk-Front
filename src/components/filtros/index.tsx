@@ -15,49 +15,6 @@ import {
   PendingTicketsProps,
 } from '@/types/tickets.types';
 
-// type Ticket = {
-//   id: number;
-//   title: string;
-//   description: string;
-//   status: string;
-//   category: string;
-//   priority: string;
-//   assigned_user_id?: number;
-//   customer_id: number;
-//   site_name?: string;
-//   site_id?: number;
-//   department?: string;
-//   created_at: string;
-//   updated_at: string;
-//   incident_date?: string; // Fecha del incidente (opcional)
-//   drivers_name?: string; // Nombre del conductor (opcional)
-//   vehicle_id: string; // ID del vehículo (opcional)
-//   dealer: string;
-//   contact_name: string;
-//   supported: string;
-//   is_escalated?: string;
-//   solution?: string;
-//   platform?: string;
-//   customer_name: string;
-//   email?: string;
-//   reporter?: string;
-//   comments?: string;
-// };
-
-// type Comment = {
-//   content: string;
-//   ticket_index: number;
-//   ticket_id?: number; // Optional initially, will be set later
-// };
-
-// interface PendingTicketsProps {
-//   option?: string;
-// }
-
-// interface PendingTicketsProps {
-//   site_id: number;
-// }
-
 export const PendingTickets: React.FC<PendingTicketsProps> = ({
   site_id,
 }) => {
@@ -185,7 +142,7 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
                 title: truncatedTitle,
                 description: row[5] !== undefined ? row[5] : '',
                 id: row[6] !== undefined ? row[6] : '',
-                supported: row[7] !== undefined ? row[7] : '',
+                created_by: row[7] !== undefined ? row[7] : '',
                 priority: row[8] !== undefined ? row[8] : '',
                 solution: row[9] !== undefined ? row[9] : '',
                 category: row[11] !== undefined ? row[11] : '',
@@ -328,7 +285,7 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
       vehicle_id: ticket.vehicle_id || '',
       dealer: ticket.dealer || '',
       contact_name: ticket.contact_name || '',
-      supported: ticket.supported || '',
+      created_by: ticket.created_by || '',
       is_escalated: ticket.is_escalated || '',
       solution: ticket.solution || '',
       platform: ticket.platform || '',
@@ -435,7 +392,7 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
         (item.dealer &&
           item.dealer.toLowerCase().includes(trimmedQuery)) ||
         item.customer_name.toLowerCase().includes(trimmedQuery) ||
-        item.supported.toLowerCase().includes(trimmedQuery) ||
+        item.created_by.toLowerCase().includes(trimmedQuery) ||
         (item.vehicle_id ? item.vehicle_id.toLowerCase() : '').includes(
           trimmedQuery
         )
@@ -539,9 +496,9 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
                     </th>
                     <th
                       className='px-6 py-3 text-center text-sm font-semibold'
-                      onClick={() => handleSort('supported')}
+                      onClick={() => handleSort('created_by')}
                     >
-                      Supported by
+                      Created by
                     </th>
                     <th className='px-6 py-3 text-center text-sm font-semibold'>
                       Category

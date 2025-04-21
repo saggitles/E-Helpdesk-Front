@@ -12,12 +12,12 @@ const Searchbar = ({ data, setData }) => {
     } else {
       const filteredData = data.filter((item) => {
         return (
-          item.Title.toLowerCase().includes(trimmedQuery) ||
+          item.title.toLowerCase().includes(trimmedQuery) ||
           item.contact_name.toLowerCase().includes(trimmedQuery) ||
           item.Dealer.toLowerCase().includes(trimmedQuery) ||
-          item.Companyname.toLowerCase().includes(trimmedQuery)||
-          item.Supported.toLowerCase().includes(trimmedQuery) ||
-          item.VehicleID.toLowerCase().includes(trimmedQuery)
+          item.customer_name.toLowerCase().includes(trimmedQuery)||
+          item.created_by.toLowerCase().includes(trimmedQuery) ||
+          item.vehicle_id.toLowerCase().includes(trimmedQuery)
         );
       });
 

@@ -19,7 +19,7 @@ const TicketModal = ({
     incident_date: new Date().toISOString().split('T')[0],
     drivers_name: '',
     vehicle_id: '',
-    supported: '',
+    created_by: '',
     status: 'To Do',
     email: '',
     priority: 'Medium',
@@ -109,7 +109,7 @@ const TicketModal = ({
         incident_date: new Date().toISOString().split('T')[0],
         drivers_name: '',
         vehicle_id: '',
-        supported: '',
+        created_by: '',
         status: 'To Do',
         email: '',
         priority: 'Medium',
@@ -406,12 +406,12 @@ const TicketModal = ({
 
             <div>
               <label className='block text-sm font-medium text-gray-700 mb-1'>
-                Supported By
+                Created By
               </label>
               <input
                 type='text'
-                name='supported'
-                value={parcialTicketData.supported}
+                name='created_by'
+                value={parcialTicketData.created_by}
                 onChange={handleChange}
                 className='w-full p-2.5 text-sm border border-teal-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50'
                 placeholder='Enter who is supporting'

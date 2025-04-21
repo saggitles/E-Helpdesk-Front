@@ -18,9 +18,9 @@ const Ticket = () => {
     create,
     update,
     category,
-    Companyname,
+    customer_name,
     VehicleID,
-    Supported,
+    created_by,
   } = router.query as Record<string, string | string[]>;
 
   // Convierte los valores obtenidos de router.query a string para evitar problemas de tipo
@@ -38,10 +38,10 @@ const Ticket = () => {
     category: category as string,
     createdAt: create as string,
     updatedAt: update as string,
-    Companyname: Companyname as string,
+    customer_name: customer_name as string,
     contact_name: contact_name as string,
     VehicleID: VehicleID as string,
-    Supported: Supported as string,
+    created_by: created_by as string,
 
     // Otros campos del ticket
   };
@@ -184,10 +184,10 @@ const Ticket = () => {
               </label>
 
               <label className='block mb-4'>
-                <span className='text-gray-700'>Supported by:</span>
+                <span className='text-gray-700'>Created by:</span>
                 <textarea
-                  value={ticket.Supported}
-                  name='Supported'
+                  value={ticket.created_by}
+                  name='created_by'
                   onChange={handleInputChange}
                   className='mt-1 p-2 w-full border rounded'
                 />

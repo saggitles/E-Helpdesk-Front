@@ -194,7 +194,7 @@ export const TicketRowItem: React.FC<TicketRowItemProps> = ({
           {ticket.email}
         </td>
         <td className='text-center text-xs font-Lato text-gray-900'>
-          {ticket.supported}
+          {ticket.created_by}
         </td>
 
         {isLoading && <LoadingScreen />}

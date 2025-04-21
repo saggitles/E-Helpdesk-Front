@@ -20,7 +20,7 @@
     vehicle_id: string | null;
     dealer: string | null;
     contact_name: string;
-    supported: string;
+    created_by: string;
     is_escalated: boolean | null;
     solution: string | null;
     platform: string | null;
@@ -52,7 +52,7 @@
     contact_name?: string;
     vehicle_id?: string;
     reporter?: string;
-    supported?: string;
+    created_by?: string;
     id?: string;
     solution?: string;
     incident_date?: string;
@@ -128,6 +128,8 @@
     created_at: string;
     ticket_id: number;
     user_id?: number;
+
+    
   }
 
   export interface JiraTicketData {

@@ -146,7 +146,7 @@ export const TicketDetails = () => {
     vehicle_id: null,
     dealer: null,
     contact_name: '',
-    supported: '',
+    created_by: '',
     is_escalated: null,
     solution: null,
     platform: null,
@@ -490,7 +490,7 @@ export const TicketDetails = () => {
       drivers_name: ticket.drivers_name || '',
       dealer: ticket.dealer || '',
       incident_date: ticket.incident_date || '',
-      supported: ticket.supported || '',
+      created_by: ticket.created_by || '',
       is_escalated: ticket.is_escalated?.toString() || '',
       reporter: ticket.reporter || '',
       solution: ticket.solution || '',
@@ -1420,20 +1420,20 @@ export const TicketDetails = () => {
 
                 <div className='mb-4'>
                   <p className='text-sm font-medium text-gray-600'>
-                    Supported By
+                    Created By
                   </p>
                   {isEditing ? (
                     <input
                       type='text'
-                      value={editedValues.supported || ''}
+                      value={editedValues.created_by || ''}
                       onChange={(e) =>
-                        handleInputChange('supported', e.target.value)
+                        handleInputChange('created_by', e.target.value)
                       }
                       className='w-full px-3 py-1.5 text-sm border border-teal-200 rounded-md focus:ring-2 focus:ring-[#14b8a6]'
                     />
                   ) : (
                     <p className='text-base'>
-                      {ticket.supported || 'N/A'}
+                      {ticket.created_by || 'N/A'}
                     </p>
                   )}
                 </div>

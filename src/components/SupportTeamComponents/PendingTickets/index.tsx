@@ -329,7 +329,7 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
                 <th className='px-4 py-2'>Site</th>
                 <th className='px-4 py-2'>Contact name</th>
                 <th className='px-4 py-2'>Subject</th>
-                <th className='px-4 py-2'>Supported By</th>
+                <th className='px-4 py-2'>Created By</th>
                 <th className='px-4 py-2'>Category</th>
                 <th className='px-4 py-2'>Status</th>
               </tr>

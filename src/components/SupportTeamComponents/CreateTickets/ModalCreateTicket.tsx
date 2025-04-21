@@ -71,7 +71,7 @@ const ModalCreateTicket: FC<ModalCreateTicketProps> = ({
     site_id: '',
     dealer: '',
     contact_name: '',
-    supported: '',
+    created_by: '',
     department: '',
     incident_date: '',
     drivers_name: '',
@@ -245,7 +245,7 @@ const ModalCreateTicket: FC<ModalCreateTicketProps> = ({
       category: selectedValue,
       dealer: formData.dealer,
       contact_name: formData.contact_name,
-      supported: formData.supported,
+      created_by: formData.created_by,
       platform: selectedValue_2,
       customer_name: formData.customer_name,
       email: formData.email,
@@ -605,17 +605,17 @@ const ModalCreateTicket: FC<ModalCreateTicketProps> = ({
                 </div>
                 <div className='col-span-2 sm:col-span-1'>
                   <label
-                    htmlFor='supported'
+                    htmlFor='created_by'
                     className='block mb-1 font-normal text-teal-700'
                   >
-                    Supported by
+                    Created by
                   </label>
                   <input
-                    value={formData.supported}
+                    value={formData.created_by}
                     onChange={handleChangeCreate}
                     type='text'
-                    name='supported'
-                    id='supported'
+                    name='created_by'
+                    id='created_by'
                     placeholder='Type supporter name'
                     className='bg-gray-50 border border-teal-300 text-teal-900 font-normal placeholder:text-gray-400 text-sm rounded-lg focus:ring-teal-600 focus:border-teal-600 block w-full p-2.5'
                   />
