@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import LoadingScreen from '@/components/generalComponents/LoadingScreen';
-import { useUser } from '@auth0/nextjs-auth0/client';
 
 interface NavItemProps {
   text: string;
@@ -21,7 +20,6 @@ const NavBar: React.FC = () => {
   };
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { user } = useUser();
   const handleRedirect = (url: string) => {
     if (router.pathname !== url) {
       setIsLoading(true);

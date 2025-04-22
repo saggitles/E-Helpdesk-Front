@@ -5,9 +5,7 @@ import Searchbar from '../../generic_comp/searchbar';
 import { TicketRowItem } from '@/components/SupportTeamComponents';
 import * as XLSX from 'xlsx';
 // import TicketDoneAlert from '../TicketDoneAlert/TicketDoneAlert';
-import ChatWidget from '../../components/chat/ChatWidget';
 
-import { useUser, withPageAuthRequired } from '@auth0/nextjs-auth0/client';
 import Image from 'next/image';
 import {
   Ticket,
@@ -41,8 +39,6 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
   const [showDoneAlert, setShowDoneAlert] = useState(false);
   const prevTicketsRef = useRef<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-
-  // const { user, isLoading } = useUser();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -527,7 +523,6 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
         </div>
       )}
       {showDoneAlert}
-      <ChatWidget />
     </>
   );
 };

@@ -9,7 +9,6 @@ import {
 } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
-import { useUser, withPageAuthRequired } from '@auth0/nextjs-auth0/client';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { STATUS_OPTIONS, getStatusColor } from '@/utils/statusConfig';
@@ -57,7 +56,6 @@ const ModalCreateTicket: FC<ModalCreateTicketProps> = ({
   const [selected, setSelected] = useState<string | null>(null);
   const [files, setFiles] = useState<File[] | null>(null);
   const [file, setFile] = useState<File | null>(null);
-  const { user } = useUser();
   const [formData, setFormData] = useState({
     title: '',
     description: '',

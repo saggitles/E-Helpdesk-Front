@@ -1,7 +1,6 @@
 'use client';
 import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import { useRouter } from 'next/router';
-import { useUser } from '@auth0/nextjs-auth0/client';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Navbar from '@/generic_comp/navbar';
@@ -16,7 +15,6 @@ import {
 
 const CreateTicketPage = () => {
   const router = useRouter();
-  const { user } = useUser();
 
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [showSiteDropdown, setShowSiteDropdown] = useState(false);
