@@ -184,6 +184,7 @@ const ModalCreateTicket: FC<ModalCreateTicketProps> = ({
   const handleSubmit = async (e: any) => {
     e.preventDefault();
 
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
     const assignedUser = user?.name;
     let assignedUserID: number | null = null;
 

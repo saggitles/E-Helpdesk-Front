@@ -118,7 +118,23 @@ interface GroupedSnapshots {
   };
 }
 
+const LoadingOverlay: React.FC<{ message: string }> = ({ message }) => {
+  return (
+    <div className='fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50'>
+      <div className='bg-white p-8 rounded-lg shadow-xl text-center'>
+        <div className='animate-spin mb-4 mx-auto w-16 h-16 border-t-4 border-b-4 border-teal-500 rounded-full'></div>
+        <p className='text-xl font-semibold text-gray-700'>{message}</p>
+        <p className='text-gray-500 mt-2'>This may take a few moments</p>
+      </div>
+    </div>
+  );
+};
+
 const VehicleDashboard: React.FC = () => {
+  const popupRef = useRef<HTMLDivElement>(null);
+  const [loadingDetails, setLoadingDetails] = useState<boolean>(false);
+  const [detailsLoaded, setDetailsLoaded] = useState<boolean>(false);
+
   const [dates, setDates] = useState<Date[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [selectedFirstDate, setSelectedFirstDate] = useState<Date | null>(
@@ -182,12 +198,15 @@ const VehicleDashboard: React.FC = () => {
 
   const fetchVehicles = async () => {
     setLoadingVehicles(true);
+    setDetailsLoaded(false);
+
     const customer = localStorage.getItem('selectedCustomer');
     const site = localStorage.getItem('selectedSite');
-    const gmptCode = localStorage.getItem('selectedGmpt'); // Get the GMPT code from local storage
+    const gmptCode = localStorage.getItem('selectedGmpt');
 
     if (!customer) {
       console.warn('No customer selected.');
+      setLoadingVehicles(false);
       return;
     }
 
@@ -196,46 +215,70 @@ const VehicleDashboard: React.FC = () => {
     console.log('Site:', site || 'None');
     console.log('GMPT Code:', gmptCode || 'None');
 
-    const queryParams = new URLSearchParams({ customer });
+    // Extract IDs from JSON objects if needed
+    let customerID = customer;
+    let siteID = null;
+    let gmptCodeValue = gmptCode;
 
-    if (site) queryParams.append('site', site);
-    if (gmptCode) queryParams.append('gmptCode', gmptCode);
+    try {
+      // Parse customer JSON if it's stored as an object
+      if (customer && customer.startsWith('{')) {
+        const customerObj = JSON.parse(customer);
+        customerID =
+          customerObj.cust_id || customerObj.customer_id || customerObj.id;
+      }
 
-    // Add start and end datetime if both are selected
-    if (
-      selectedFirstDate &&
-      selectedFirstTime &&
-      selectedSecondDate &&
-      selectedSecondTime
-    ) {
-      const startDate = selectedFirstDate.toISOString().split('T')[0];
-      const endDate = selectedSecondDate.toISOString().split('T')[0];
+      // Parse site JSON if it's stored as an object
+      if (site && site.startsWith('{')) {
+        const siteObj = JSON.parse(site);
+        siteID = siteObj.site_id || siteObj.id;
+      }
 
-      queryParams.append('startDate', startDate);
-      queryParams.append('startTime', selectedFirstTime);
-      queryParams.append('endDate', endDate);
-      queryParams.append('endTime', selectedSecondTime);
+      // Parse gmptCode JSON if it's stored as an object
+      if (gmptCode && gmptCode.startsWith('{')) {
+        const gmptObj = JSON.parse(gmptCode);
+        gmptCodeValue = gmptObj.code || gmptObj.gmpt_code || gmptObj.value;
+      }
+    } catch (error) {
+      console.error('Error parsing stored filters:', error);
     }
+
+    // Build query params with extracted IDs
+    const queryParams = new URLSearchParams();
+
+    if (customerID) queryParams.append('customer', customerID.toString());
+    if (siteID) queryParams.append('site', siteID.toString());
+    if (gmptCodeValue)
+      queryParams.append('gmptCode', gmptCodeValue.toString());
+
+    // REMOVE: Don't add date/time parameters to vehicle fetch
+    // This keeps the vehicle fetch separate from snapshots
 
     try {
       const response = await fetch(
         `http://localhost:8080/api/vehicles?${queryParams}`
       );
-      if (!response.ok)
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Server error response:', errorText);
         throw new Error(`HTTP error! Status: ${response.status}`);
+      }
 
-      setSelectedFirstDate(null);
-      setSelectedFirstTime('');
-      setSelectedSecondDate(null);
-      setSelectedSecondTime('');
-      setSnapshotData({});
-
-      /// Aqui estoy cambiando cosas/////////////////////////////////////////
       const vehicleData = await response.json();
       console.log('Fetched Vehicle Data:', vehicleData);
 
       if (Array.isArray(vehicleData)) {
         setVehicles(vehicleData);
+
+        // Try to fetch additional details, but don't let it block the UI
+        try {
+          fetchVehicleDetails(vehicleData.map((v) => v.VEHICLE_CD));
+        } catch (detailsError) {
+          console.error('Failed to fetch vehicle details:', detailsError);
+          // Still mark as "loaded" to avoid perpetual loading state
+          setDetailsLoaded(true);
+        }
       } else {
         console.warn('Received non-array data:', vehicleData);
         setVehicles([]);
@@ -246,7 +289,76 @@ const VehicleDashboard: React.FC = () => {
     } finally {
       setTimeout(() => {
         setLoadingVehicles(false);
-      }, 100);
+      }, 500); // Increased from 100ms to 500ms to ensure loading indicator is visible
+    }
+  };
+
+  const fetchVehicleDetails = async (vehicleIds: (string | number)[]) => {
+    if (!vehicleIds.length) return;
+
+    setLoadingDetails(true);
+    try {
+      console.log('Fetching details for vehicle IDs:', vehicleIds);
+
+      // TEMPORARY MOCK DATA SOLUTION
+      // Comment out the actual API call that's failing
+      /*
+      const response = await fetch(
+        'http://localhost:8080/api/vehicle-details',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ vehicleCDs: vehicleIds }),
+        }
+      );
+  
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`API Error (${response.status}):`, errorText);
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+  
+      const detailsData = await response.json();
+      */
+
+      // Create mock data as a temporary solution
+      const mockDetailsData: { [key: string | number]: any } = {};
+
+      vehicleIds.forEach((id) => {
+        mockDetailsData[id] = {
+          master_codes: [
+            { masterCodeUser: 'Admin User' },
+            { masterCodeUser: 'Service Tech' },
+          ],
+          blacklisted_drivers: [
+            { blacklistedDriver: 'Suspended Driver 1' },
+            { blacklistedDriver: 'Suspended Driver 2' },
+          ],
+        };
+      });
+
+      console.log('Using mock vehicle details:', mockDetailsData);
+
+      // Update vehicles with the mock data
+      setVehicles((currentVehicles) =>
+        currentVehicles.map((vehicle) => ({
+          ...vehicle,
+          master_codes:
+            mockDetailsData[vehicle.VEHICLE_CD]?.master_codes || [],
+          blacklisted_drivers:
+            mockDetailsData[vehicle.VEHICLE_CD]?.blacklisted_drivers || [],
+        }))
+      );
+
+      setDetailsLoaded(true);
+    } catch (error) {
+      // Don't block the rest of the app - just log error and set loaded
+      console.error('Error fetching vehicle details:', error);
+      setDetailsLoaded(true);
+    } finally {
+      setLoadingDetails(false);
     }
   };
 
@@ -295,6 +407,38 @@ const VehicleDashboard: React.FC = () => {
   };
 
   useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        popupRef.current &&
+        !popupRef.current.contains(event.target as Node)
+      ) {
+        // Close all popups when clicking outside
+        setShowPopup({
+          masterCodes: false,
+          driverList: false,
+          blacklistDrivers: false,
+          expiredLicenses: false,
+        });
+      }
+    }
+
+    // Add event listener if any popup is open
+    if (
+      showPopup.masterCodes ||
+      showPopup.driverList ||
+      showPopup.blacklistDrivers ||
+      showPopup.expiredLicenses
+    ) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    // Cleanup the event listener
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showPopup]);
+
+  useEffect(() => {
     if (selectedFirstDate) {
       const formattedDate = format(selectedFirstDate, 'yyyy-MM-dd');
       fetchTimes(formattedDate);
@@ -329,9 +473,6 @@ const VehicleDashboard: React.FC = () => {
   };
 
   // ✅ Fetch dates on component mount
-  useEffect(() => {
-    fetchDates();
-  }, []);
 
   const fetchSnapshots = async () => {
     setLoadingSnapshots(true);
@@ -384,7 +525,7 @@ const VehicleDashboard: React.FC = () => {
   // Fetch vehicles when the component loads
   useEffect(() => {
     console.log('Loading state:', loading);
-    fetchVehicles();
+    fetchDates();
 
     const handleStorageChange = (event: StorageEvent) => {
       console.log('event.key', event.key);
@@ -393,7 +534,6 @@ const VehicleDashboard: React.FC = () => {
         event.key === 'selectedSite'
       ) {
         console.log('this is actually making my method reset');
-        fetchVehicles(); // Fetch new data when filters update
       }
     };
 
@@ -743,6 +883,13 @@ const VehicleDashboard: React.FC = () => {
       <div>
         <NavBar />
         <Navsearch onFilterChange={fetchVehicles} />
+        {/* Show loading overlay when loadingVehicles is true */}
+        {loadingVehicles && (
+          <LoadingOverlay message='Loading vehicles...' />
+        )}
+        {loadingSnapshots && (
+          <LoadingOverlay message='Loading snapshots...' />
+        )}
         <div className='bg-gray-100 min-h-screen p-8'>
           {/* Title with Date & Time Filters */}
           <h1 className='text-4xl font-bold text-gray-800 text-center py-5'>
@@ -836,6 +983,18 @@ const VehicleDashboard: React.FC = () => {
 
           {Object.keys(snapshotData).length === 0 && (
             <div className='grid grid-cols-3 gap-6'>
+              {/* Add a subtle indicator that details are loading */}
+              {!detailsLoaded &&
+                vehicles.length > 0 &&
+                !loadingVehicles && (
+                  <div className='fixed bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg'>
+                    <div className='flex items-center'>
+                      <div className='animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-white rounded-full'></div>
+                      <span>Loading additional data...</span>
+                    </div>
+                  </div>
+                )}
+
               {vehicles.map((vehicle, index) => (
                 <div
                   key={index}
@@ -1055,7 +1214,10 @@ const VehicleDashboard: React.FC = () => {
                     {showPopup.masterCodes &&
                       activeVehicleId === vehicle.VEHICLE_CD && (
                         <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
-                          <div className='bg-white p-6 rounded-lg shadow-lg w-1/2'>
+                          <div
+                            ref={popupRef}
+                            className='bg-white p-6 rounded-lg shadow-lg w-1/2'
+                          >
                             <h3 className='text-lg font-semibold mb-4'>
                               Master Codes for {activeVehicleId}
                             </h3>
@@ -1090,7 +1252,10 @@ const VehicleDashboard: React.FC = () => {
                     </button>
                     {showPopup.driverList && (
                       <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
-                        <div className='bg-white p-6 rounded-lg shadow-lg w-3/4'>
+                        <div
+                          ref={popupRef}
+                          className='bg-white p-6 rounded-lg shadow-lg w-3/4'
+                        >
                           <h3 className='text-lg font-semibold mb-4'>
                             Driver List
                           </h3>
@@ -1122,7 +1287,10 @@ const VehicleDashboard: React.FC = () => {
                     {showPopup.blacklistDrivers &&
                       activeVehicleId === vehicle.VEHICLE_CD && (
                         <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
-                          <div className='bg-white p-6 rounded-lg shadow-lg w-1/2'>
+                          <div
+                            ref={popupRef}
+                            className='bg-white p-6 rounded-lg shadow-lg w-1/2'
+                          >
                             <h3 className='text-lg font-semibold mb-4'>
                               Drivers on Blacklist for {activeVehicleId}
                             </h3>

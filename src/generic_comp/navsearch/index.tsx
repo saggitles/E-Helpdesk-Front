@@ -10,11 +10,11 @@ import {
 } from '@/types/tickets.types';
 
 // Define Props Type for Navbar
-interface NavbarProps {
+interface NavsearchProps {
   onFilterChange?: () => void;
 }
 
-const Navsearch: React.FC<NavbarProps> = ({ onFilterChange }) => {
+const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
   // Define state for filters
   const [filters, setFilters] = useState<Filters>({
     customer: '',

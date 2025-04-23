@@ -1,17 +1,19 @@
-// pages/error.tsx
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
 export default function ErrorPage() {
-  const router = useRouter();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (router.query.message) {
-      setErrorMessage(router.query.message as string);
+    // Ensure this runs only on the client side
+    if (typeof window !== 'undefined') {
+      const router = useRouter();
+      if (router.query.message) {
+        setErrorMessage(router.query.message as string);
+      }
     }
-  }, [router.query]);
+  }, []);
 
   return (
     <div className='flex flex-col items-center justify-center min-h-screen bg-gray-100'>
