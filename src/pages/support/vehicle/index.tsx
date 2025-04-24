@@ -13,38 +13,38 @@ import { useMemo } from 'react';
 
 // Define interfaces for your data types
 interface VehicleInfo {
-  preopSchedule: string;
-  vehicleName: string;
-  serialNumber: string;
+  preop_schedule: string;
+  vehicle_name: string;
+  serial_number: string;
   department: string;
-  screenVersion: string;
-  expansionVersion: string;
-  firmwareVersion: string;
-  lastConnection: string;
-  vorSetting: boolean;
-  lockoutCode: string;
-  dList: string;
+  screen_version: string;
+  expansion_version: string;
+  firmware_version: string;
+  last_connection: string;
+  vor_setting: boolean;
+  lockout_code: string;
+  d_list: string;
   checklist: string;
-  loReason: string;
-  mList: string;
-  checklistSchedule: string;
-  impactLockout: string;
-  redImpactThreshold: number;
-  impactRecalibrationDate: string;
-  seatIdle: number;
-  surveyTimeout: number;
-  canRulesLoaded?: boolean;
-  vehicleModel: string;
-  simNumber: number;
+  lo_reason: string;
+  m_list: string;
+  checklist_schedule: string;
+  impact_lockout: string;
+  red_impact_threshold: number;
+  impact_recalibration_date: string;
+  seat_idle: number;
+  survey_timeout: number;
+  can_rules_loaded?: boolean;
+  vehicle_model: string;
+  sim_number: number;
   status: string;
-  gmptCode: string;
-  fullLockoutEnabled: boolean;
-  fullLockoutTimeout: number;
-  customerName: string;
-  siteName: string;
-  hasWifi: boolean;
-  lastDlistTimestamp: string;
-  lastPreopTimestamp: string;
+  gmpt_code: string;
+  full_lockout_enabled: boolean;
+  full_lockout_timeout: number;
+  customer_name: string;
+  site_name: string;
+  has_wifi: boolean;
+  last_dlist_timestamp: string;
+  last_preop_timestamp: string;
 }
 
 interface MasterCode {
@@ -53,6 +53,12 @@ interface MasterCode {
 
 interface BlacklistedDriver {
   blacklistedDriver: string;
+}
+interface VehicleLogin {
+  driverName: string;
+  driverId: string;
+  swipeTime: string;
+  cardPrefix: string | null;
 }
 
 interface Vehicle {
@@ -68,6 +74,7 @@ interface PopupState {
   driverList: boolean;
   blacklistDrivers: boolean;
   expiredLicenses: boolean;
+  vehicleLogins: boolean;
 }
 
 interface Driver {
@@ -131,6 +138,27 @@ const LoadingOverlay: React.FC<{ message: string }> = ({ message }) => {
 };
 
 const VehicleDashboard: React.FC = () => {
+  // Add this with your other state variables
+  const [vehicleLoginsByVehicle, setVehicleLoginsByVehicle] = useState<
+    Record<string | number, VehicleLogin[]>
+  >({});
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [masterCodesByVehicle, setMasterCodesByVehicle] = useState<{
+    [key: string]: MasterCode[];
+  }>({});
+  const [blacklistedDriversByVehicle, setBlacklistedDriversByVehicle] =
+    useState<{ [key: string]: BlacklistedDriver[] }>({});
+  const [loadingStates, setLoadingStates] = useState<{
+    vehicles: boolean;
+    masterCodes: boolean;
+    blacklistedDrivers: boolean;
+    vehicleLogins: boolean;
+  }>({
+    vehicles: false,
+    masterCodes: false,
+    blacklistedDrivers: false,
+    vehicleLogins: false,
+  });
   const popupRef = useRef<HTMLDivElement>(null);
   const [loadingDetails, setLoadingDetails] = useState<boolean>(false);
   const [detailsLoaded, setDetailsLoaded] = useState<boolean>(false);
@@ -165,13 +193,13 @@ const VehicleDashboard: React.FC = () => {
   const [loadingVehicles, setLoadingVehicles] = useState<boolean>(false);
   const [loadingSnapshots, setLoadingSnapshots] = useState<boolean>(false);
 
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [additionalData, setAdditionalData] = useState({});
   const [showPopup, setShowPopup] = useState<PopupState>({
     masterCodes: false,
     driverList: false,
     blacklistDrivers: false,
     expiredLicenses: false,
+    vehicleLogins: false,
   });
   const [activeVehicleId, setActiveVehicleId] = useState<
     string | number | null
@@ -197,8 +225,13 @@ const VehicleDashboard: React.FC = () => {
   }, [vehicles]);
 
   const fetchVehicles = async () => {
-    setLoadingVehicles(true);
-    setDetailsLoaded(false);
+    setVehicles([]);
+    setMasterCodesByVehicle({});
+    setBlacklistedDriversByVehicle({});
+    setSnapshotData({});
+
+    setLoadingStates((prev) => ({ ...prev, vehicles: true }));
+    setLoadingVehicles(true); // Make sure this is set to show loading overlay
 
     const customer = localStorage.getItem('selectedCustomer');
     const site = localStorage.getItem('selectedSite');
@@ -207,6 +240,7 @@ const VehicleDashboard: React.FC = () => {
     if (!customer) {
       console.warn('No customer selected.');
       setLoadingVehicles(false);
+      setLoadingStates((prev) => ({ ...prev, vehicles: false }));
       return;
     }
 
@@ -215,44 +249,13 @@ const VehicleDashboard: React.FC = () => {
     console.log('Site:', site || 'None');
     console.log('GMPT Code:', gmptCode || 'None');
 
-    // Extract IDs from JSON objects if needed
-    let customerID = customer;
-    let siteID = null;
-    let gmptCodeValue = gmptCode;
-
-    try {
-      // Parse customer JSON if it's stored as an object
-      if (customer && customer.startsWith('{')) {
-        const customerObj = JSON.parse(customer);
-        customerID =
-          customerObj.cust_id || customerObj.customer_id || customerObj.id;
-      }
-
-      // Parse site JSON if it's stored as an object
-      if (site && site.startsWith('{')) {
-        const siteObj = JSON.parse(site);
-        siteID = siteObj.site_id || siteObj.id;
-      }
-
-      // Parse gmptCode JSON if it's stored as an object
-      if (gmptCode && gmptCode.startsWith('{')) {
-        const gmptObj = JSON.parse(gmptCode);
-        gmptCodeValue = gmptObj.code || gmptObj.gmpt_code || gmptObj.value;
-      }
-    } catch (error) {
-      console.error('Error parsing stored filters:', error);
-    }
-
-    // Build query params with extracted IDs
+    // Build query params with direct values - don't try to parse JSON
     const queryParams = new URLSearchParams();
 
-    if (customerID) queryParams.append('customer', customerID.toString());
-    if (siteID) queryParams.append('site', siteID.toString());
-    if (gmptCodeValue)
-      queryParams.append('gmptCode', gmptCodeValue.toString());
-
-    // REMOVE: Don't add date/time parameters to vehicle fetch
-    // This keeps the vehicle fetch separate from snapshots
+    if (customer) queryParams.append('customer', customer.toString());
+    if (site && site !== '') queryParams.append('site', site.toString());
+    if (gmptCode && gmptCode !== '')
+      queryParams.append('gmptCode', gmptCode.toString());
 
     try {
       const response = await fetch(
@@ -260,105 +263,107 @@ const VehicleDashboard: React.FC = () => {
       );
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Server error response:', errorText);
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
       const vehicleData = await response.json();
-      console.log('Fetched Vehicle Data:', vehicleData);
 
       if (Array.isArray(vehicleData)) {
         setVehicles(vehicleData);
 
-        // Try to fetch additional details, but don't let it block the UI
-        try {
-          fetchVehicleDetails(vehicleData.map((v) => v.VEHICLE_CD));
-        } catch (detailsError) {
-          console.error('Failed to fetch vehicle details:', detailsError);
-          // Still mark as "loaded" to avoid perpetual loading state
-          setDetailsLoaded(true);
-        }
+        // Trigger additional data fetches but don't wait for them
+        const vehicleIds = vehicleData.map((v) => v.VEHICLE_CD);
+        fetchMasterCodes(vehicleIds);
+        fetchBlacklistedDrivers(vehicleIds);
+        fetchVehicleLogins(vehicleIds);
       } else {
-        console.warn('Received non-array data:', vehicleData);
-        setVehicles([]);
+        console.error('Unexpected response format:', vehicleData);
       }
     } catch (error) {
       console.error('Error fetching vehicles:', error);
-      setVehicles([]);
     } finally {
-      setTimeout(() => {
-        setLoadingVehicles(false);
-      }, 500); // Increased from 100ms to 500ms to ensure loading indicator is visible
+      setLoadingStates((prev) => ({ ...prev, vehicles: false }));
+      setLoadingVehicles(false);
     }
   };
 
-  const fetchVehicleDetails = async (vehicleIds: (string | number)[]) => {
+  // Fetch master codes separately
+  const fetchMasterCodes = async (vehicleIds: (string | number)[]) => {
     if (!vehicleIds.length) return;
 
-    setLoadingDetails(true);
-    try {
-      console.log('Fetching details for vehicle IDs:', vehicleIds);
+    setLoadingStates((prev) => ({ ...prev, masterCodes: true }));
 
-      // TEMPORARY MOCK DATA SOLUTION
-      // Comment out the actual API call that's failing
-      /*
+    try {
       const response = await fetch(
-        'http://localhost:8080/api/vehicle-details',
+        `http://localhost:8080/api/master-codes`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ vehicleCDs: vehicleIds }),
         }
       );
-  
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`API Error (${response.status}):`, errorText);
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-  
-      const detailsData = await response.json();
-      */
 
-      // Create mock data as a temporary solution
-      const mockDetailsData: { [key: string | number]: any } = {};
+      const masterCodesData = await response.json();
+      setMasterCodesByVehicle(masterCodesData);
+    } catch (error) {
+      console.error('Error fetching master codes:', error);
+    } finally {
+      setLoadingStates((prev) => ({ ...prev, masterCodes: false }));
+    }
+  };
 
-      vehicleIds.forEach((id) => {
-        mockDetailsData[id] = {
-          master_codes: [
-            { masterCodeUser: 'Admin User' },
-            { masterCodeUser: 'Service Tech' },
-          ],
-          blacklisted_drivers: [
-            { blacklistedDriver: 'Suspended Driver 1' },
-            { blacklistedDriver: 'Suspended Driver 2' },
-          ],
-        };
-      });
+  // Fetch blacklisted drivers separately
+  const fetchBlacklistedDrivers = async (
+    vehicleIds: (string | number)[]
+  ) => {
+    if (!vehicleIds.length) return;
 
-      console.log('Using mock vehicle details:', mockDetailsData);
+    setLoadingStates((prev) => ({ ...prev, blacklistedDrivers: true }));
 
-      // Update vehicles with the mock data
-      setVehicles((currentVehicles) =>
-        currentVehicles.map((vehicle) => ({
-          ...vehicle,
-          master_codes:
-            mockDetailsData[vehicle.VEHICLE_CD]?.master_codes || [],
-          blacklisted_drivers:
-            mockDetailsData[vehicle.VEHICLE_CD]?.blacklisted_drivers || [],
-        }))
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/blacklisted-drivers`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vehicleCDs: vehicleIds }),
+        }
       );
 
-      setDetailsLoaded(true);
+      const blacklistedData = await response.json();
+      setBlacklistedDriversByVehicle(blacklistedData);
     } catch (error) {
-      // Don't block the rest of the app - just log error and set loaded
-      console.error('Error fetching vehicle details:', error);
-      setDetailsLoaded(true);
+      console.error('Error fetching blacklisted drivers:', error);
     } finally {
-      setLoadingDetails(false);
+      setLoadingStates((prev) => ({ ...prev, blacklistedDrivers: false }));
+    }
+  };
+
+  const fetchVehicleLogins = async (vehicleIds: (string | number)[]) => {
+    if (!vehicleIds.length) return;
+
+    setLoadingStates((prev) => ({ ...prev, vehicleLogins: true }));
+
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/vehicle-logins`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vehicleCDs: vehicleIds }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const vehicleLoginsData = await response.json();
+      setVehicleLoginsByVehicle(vehicleLoginsData);
+    } catch (error) {
+      console.error('Error fetching vehicle logins:', error);
+    } finally {
+      setLoadingStates((prev) => ({ ...prev, vehicleLogins: false }));
     }
   };
 
@@ -418,6 +423,7 @@ const VehicleDashboard: React.FC = () => {
           driverList: false,
           blacklistDrivers: false,
           expiredLicenses: false,
+          vehicleLogins: false,
         });
       }
     }
@@ -427,7 +433,8 @@ const VehicleDashboard: React.FC = () => {
       showPopup.masterCodes ||
       showPopup.driverList ||
       showPopup.blacklistDrivers ||
-      showPopup.expiredLicenses
+      showPopup.expiredLicenses ||
+      showPopup.vehicleLogins
     ) {
       document.addEventListener('mousedown', handleClickOutside);
     }
@@ -473,6 +480,29 @@ const VehicleDashboard: React.FC = () => {
   };
 
   // ✅ Fetch dates on component mount
+
+  // Add this clearDateFilters function to your VehicleDashboard component
+
+  const clearDateFilters = () => {
+    // Clear date selections
+    setSelectedFirstDate(null);
+    setSelectedSecondDate(null);
+
+    // Clear time selections
+    setSelectedFirstTime(null);
+    setSelectedSecondTime(null);
+
+    // Clear snapshot IDs
+    setSelectedSnapshotId1(null);
+    setSelectedSnapshotId2(null);
+
+    // Clear available times
+    setAvailableTimes1([]);
+    setAvailableTimes2([]);
+
+    // Clear snapshot data
+    setSnapshotData({});
+  };
 
   const fetchSnapshots = async () => {
     setLoadingSnapshots(true);
@@ -900,6 +930,7 @@ const VehicleDashboard: React.FC = () => {
               <h3 className='text-2xl font-bold text-gray-800 px-4 py-2 text-center'>
                 Compare vehicles at 2 points in time
               </h3>
+
               <hr className='border-gray-300 mb-4' />
 
               <div className='grid grid-cols-3 gap-4 items-center'>
@@ -968,32 +999,104 @@ const VehicleDashboard: React.FC = () => {
                   </select>
                 </div>
 
-                {/* Snapshot Button */}
-                <div className='flex items-center justify-center'>
+                <div className='flex flex-col items-center justify-center gap-2'>
                   <button
-                    className='bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition'
+                    className='bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition w-full'
                     onClick={fetchSnapshots}
+                    disabled={!selectedFirstTime || !selectedSecondTime}
                   >
                     Fetch Vehicle Snapshots
+                  </button>
+
+                  <button
+                    className='text-blue-600 hover:text-blue-800 px-4 py-2 border border-blue-300 rounded-md hover:bg-blue-50 transition w-full'
+                    onClick={clearDateFilters}
+                    disabled={!selectedFirstDate && !selectedSecondDate}
+                  >
+                    Clear Dates
                   </button>
                 </div>
               </div>
             </div>
           </div>
 
+          {/* Vehicle Cards with Progressive Loading */}
           {Object.keys(snapshotData).length === 0 && (
             <div className='grid grid-cols-3 gap-6'>
-              {/* Add a subtle indicator that details are loading */}
-              {!detailsLoaded &&
-                vehicles.length > 0 &&
-                !loadingVehicles && (
-                  <div className='fixed bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg'>
-                    <div className='flex items-center'>
-                      <div className='animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-white rounded-full'></div>
-                      <span>Loading additional data...</span>
-                    </div>
-                  </div>
-                )}
+              {/* Data Loading Status Panel */}
+              {vehicles.length > 0 && (
+                <div className='fixed bottom-4 right-4 bg-white shadow-lg rounded-lg p-4 z-50 border border-gray-200'>
+                  <h4 className='font-semibold mb-2 text-gray-700'>
+                    Loading Status
+                  </h4>
+                  <ul className='text-sm space-y-2'>
+                    <li className='flex items-center'>
+                      <span
+                        className={
+                          loadingStates.vehicles
+                            ? 'text-blue-500'
+                            : 'text-green-500'
+                        }
+                      >
+                        {loadingStates.vehicles ? 'Loading' : 'Loaded'}{' '}
+                        Vehicles
+                      </span>
+                      {loadingStates.vehicles && (
+                        <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                      )}
+                    </li>
+                    <li className='flex items-center'>
+                      <span
+                        className={
+                          loadingStates.masterCodes
+                            ? 'text-blue-500'
+                            : 'text-green-500'
+                        }
+                      >
+                        {loadingStates.masterCodes ? 'Loading' : 'Loaded'}{' '}
+                        Master Codes
+                      </span>
+                      {loadingStates.masterCodes && (
+                        <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                      )}
+                    </li>
+                    <li className='flex items-center'>
+                      <span
+                        className={
+                          loadingStates.blacklistedDrivers
+                            ? 'text-blue-500'
+                            : 'text-green-500'
+                        }
+                      >
+                        {loadingStates.blacklistedDrivers
+                          ? 'Loading'
+                          : 'Loaded'}{' '}
+                        Blacklisted Drivers
+                      </span>
+                      {loadingStates.blacklistedDrivers && (
+                        <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                      )}
+                    </li>
+                    <li className='flex items-center'>
+                      <span
+                        className={
+                          loadingStates.vehicleLogins
+                            ? 'text-blue-500'
+                            : 'text-green-500'
+                        }
+                      >
+                        {loadingStates.vehicleLogins
+                          ? 'Loading'
+                          : 'Loaded'}{' '}
+                        Vehicle Logins
+                      </span>
+                      {loadingStates.vehicleLogins && (
+                        <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                      )}
+                    </li>
+                  </ul>
+                </div>
+              )}
 
               {vehicles.map((vehicle, index) => (
                 <div
@@ -1013,15 +1116,15 @@ const VehicleDashboard: React.FC = () => {
                     {/* Vehicle Identification Details */}
                     <div className='col-span-2 text-center'>
                       <h2 className='text-2xl font-bold text-gray-800'>
-                        {vehicle.vehicle_info.vehicleName}
+                        {vehicle.vehicle_info.vehicle_name}
                       </h2>
                       <p className='text-base text-gray-600'>
                         <strong>Serial:</strong>{' '}
-                        {vehicle.vehicle_info.serialNumber}
+                        {vehicle.vehicle_info.serial_number}
                       </p>
                       <p className='text-base text-gray-600'>
                         <strong>GMPT:</strong>{' '}
-                        {vehicle.vehicle_info.gmptCode}
+                        {vehicle.vehicle_info.gmpt_code}
                       </p>
                     </div>
                   </div>
@@ -1031,11 +1134,11 @@ const VehicleDashboard: React.FC = () => {
                     <div>
                       <p className='text-base text-gray-600'>
                         <strong>Customer:</strong>{' '}
-                        {vehicle.vehicle_info.customerName}
+                        {vehicle.vehicle_info.customer_name}
                       </p>
                       <p className='text-base text-gray-600'>
                         <strong>Site:</strong>{' '}
-                        {vehicle.vehicle_info.siteName}
+                        {vehicle.vehicle_info.site_name}
                       </p>
                       <p className='text-base text-gray-600'>
                         <strong>Department:</strong>{' '}
@@ -1043,41 +1146,37 @@ const VehicleDashboard: React.FC = () => {
                       </p>
                       <p className='text-base text-gray-600'>
                         <strong>Screen Version:</strong>{' '}
-                        {vehicle.vehicle_info.screenVersion}
+                        {vehicle.vehicle_info.screen_version}
                       </p>
                       <p className='text-base text-gray-600'>
                         <strong>ExpModu Version:</strong>{' '}
-                        {vehicle.vehicle_info.expansionVersion}
+                        {vehicle.vehicle_info.expansion_version}
                       </p>
                     </div>
                     <div>
                       <p className='text-base text-gray-600'>
                         <strong>Firmware Version:</strong>{' '}
-                        {vehicle.vehicle_info.firmwareVersion}
+                        {vehicle.vehicle_info.firmware_version}
                       </p>
                       <p className='text-base text-gray-600'>
                         <strong>Vehicle Model:</strong>{' '}
-                        {vehicle.vehicle_info.vehicleModel}
+                        {vehicle.vehicle_info.vehicle_model}
                       </p>
                       <p className='text-base text-gray-600'>
                         <strong>Sim Number:</strong>{' '}
-                        {vehicle.vehicle_info.simNumber}
-                      </p>
-                      <p className='text-base text-gray-600'>
-                        <strong>Firmware Version:</strong>{' '}
-                        {vehicle.vehicle_info.firmwareVersion}
+                        {vehicle.vehicle_info.sim_number}
                       </p>
                       <p className='text-base text-gray-600'>
                         <strong>Last Connection:</strong>{' '}
-                        {vehicle.vehicle_info.lastConnection}
+                        {vehicle.vehicle_info.last_connection}
                       </p>
                       <p className='text-base text-gray-600'>
                         <strong>Last Driver List:</strong>{' '}
-                        {vehicle.vehicle_info.lastDlistTimestamp}
+                        {vehicle.vehicle_info.last_dlist_timestamp}
                       </p>
                       <p className='text-base text-gray-600'>
                         <strong>Last Checklist:</strong>{' '}
-                        {vehicle.vehicle_info.lastPreopTimestamp}
+                        {vehicle.vehicle_info.last_preop_timestamp}
                       </p>
                     </div>
                   </div>
@@ -1102,13 +1201,13 @@ const VehicleDashboard: React.FC = () => {
                     <p>
                       <span
                         className={
-                          vehicle.vehicle_info.vorSetting == false
+                          vehicle.vehicle_info.vor_setting == false
                             ? 'text-green-500'
                             : 'text-red-500'
                         }
                       >
                         <strong>VOR: </strong>{' '}
-                        {vehicle.vehicle_info.vorSetting == false
+                        {vehicle.vehicle_info.vor_setting == false
                           ? 'Off'
                           : 'On'}
                       </span>
@@ -1116,7 +1215,7 @@ const VehicleDashboard: React.FC = () => {
                     <p>
                       <span
                         className={
-                          vehicle.vehicle_info.lockoutCode
+                          vehicle.vehicle_info.lockout_code
                             ?.toString()
                             .trim() === '0'
                             ? 'text-green-500' // If "0", Unlocked (Green)
@@ -1124,7 +1223,7 @@ const VehicleDashboard: React.FC = () => {
                         }
                       >
                         <strong>Lockout Status:</strong>{' '}
-                        {vehicle.vehicle_info.lockoutCode
+                        {vehicle.vehicle_info.lockout_code
                           ?.toString()
                           .trim() === '0'
                           ? 'Unlocked'
@@ -1133,50 +1232,53 @@ const VehicleDashboard: React.FC = () => {
                     </p>
                     <p>
                       <strong>LO Reason:</strong>{' '}
-                      {vehicle.vehicle_info.loReason}
+                      {vehicle.vehicle_info.lo_reason}
                     </p>
                     <p>
                       <strong>Checklist Schedule:</strong>{' '}
-                      {vehicle.vehicle_info.preopSchedule}
+                      {vehicle.vehicle_info.preop_schedule}
                     </p>
                     <p>
                       <strong>Recalibration Date:</strong>{' '}
-                      {vehicle.vehicle_info.impactRecalibrationDate}
+                      {vehicle.vehicle_info.impact_recalibration_date}
                     </p>
 
                     <p
                       className={` ${
-                        vehicle.vehicle_info.redImpactThreshold !== null &&
-                        vehicle.vehicle_info.redImpactThreshold > 0.0
+                        vehicle.vehicle_info.red_impact_threshold !==
+                          null &&
+                        vehicle.vehicle_info.red_impact_threshold > 0.0
                           ? 'text-green-500'
                           : 'text-red-500'
                       }`}
                     >
                       <strong>Red Impact Threshold: </strong>{' '}
-                      {vehicle.vehicle_info.redImpactThreshold}g
+                      {vehicle.vehicle_info.red_impact_threshold}g
                     </p>
                     <p>
                       <span
                         className={
-                          vehicle.vehicle_info.impactLockout
-                            ? 'text-green-500' // If false/null, Unlocked (Green)
-                            : 'text-red-500' // If true, Locked (Red)
+                          vehicle.vehicle_info.impact_lockout
+                            ? 'text-green-500'
+                            : 'text-red-500'
                         }
                       >
                         <strong>Impact Lockouts:</strong>{' '}
-                        {vehicle.vehicle_info.impactLockout ? 'On' : 'Off'}
+                        {vehicle.vehicle_info.impact_lockout
+                          ? 'On'
+                          : 'Off'}
                       </span>
                     </p>
                     <p>
                       <span
                         className={
-                          vehicle.vehicle_info.fullLockoutEnabled
-                            ? 'text-green-500' // If false/null, Unlocked (Green)
-                            : 'text-red-500' // If true, Locked (Red)
+                          vehicle.vehicle_info.full_lockout_enabled
+                            ? 'text-green-500'
+                            : 'text-red-500'
                         }
                       >
                         <strong>Full Lockout:</strong>{' '}
-                        {vehicle.vehicle_info.fullLockoutEnabled
+                        {vehicle.vehicle_info.full_lockout_enabled
                           ? 'On'
                           : 'Off'}
                       </span>
@@ -1184,33 +1286,40 @@ const VehicleDashboard: React.FC = () => {
 
                     <p className='text-gray-600 text-base'>
                       <strong>Full Lockout Timeout:</strong>{' '}
-                      {vehicle.vehicle_info.fullLockoutTimeout}s
+                      {vehicle.vehicle_info.full_lockout_timeout}s
                     </p>
 
                     <p className='text-gray-600 text-base'>
                       <strong>Idle Timeout:</strong>{' '}
-                      {vehicle.vehicle_info.seatIdle !== null
-                        ? vehicle.vehicle_info.seatIdle
+                      {vehicle.vehicle_info.seat_idle !== null
+                        ? vehicle.vehicle_info.seat_idle
                         : 'Off'}
                       s
                     </p>
                     <p className='text-gray-600 text-base'>
                       <strong>Checklist Timeout:</strong>{' '}
-                      {vehicle.vehicle_info.surveyTimeout}s
+                      {vehicle.vehicle_info.survey_timeout}s
                     </p>
                     <p className='text-gray-600 text-base'>
                       <strong>Can-Rules Loaded:</strong>{' '}
-                      {vehicle.vehicle_info.canRulesLoaded ? 'Yes' : 'No'}
+                      {vehicle.vehicle_info.can_rules_loaded
+                        ? 'Yes'
+                        : 'No'}
                     </p>
-                    {/* Master Codes Popup */}
+
+                    {/* Master Codes Popup - UPDATED with loading state */}
                     <button
-                      className='text-blue-500 hover:underline mt-2'
+                      className='text-blue-500 hover:underline mt-2 flex items-center'
                       onClick={() =>
                         togglePopup('masterCodes', vehicle.VEHICLE_CD)
                       }
                     >
-                      Master Codes
+                      <span>Master Codes</span>
+                      {loadingStates.masterCodes && (
+                        <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                      )}
                     </button>
+
                     {showPopup.masterCodes &&
                       activeVehicleId === vehicle.VEHICLE_CD && (
                         <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
@@ -1219,12 +1328,24 @@ const VehicleDashboard: React.FC = () => {
                             className='bg-white p-6 rounded-lg shadow-lg w-1/2'
                           >
                             <h3 className='text-lg font-semibold mb-4'>
-                              Master Codes for {activeVehicleId}
+                              Master Codes for{' '}
+                              {vehicle.vehicle_info.vehicle_name}
+                              {' ('}
+                              {vehicle.vehicle_info.gmpt_code}
+                              {')'}
                             </h3>
 
                             <ul className='list-disc pl-6'>
-                              {vehicle.master_codes.length > 0 ? (
-                                vehicle.master_codes.map((user, idx) => (
+                              {loadingStates.masterCodes ? (
+                                <div className='flex items-center text-blue-500'>
+                                  <span className='mr-2 inline-block w-4 h-4 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                                  Loading master codes...
+                                </div>
+                              ) : masterCodesByVehicle[vehicle.VEHICLE_CD]
+                                  ?.length > 0 ? (
+                                masterCodesByVehicle[
+                                  vehicle.VEHICLE_CD
+                                ].map((user, idx) => (
                                   <li key={idx}>{user.masterCodeUser}</li>
                                 ))
                               ) : (
@@ -1243,6 +1364,100 @@ const VehicleDashboard: React.FC = () => {
                           </div>
                         </div>
                       )}
+
+                    <button
+                      className='text-blue-500 hover:underline mt-2 flex items-center'
+                      onClick={() =>
+                        togglePopup('vehicleLogins', vehicle.VEHICLE_CD)
+                      }
+                    >
+                      <span>Recent Vehicle Logins</span>
+                      {loadingStates.vehicleLogins &&
+                        activeVehicleId === vehicle.VEHICLE_CD && (
+                          <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                        )}
+                    </button>
+
+                    {/* Vehicle Logins Popup */}
+                    {showPopup.vehicleLogins &&
+                      activeVehicleId === vehicle.VEHICLE_CD && (
+                        <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
+                          <div
+                            ref={popupRef}
+                            className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'
+                          >
+                            <h3 className='text-lg font-semibold mb-4'>
+                              Recent vehicle logins for{' '}
+                              {vehicle.vehicle_info.vehicle_name} (
+                              {vehicle.vehicle_info.gmpt_code})
+                            </h3>
+
+                            {loadingStates.vehicleLogins ? (
+                              <div className='flex items-center text-blue-500'>
+                                <span className='mr-2 inline-block w-4 h-4 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                                Loading vehicle logins...
+                              </div>
+                            ) : vehicleLoginsByVehicle[vehicle.VEHICLE_CD]
+                                ?.length > 0 ? (
+                              <div className='overflow-x-auto'>
+                                <table className='min-w-full bg-white'>
+                                  <thead>
+                                    <tr className='w-full h-16 border-b border-gray-200 bg-gray-50'>
+                                      <th className='text-left pl-4'>
+                                        Driver Name
+                                      </th>
+                                      <th className='text-left pl-4'>
+                                        Driver ID
+                                      </th>
+                                      <th className='text-left pl-4'>
+                                        Card Prefix
+                                      </th>
+                                      <th className='text-left pl-4'>
+                                        Swipe Time
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {vehicleLoginsByVehicle[
+                                      vehicle.VEHICLE_CD
+                                    ].map((login, idx) => (
+                                      <tr
+                                        key={idx}
+                                        className='h-12 border-b border-gray-200'
+                                      >
+                                        <td className='text-left pl-4'>
+                                          {login.driverName}
+                                        </td>
+                                        <td className='text-left pl-4'>
+                                          {login.driverId}
+                                        </td>
+                                        <td className='text-left pl-4'>
+                                          {login.cardPrefix || 'N/A'}
+                                        </td>
+                                        <td className='text-left pl-4'>
+                                          {login.swipeTime}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            ) : (
+                              <p className='text-gray-600'>
+                                No vehicle logins found in the last 2 days.
+                              </p>
+                            )}
+
+                            <button
+                              className='mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700'
+                              onClick={() => togglePopup('vehicleLogins')}
+                            >
+                              Close
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
                     {/* Driver List Popup */}
                     <button
                       className='text-blue-500 hover:underline mt-2'
@@ -1250,6 +1465,7 @@ const VehicleDashboard: React.FC = () => {
                     >
                       Driver List
                     </button>
+
                     {showPopup.driverList && (
                       <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
                         <div
@@ -1257,7 +1473,11 @@ const VehicleDashboard: React.FC = () => {
                           className='bg-white p-6 rounded-lg shadow-lg w-3/4'
                         >
                           <h3 className='text-lg font-semibold mb-4'>
-                            Driver List
+                            Driver List for{' '}
+                            {vehicle.vehicle_info.vehicle_name}
+                            {' ('}
+                            {vehicle.vehicle_info.gmpt_code}
+                            {')'}
                           </h3>
                           <ul className='list-disc pl-6'>
                             {driverList.map((driver, idx) => (
@@ -1275,15 +1495,20 @@ const VehicleDashboard: React.FC = () => {
                         </div>
                       </div>
                     )}
-                    {/* Drivers on Blacklist Popup */}
+
+                    {/* Blacklisted Drivers Popup - UPDATED with loading state */}
                     <button
-                      className='text-blue-500 hover:underline mt-2'
+                      className='text-blue-500 hover:underline mt-2 flex items-center'
                       onClick={() =>
                         togglePopup('blacklistDrivers', vehicle.VEHICLE_CD)
                       }
                     >
-                      Drivers on Blacklist
+                      <span>Drivers on Blacklist</span>
+                      {loadingStates.blacklistedDrivers && (
+                        <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                      )}
                     </button>
+
                     {showPopup.blacklistDrivers &&
                       activeVehicleId === vehicle.VEHICLE_CD && (
                         <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
@@ -1292,17 +1517,28 @@ const VehicleDashboard: React.FC = () => {
                             className='bg-white p-6 rounded-lg shadow-lg w-1/2'
                           >
                             <h3 className='text-lg font-semibold mb-4'>
-                              Drivers on Blacklist for {activeVehicleId}
+                              Drivers on Blacklist for{' '}
+                              {vehicle.vehicle_info.vehicle_name}
+                              {' ('}
+                              {vehicle.vehicle_info.gmpt_code}
+                              {')'}
                             </h3>
                             <ul className='list-disc pl-6'>
-                              {vehicle.blacklisted_drivers.length > 0 ? (
-                                vehicle.blacklisted_drivers.map(
-                                  (driver, idx) => (
-                                    <li key={idx}>
-                                      {driver.blacklistedDriver}
-                                    </li>
-                                  )
-                                )
+                              {loadingStates.blacklistedDrivers ? (
+                                <div className='flex items-center text-blue-500'>
+                                  <span className='mr-2 inline-block w-4 h-4 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                                  Loading blacklisted drivers...
+                                </div>
+                              ) : blacklistedDriversByVehicle[
+                                  vehicle.VEHICLE_CD
+                                ]?.length > 0 ? (
+                                blacklistedDriversByVehicle[
+                                  vehicle.VEHICLE_CD
+                                ].map((driver, idx) => (
+                                  <li key={idx}>
+                                    {driver.blacklistedDriver}
+                                  </li>
+                                ))
                               ) : (
                                 <p className='text-gray-600'>
                                   No blacklisted drivers found.

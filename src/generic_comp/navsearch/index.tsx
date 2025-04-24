@@ -189,10 +189,10 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
       localStorage.setItem('selectedSite', value);
     }
 
-    // Immediate callback if needed
-    if (typeof onFilterChange === 'function') {
-      onFilterChange();
-    }
+    // // Immediate callback if needed
+    // if (typeof onFilterChange === 'function') {
+    //   onFilterChange();
+    // }
   };
 
   // Handle Search Button Click - mantener esta funcionalidad del compañero
@@ -207,10 +207,15 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
     console.log('Site:', filters.site || 'None selected');
     console.log('GMPT:', filters.gmptCode || 'None input');
 
-    // Store customer and site in local storage
+    // Store customer and site in local storage - Make sure we store the raw values
     localStorage.setItem('selectedCustomer', filters.customer);
     localStorage.setItem('selectedSite', filters.site || '');
     localStorage.setItem('selectedGmpt', filters.gmptCode || '');
+
+    // Clear cache to ensure fresh data on parameter change
+    fetch('http://localhost:8080/clear-vehicle-cache', {
+      method: 'POST',
+    }).catch((err) => console.error('Failed to clear cache:', err));
 
     if (typeof onFilterChange === 'function') {
       onFilterChange();
@@ -238,10 +243,10 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
     // Reset sites list
     setSites([]);
 
-    // Trigger callback if provided
-    if (typeof onFilterChange === 'function') {
-      onFilterChange();
-    }
+    // // Trigger callback if provided
+    // if (typeof onFilterChange === 'function') {
+    //   onFilterChange();
+    // }
   };
 
   // Loading spinner component with CSS
