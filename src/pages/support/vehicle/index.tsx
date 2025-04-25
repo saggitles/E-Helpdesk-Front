@@ -46,15 +46,19 @@ interface VehicleInfo {
   last_dlist_timestamp: string;
   last_preop_timestamp: string;
   last_driver_logins: string;
+  message_sent: string;
 }
 
 interface MasterCode {
-  masterCodeUser: string;
+  master_code_user: string;
+  master_code: string;
 }
 
 interface BlacklistedDriver {
-  blacklistedDriver: string;
+  driver_name: string;
+  driver_id: string;
 }
+
 interface VehicleLogin {
   driver_name: string;
   driver_id: string;
@@ -69,6 +73,14 @@ interface LastDriverLogin {
   login_time: string;
   accepted: boolean;
 }
+
+interface MessageSent {
+  message_text: string;
+  message_timestamp: string;
+  status: string;
+  message_type: string;
+}
+
 interface Vehicle {
   VEHICLE_CD: string | number;
   vehicle_info: VehicleInfo;
@@ -84,6 +96,7 @@ interface PopupState {
   expiredLicenses: boolean;
   vehicleLogins: boolean;
   lastDriverLogins: boolean;
+  messagesSent: boolean;
 }
 
 interface Driver {
@@ -147,6 +160,10 @@ const LoadingOverlay: React.FC<{ message: string }> = ({ message }) => {
 };
 
 const VehicleDashboard: React.FC = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [messagesSentByVehicle, setMessagesSentByVehicle] = useState<
+    Record<string | number, MessageSent[]>
+  >({});
   const [lastDriverLoginsByVehicle, setLastDriverLoginsByVehicle] =
     useState<Record<string | number, LastDriverLogin[]>>({});
   const [vehicleLoginsByVehicle, setVehicleLoginsByVehicle] = useState<
@@ -164,12 +181,14 @@ const VehicleDashboard: React.FC = () => {
     blacklistedDrivers: boolean;
     vehicleLogins: boolean;
     lastDriverLogins: boolean;
+    MessageSent: boolean;
   }>({
     vehicles: false,
     masterCodes: false,
     blacklistedDrivers: false,
     vehicleLogins: false,
     lastDriverLogins: false,
+    MessageSent: false,
   });
   const popupRef = useRef<HTMLDivElement>(null);
   const [loadingDetails, setLoadingDetails] = useState<boolean>(false);
@@ -213,6 +232,7 @@ const VehicleDashboard: React.FC = () => {
     expiredLicenses: false,
     vehicleLogins: false,
     lastDriverLogins: false,
+    messagesSent: false,
   });
   const [activeVehicleId, setActiveVehicleId] = useState<
     string | number | null
@@ -290,6 +310,7 @@ const VehicleDashboard: React.FC = () => {
         fetchBlacklistedDrivers(vehicleIds);
         fetchVehicleLogins(vehicleIds);
         fetchLastDriverLogins(vehicleIds);
+        fetchMessagesSent(vehicleIds);
       } else {
         console.error('Unexpected response format:', vehicleData);
       }
@@ -317,10 +338,21 @@ const VehicleDashboard: React.FC = () => {
         }
       );
 
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
       const masterCodesData = await response.json();
       setMasterCodesByVehicle(masterCodesData);
     } catch (error) {
       console.error('Error fetching master codes:', error);
+      // Initialize with empty arrays on error
+      const fallbackData = vehicleIds.reduce((acc, id) => {
+        acc[id] = [];
+        return acc;
+      }, {} as Record<string | number, MasterCode[]>);
+
+      setMasterCodesByVehicle(fallbackData);
     } finally {
       setLoadingStates((prev) => ({ ...prev, masterCodes: false }));
     }
@@ -344,10 +376,21 @@ const VehicleDashboard: React.FC = () => {
         }
       );
 
-      const blacklistedData = await response.json();
-      setBlacklistedDriversByVehicle(blacklistedData);
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const blacklistedDriversData = await response.json();
+      setBlacklistedDriversByVehicle(blacklistedDriversData);
     } catch (error) {
       console.error('Error fetching blacklisted drivers:', error);
+      // Initialize with empty arrays on error
+      const fallbackData = vehicleIds.reduce((acc, id) => {
+        acc[id] = [];
+        return acc;
+      }, {} as Record<string | number, BlacklistedDriver[]>);
+
+      setBlacklistedDriversByVehicle(fallbackData);
     } finally {
       setLoadingStates((prev) => ({ ...prev, blacklistedDrivers: false }));
     }
@@ -444,6 +487,42 @@ const VehicleDashboard: React.FC = () => {
     }
   };
 
+  const fetchMessagesSent = async (vehicleIds: (string | number)[]) => {
+    if (!vehicleIds.length) return;
+
+    setLoadingStates((prev) => ({ ...prev, messagesSent: true }));
+
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/messages-sent`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vehicleCDs: vehicleIds }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const messagesSentData = await response.json();
+      console.log('Messages sent front data received:', messagesSentData);
+      setMessagesSentByVehicle(messagesSentData);
+    } catch (error) {
+      console.error('Error fetching messages sent:', error);
+      // Initialize with empty arrays on error
+      const fallbackData = vehicleIds.reduce((acc, id) => {
+        acc[id] = [];
+        return acc;
+      }, {} as Record<string | number, MessageSent[]>);
+
+      setMessagesSentByVehicle(fallbackData);
+    } finally {
+      setLoadingStates((prev) => ({ ...prev, messagesSent: false }));
+    }
+  };
+
   // ✅ Fetch available dates from backend
   const fetchDates = async () => {
     try {
@@ -489,6 +568,27 @@ const VehicleDashboard: React.FC = () => {
   };
 
   useEffect(() => {
+    // Check if any loading state is true
+    const anyLoading = Object.values(loadingStates).some(
+      (state) => state === true
+    );
+
+    // Set a separate state to track if anything is loading
+    if (!anyLoading) {
+      // Add a delay before hiding the loading panel
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 800); // 800ms = 0.8 second delay
+
+      // Clear the timeout if the component unmounts or dependencies change
+      return () => clearTimeout(timer);
+    } else {
+      // If anything is loading, immediately show the loading status
+      setIsLoading(true);
+    }
+  }, [loadingStates]);
+
+  useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
         popupRef.current &&
@@ -502,6 +602,7 @@ const VehicleDashboard: React.FC = () => {
           expiredLicenses: false,
           vehicleLogins: false,
           lastDriverLogins: false,
+          messagesSent: false,
         });
       }
     }
@@ -513,7 +614,8 @@ const VehicleDashboard: React.FC = () => {
       showPopup.blacklistDrivers ||
       showPopup.expiredLicenses ||
       showPopup.vehicleLogins ||
-      showPopup.lastDriverLogins
+      showPopup.lastDriverLogins ||
+      showPopup.messagesSent
     ) {
       document.addEventListener('mousedown', handleClickOutside);
     }
@@ -1103,7 +1205,7 @@ const VehicleDashboard: React.FC = () => {
           {Object.keys(snapshotData).length === 0 && (
             <div className='grid grid-cols-3 gap-6'>
               {/* Data Loading Status Panel */}
-              {vehicles.length > 0 && (
+              {vehicles.length > 0 && isLoading && (
                 <div className='fixed bottom-4 right-4 bg-white shadow-lg rounded-lg p-4 z-50 border border-gray-200'>
                   <h4 className='font-semibold mb-2 text-gray-700'>
                     Loading Status
@@ -1338,7 +1440,6 @@ const VehicleDashboard: React.FC = () => {
                       <strong>Recalibration Date:</strong>{' '}
                       {vehicle.vehicle_info.impact_recalibration_date}
                     </p>
-
                     <p
                       className={` ${
                         vehicle.vehicle_info.red_impact_threshold !==
@@ -1379,12 +1480,10 @@ const VehicleDashboard: React.FC = () => {
                           : 'Off'}
                       </span>
                     </p>
-
                     <p className='text-gray-600 text-base'>
                       <strong>Full Lockout Timeout:</strong>{' '}
                       {vehicle.vehicle_info.full_lockout_timeout}s
                     </p>
-
                     <p className='text-gray-600 text-base'>
                       <strong>Idle Timeout:</strong>{' '}
                       {vehicle.vehicle_info.seat_idle !== null
@@ -1402,7 +1501,6 @@ const VehicleDashboard: React.FC = () => {
                         ? 'Yes'
                         : 'No'}
                     </p>
-
                     {/* Master Codes Popup - UPDATED with loading state */}
                     <button
                       className='text-blue-500 hover:underline mt-2 flex items-center'
@@ -1415,7 +1513,6 @@ const VehicleDashboard: React.FC = () => {
                         <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
                       )}
                     </button>
-
                     {showPopup.masterCodes &&
                       activeVehicleId === vehicle.VEHICLE_CD && (
                         <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
@@ -1442,7 +1539,9 @@ const VehicleDashboard: React.FC = () => {
                                 masterCodesByVehicle[
                                   vehicle.VEHICLE_CD
                                 ].map((user, idx) => (
-                                  <li key={idx}>{user.masterCodeUser}</li>
+                                  <li key={idx}>
+                                    {user.master_code_user}
+                                  </li>
                                 ))
                               ) : (
                                 <p className='text-gray-600'>
@@ -1460,7 +1559,6 @@ const VehicleDashboard: React.FC = () => {
                           </div>
                         </div>
                       )}
-
                     <button
                       className='text-blue-500 hover:underline mt-2 flex items-center'
                       onClick={() =>
@@ -1473,7 +1571,6 @@ const VehicleDashboard: React.FC = () => {
                           <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
                         )}
                     </button>
-
                     {/* Vehicle Logins Popup */}
                     {showPopup.vehicleLogins &&
                       activeVehicleId === vehicle.VEHICLE_CD && (
@@ -1591,7 +1688,6 @@ const VehicleDashboard: React.FC = () => {
                           </div>
                         </div>
                       )}
-
                     {/* Last driver logins Popup */}
                     <button
                       className='text-blue-500 hover:underline mt-2 flex items-center'
@@ -1719,6 +1815,112 @@ const VehicleDashboard: React.FC = () => {
                         </div>
                       )}
 
+                    {/* messagesSent Popup */}
+                    <button
+                      className='text-blue-500 hover:underline mt-2 flex items-center'
+                      onClick={() =>
+                        togglePopup('messagesSent', vehicle.VEHICLE_CD)
+                      }
+                    >
+                      <span>Messages Sent</span>
+                      {loadingStates.MessageSent &&
+                        activeVehicleId === vehicle.VEHICLE_CD && (
+                          <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                        )}
+                    </button>
+                    {showPopup.messagesSent &&
+                      activeVehicleId === vehicle.VEHICLE_CD && (
+                        <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
+                          <div
+                            ref={popupRef}
+                            className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'
+                          >
+                            <h3 className='text-lg font-semibold mb-4'>
+                              Messages Sent to{' '}
+                              {vehicle.vehicle_info.vehicle_name} (
+                              {vehicle.vehicle_info.gmpt_code})
+                            </h3>
+
+                            {loadingStates.MessageSent ? (
+                              <div className='flex items-center text-blue-500'>
+                                <span className='mr-2 inline-block w-4 h-4 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                                Loading messages...
+                              </div>
+                            ) : messagesSentByVehicle[vehicle.VEHICLE_CD]
+                                ?.length > 0 ? (
+                              <div className='overflow-x-auto'>
+                                <table className='min-w-full bg-white'>
+                                  <thead>
+                                    <tr className='w-full h-16 border-b border-gray-200 bg-gray-50'>
+                                      <th className='text-left pl-4'>
+                                        Message Type
+                                      </th>
+                                      <th className='text-left pl-4'>
+                                        Message
+                                      </th>
+                                      <th className='text-left pl-4'>
+                                        Sent Time
+                                      </th>
+                                      <th className='text-left pl-4'>
+                                        Status
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {messagesSentByVehicle[
+                                      vehicle.VEHICLE_CD
+                                    ].map((msg, idx) => (
+                                      <tr
+                                        key={idx}
+                                        className={`h-12 border-b border-gray-200 ${
+                                          msg.status === 'done'
+                                            ? 'bg-green-100/50'
+                                            : msg.status === 'in_queue'
+                                            ? 'bg-amber-100/50'
+                                            : ''
+                                        }`}
+                                      >
+                                        <td className='text-left pl-4'>
+                                          {msg.message_type || 'Unknown'}
+                                        </td>
+                                        <td className='text-left pl-4 max-w-xs truncate'>
+                                          {msg.message_text || 'N/A'}
+                                        </td>
+                                        <td className='text-left pl-4'>
+                                          {msg.message_timestamp || 'N/A'}
+                                        </td>
+                                        <td
+                                          className={`text-left pl-4 ${
+                                            msg.status === 'done'
+                                              ? 'text-green-600 font-semibold'
+                                              : msg.status === 'in_queue'
+                                              ? 'text-amber-600 font-semibold'
+                                              : 'text-gray-500'
+                                          }`}
+                                        >
+                                          {msg.status || 'N/A'}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            ) : (
+                              <p className='text-gray-600'>
+                                No messages found in the last 7 days.
+                              </p>
+                            )}
+
+                            <button
+                              className='mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700'
+                              onClick={() => togglePopup('messagesSent')}
+                            >
+                              Close
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
                     {/* Driver List Popup */}
                     <button
                       className='text-blue-500 hover:underline mt-2'
@@ -1726,7 +1928,6 @@ const VehicleDashboard: React.FC = () => {
                     >
                       Driver List
                     </button>
-
                     {showPopup.driverList && (
                       <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
                         <div
@@ -1769,7 +1970,6 @@ const VehicleDashboard: React.FC = () => {
                         <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
                       )}
                     </button>
-
                     {showPopup.blacklistDrivers &&
                       activeVehicleId === vehicle.VEHICLE_CD && (
                         <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
@@ -1796,9 +1996,7 @@ const VehicleDashboard: React.FC = () => {
                                 blacklistedDriversByVehicle[
                                   vehicle.VEHICLE_CD
                                 ].map((driver, idx) => (
-                                  <li key={idx}>
-                                    {driver.blacklistedDriver}
-                                  </li>
+                                  <li key={idx}>{driver.driver_name}</li>
                                 ))
                               ) : (
                                 <p className='text-gray-600'>
