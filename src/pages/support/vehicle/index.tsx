@@ -45,6 +45,7 @@ interface VehicleInfo {
   has_wifi: boolean;
   last_dlist_timestamp: string;
   last_preop_timestamp: string;
+  last_driver_logins: string;
 }
 
 interface MasterCode {
@@ -55,12 +56,19 @@ interface BlacklistedDriver {
   blacklistedDriver: string;
 }
 interface VehicleLogin {
-  driverName: string;
-  driverId: string;
-  swipeTime: string;
-  cardPrefix: string | null;
+  driver_name: string;
+  driver_id: string;
+  login_time: string;
+  facility_code: string | null;
+  accepted: boolean;
 }
 
+interface LastDriverLogin {
+  driver_name: string;
+  driver_id: string;
+  login_time: string;
+  accepted: boolean;
+}
 interface Vehicle {
   VEHICLE_CD: string | number;
   vehicle_info: VehicleInfo;
@@ -75,6 +83,7 @@ interface PopupState {
   blacklistDrivers: boolean;
   expiredLicenses: boolean;
   vehicleLogins: boolean;
+  lastDriverLogins: boolean;
 }
 
 interface Driver {
@@ -138,7 +147,8 @@ const LoadingOverlay: React.FC<{ message: string }> = ({ message }) => {
 };
 
 const VehicleDashboard: React.FC = () => {
-  // Add this with your other state variables
+  const [lastDriverLoginsByVehicle, setLastDriverLoginsByVehicle] =
+    useState<Record<string | number, LastDriverLogin[]>>({});
   const [vehicleLoginsByVehicle, setVehicleLoginsByVehicle] = useState<
     Record<string | number, VehicleLogin[]>
   >({});
@@ -153,11 +163,13 @@ const VehicleDashboard: React.FC = () => {
     masterCodes: boolean;
     blacklistedDrivers: boolean;
     vehicleLogins: boolean;
+    lastDriverLogins: boolean;
   }>({
     vehicles: false,
     masterCodes: false,
     blacklistedDrivers: false,
     vehicleLogins: false,
+    lastDriverLogins: false,
   });
   const popupRef = useRef<HTMLDivElement>(null);
   const [loadingDetails, setLoadingDetails] = useState<boolean>(false);
@@ -200,6 +212,7 @@ const VehicleDashboard: React.FC = () => {
     blacklistDrivers: false,
     expiredLicenses: false,
     vehicleLogins: false,
+    lastDriverLogins: false,
   });
   const [activeVehicleId, setActiveVehicleId] = useState<
     string | number | null
@@ -276,6 +289,7 @@ const VehicleDashboard: React.FC = () => {
         fetchMasterCodes(vehicleIds);
         fetchBlacklistedDrivers(vehicleIds);
         fetchVehicleLogins(vehicleIds);
+        fetchLastDriverLogins(vehicleIds);
       } else {
         console.error('Unexpected response format:', vehicleData);
       }
@@ -359,11 +373,74 @@ const VehicleDashboard: React.FC = () => {
       }
 
       const vehicleLoginsData = await response.json();
-      setVehicleLoginsByVehicle(vehicleLoginsData);
+      console.log('Login data received:', vehicleLoginsData);
+
+      // Ensure we have an entry for each vehicle ID
+      const processedData: Record<string | number, VehicleLogin[]> = {};
+
+      // Make sure every vehicle has an entry, even if empty
+      vehicleIds.forEach((id) => {
+        processedData[id] = vehicleLoginsData[id] || [];
+      });
+
+      setVehicleLoginsByVehicle(processedData);
     } catch (error) {
       console.error('Error fetching vehicle logins:', error);
+      // Initialize with empty arrays on error
+      const fallbackData = vehicleIds.reduce((acc, id) => {
+        acc[id] = [];
+        return acc;
+      }, {} as Record<string | number, VehicleLogin[]>);
+
+      setVehicleLoginsByVehicle(fallbackData);
     } finally {
       setLoadingStates((prev) => ({ ...prev, vehicleLogins: false }));
+    }
+  };
+
+  const fetchLastDriverLogins = async (
+    vehicleIds: (string | number)[]
+  ) => {
+    if (!vehicleIds.length) return;
+
+    setLoadingStates((prev) => ({ ...prev, lastDriverLogins: true }));
+
+    try {
+      // First create fallback data in case the endpoint doesn't exist or fails
+      const fallbackData = vehicleIds.reduce((acc, id) => {
+        acc[id] = [];
+        return acc;
+      }, {} as Record<string | number, LastDriverLogin[]>);
+
+      try {
+        const response = await fetch(
+          `http://localhost:8080/api/last-driver-logins`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ vehicleCDs: vehicleIds }),
+          }
+        );
+
+        if (!response.ok) {
+          console.warn(
+            `API warning: ${response.status} - Last driver logins endpoint may not be implemented yet`
+          );
+          // Use fallback data instead of throwing
+          setLastDriverLoginsByVehicle(fallbackData);
+          return;
+        }
+
+        const lastDriverLoginsData = await response.json();
+        console.log('Last driver logins data:', lastDriverLoginsData);
+        setLastDriverLoginsByVehicle(lastDriverLoginsData);
+      } catch (error) {
+        console.error('Error fetching last driver logins:', error);
+        // Use fallback data on error
+        setLastDriverLoginsByVehicle(fallbackData);
+      }
+    } finally {
+      setLoadingStates((prev) => ({ ...prev, lastDriverLogins: false }));
     }
   };
 
@@ -424,6 +501,7 @@ const VehicleDashboard: React.FC = () => {
           blacklistDrivers: false,
           expiredLicenses: false,
           vehicleLogins: false,
+          lastDriverLogins: false,
         });
       }
     }
@@ -434,7 +512,8 @@ const VehicleDashboard: React.FC = () => {
       showPopup.driverList ||
       showPopup.blacklistDrivers ||
       showPopup.expiredLicenses ||
-      showPopup.vehicleLogins
+      showPopup.vehicleLogins ||
+      showPopup.lastDriverLogins
     ) {
       document.addEventListener('mousedown', handleClickOutside);
     }
@@ -761,7 +840,7 @@ const VehicleDashboard: React.FC = () => {
         <div className='text-center mt-4'>
           <p
             className={`text-lg font-bold ${
-              snapshot.status === 'Online'
+              snapshot.status === 'online'
                 ? 'text-green-600'
                 : 'text-red-600'
             }`}
@@ -1094,6 +1173,23 @@ const VehicleDashboard: React.FC = () => {
                         <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
                       )}
                     </li>
+                    <li className='flex items-center'>
+                      <span
+                        className={
+                          loadingStates.lastDriverLogins
+                            ? 'text-blue-500'
+                            : 'text-green-500'
+                        }
+                      >
+                        {loadingStates.lastDriverLogins
+                          ? 'Loading'
+                          : 'Loaded'}{' '}
+                        Last Driver Logins
+                      </span>
+                      {loadingStates.lastDriverLogins && (
+                        <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                      )}
+                    </li>
                   </ul>
                 </div>
               )}
@@ -1185,7 +1281,7 @@ const VehicleDashboard: React.FC = () => {
                   <div className='text-center mt-4'>
                     <p
                       className={`text-lg font-bold ${
-                        vehicle.vehicle_info.status === 'Online'
+                        vehicle.vehicle_info.status === 'online'
                           ? 'text-green-600'
                           : 'text-red-600'
                       }`}
@@ -1410,10 +1506,13 @@ const VehicleDashboard: React.FC = () => {
                                         Driver ID
                                       </th>
                                       <th className='text-left pl-4'>
-                                        Card Prefix
+                                        Facility code
                                       </th>
                                       <th className='text-left pl-4'>
-                                        Swipe Time
+                                        Login Time
+                                      </th>
+                                      <th className='text-left pl-4'>
+                                        Accepted
                                       </th>
                                     </tr>
                                   </thead>
@@ -1423,19 +1522,54 @@ const VehicleDashboard: React.FC = () => {
                                     ].map((login, idx) => (
                                       <tr
                                         key={idx}
-                                        className='h-12 border-b border-gray-200'
+                                        className={`h-12 border-b border-gray-200 ${
+                                          login.accepted !== undefined
+                                            ? login.accepted
+                                              ? 'bg-green-100/50'
+                                              : 'bg-red-100/50'
+                                            : ''
+                                        }`}
                                       >
                                         <td className='text-left pl-4'>
-                                          {login.driverName}
+                                          {login.driver_name || 'Unknown'}
                                         </td>
                                         <td className='text-left pl-4'>
-                                          {login.driverId}
+                                          {login.driver_id || 'N/A'}
                                         </td>
                                         <td className='text-left pl-4'>
-                                          {login.cardPrefix || 'N/A'}
+                                          {login.facility_code || 'N/A'}
                                         </td>
                                         <td className='text-left pl-4'>
-                                          {login.swipeTime}
+                                          {login.login_time
+                                            ? typeof login.login_time ===
+                                              'string'
+                                              ? login.login_time
+                                              : new Date(
+                                                  login.login_time
+                                                ).toLocaleString('en-GB', {
+                                                  day: '2-digit',
+                                                  month: '2-digit',
+                                                  year: 'numeric',
+                                                  hour: '2-digit',
+                                                  minute: '2-digit',
+                                                  hour12: false,
+                                                })
+                                            : 'N/A'}
+                                        </td>
+                                        <td
+                                          className={`text-left pl-4 ${
+                                            login.accepted !== undefined
+                                              ? login.accepted
+                                                ? 'text-green-600'
+                                                : 'text-red-600'
+                                              : 'text-gray-500'
+                                          }`}
+                                        >
+                                          {login.accepted !== undefined
+                                            ? login.accepted
+                                              ? 'Yes'
+                                              : 'No'
+                                            : 'Unknown'}
                                         </td>
                                       </tr>
                                     ))}
@@ -1451,6 +1585,133 @@ const VehicleDashboard: React.FC = () => {
                             <button
                               className='mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700'
                               onClick={() => togglePopup('vehicleLogins')}
+                            >
+                              Close
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                    {/* Last driver logins Popup */}
+                    <button
+                      className='text-blue-500 hover:underline mt-2 flex items-center'
+                      onClick={() =>
+                        togglePopup('lastDriverLogins', vehicle.VEHICLE_CD)
+                      }
+                    >
+                      <span>Last Driver Login</span>
+                      {loadingStates.lastDriverLogins &&
+                        activeVehicleId === vehicle.VEHICLE_CD && (
+                          <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                        )}
+                    </button>
+                    {showPopup.lastDriverLogins &&
+                      activeVehicleId === vehicle.VEHICLE_CD && (
+                        <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
+                          <div
+                            ref={popupRef}
+                            className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'
+                          >
+                            <h3 className='text-lg font-semibold mb-4'>
+                              Last Driver Login for{' '}
+                              {vehicle.vehicle_info.vehicle_name} (
+                              {vehicle.vehicle_info.gmpt_code})
+                            </h3>
+
+                            {loadingStates.lastDriverLogins ? (
+                              <div className='flex items-center text-blue-500'>
+                                <span className='mr-2 inline-block w-4 h-4 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                                Loading last driver login...
+                              </div>
+                            ) : lastDriverLoginsByVehicle[
+                                vehicle.VEHICLE_CD
+                              ]?.length > 0 ? (
+                              <div className='overflow-x-auto'>
+                                <table className='min-w-full bg-white'>
+                                  <thead>
+                                    <tr className='w-full h-16 border-b border-gray-200 bg-gray-50'>
+                                      <th className='text-left pl-4'>
+                                        Driver Name
+                                      </th>
+                                      <th className='text-left pl-4'>
+                                        Driver ID
+                                      </th>
+                                      <th className='text-left pl-4'>
+                                        Login Time
+                                      </th>
+                                      <th className='text-left pl-4'>
+                                        Accepted
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {lastDriverLoginsByVehicle[
+                                      vehicle.VEHICLE_CD
+                                    ].map((login, idx) => (
+                                      <tr
+                                        key={idx}
+                                        className={`h-12 border-b border-gray-200 ${
+                                          login?.accepted !== undefined
+                                            ? login.accepted
+                                              ? 'bg-green-100/50'
+                                              : 'bg-red-100/50'
+                                            : ''
+                                        }`}
+                                      >
+                                        <td className='text-left pl-4'>
+                                          {login?.driver_name || 'Unknown'}
+                                        </td>
+                                        <td className='text-left pl-4'>
+                                          {login?.driver_id || 'N/A'}
+                                        </td>
+                                        <td className='text-left pl-4'>
+                                          {login?.login_time
+                                            ? typeof login.login_time ===
+                                              'string'
+                                              ? login.login_time
+                                              : new Date(
+                                                  login.login_time
+                                                ).toLocaleString('en-GB', {
+                                                  day: '2-digit',
+                                                  month: '2-digit',
+                                                  year: 'numeric',
+                                                  hour: '2-digit',
+                                                  minute: '2-digit',
+                                                  hour12: false,
+                                                })
+                                            : 'N/A'}
+                                        </td>
+                                        <td
+                                          className={`text-left pl-4 ${
+                                            login?.accepted !== undefined
+                                              ? login.accepted
+                                                ? 'text-green-600'
+                                                : 'text-red-600'
+                                              : 'text-gray-500'
+                                          }`}
+                                        >
+                                          {login?.accepted !== undefined
+                                            ? login.accepted
+                                              ? 'Yes'
+                                              : 'No'
+                                            : 'Unknown'}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            ) : (
+                              <p className='text-gray-600'>
+                                No login information available.
+                              </p>
+                            )}
+
+                            <button
+                              className='mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700'
+                              onClick={() =>
+                                togglePopup('lastDriverLogins')
+                              }
                             >
                               Close
                             </button>
