@@ -12,20 +12,20 @@ export const authOptions = {
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        email: { label: "Email", type: "email", placeholder: "john@example.com" },
-        password: { label: "Password", type: "password" }
+        email: { label: "Username", type: "text" },
+        password: { label: "Password", type: "password" },
+        isAdmin: { type: "boolean" }
       },
+      
       async authorize(credentials, req) {
-        // Add your authentication logic here
-        // This is where you would validate against your database
-        
-        // Example implementation:
-        // const res = await fetch("/your-api/auth", {
-        //   method: 'POST',
-        //   body: JSON.stringify(credentials),
-        //   headers: { "Content-Type": "application/json" }
-        // })
-        // const user = await res.json()
+        if (credentials.isAdmin && credentials.email === 'admin' && credentials.password === 'admin12345') {
+          return {
+            id: 'admin-user',
+            name: 'Admin User',
+            email: 'admin@example.com',
+            role: 'admin'
+          };
+        }
         
         // For testing purposes, allow a demo user:
         if (credentials?.email === "demo@example.com" && credentials?.password === "password") {
