@@ -47,6 +47,7 @@ interface VehicleInfo {
   last_preop_timestamp: string;
   last_driver_logins: string;
   message_sent: string;
+  idle_polarity: string;
 }
 
 interface MasterCode {
@@ -967,13 +968,7 @@ const VehicleDashboard: React.FC = () => {
                 {snapshot.vorSetting == 'false' ? 'Off' : 'On'}
               </span>
             </p>
-            <p
-              className={`text-base text-gray-600 ${compareBeforeAfterSnaps(
-                'loReason'
-              )}`}
-            >
-              <strong>LO Reason:</strong> {snapshot.loReason || 'N/A'}
-            </p>
+            
             <p
               className={`text-base text-gray-600 ${compareBeforeAfterSnaps(
                 'impactRecalibrationDate'
@@ -1097,7 +1092,12 @@ const VehicleDashboard: React.FC = () => {
         {/* Show loading overlay when loadingVehicles is true */}
         {loadingVehicles && (
           <LoadingOverlay message='Loading vehicles...' />
+        )}  {/* This closing bracket was missing */}
+
+        {Object.keys(snapshotData).length === 0 && (
+          <p className="text-center text-gray-600">No snapshot data available.</p>
         )}
+
         {loadingSnapshots && (
           <LoadingOverlay message='Loading snapshots...' />
         )}
@@ -1202,8 +1202,73 @@ const VehicleDashboard: React.FC = () => {
           </div>
 
           {/* Vehicle Cards with Progressive Loading */}
+          
+          <div className="mb-6">
+            <div className="bg-white shadow-lg rounded-lg p-6 border border-gray-200">
+              <h2 className="text-xl font-bold text-gray-800 mb-4">Vehicle Status Summary</h2>
+              <div className="grid grid-cols-5 gap-4">
+                {/* Total vehicles */}
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <p className="text-4xl font-bold text-blue-600">{vehicles.length}</p>
+                  <p className="text-sm text-gray-600 mt-1">Total Vehicles</p>
+                </div>
+                
+                {/* Online vehicles */}
+                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                  <p className="text-4xl font-bold text-green-600">
+                    {vehicles.filter(v => v.vehicle_info.status === 'online').length}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">Online Vehicles</p>
+                </div>
+                
+                {/* Currently offline vehicles */}
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <p className="text-4xl font-bold text-gray-600">
+                    {vehicles.filter(v => v.vehicle_info.status === 'offline').length}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">Currently Offline</p>
+                </div>
+                
+                {/* Offline more than 3 days */}
+                <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                  <p className="text-4xl font-bold text-orange-600">
+                    {vehicles.filter(v => {
+                      if (v.vehicle_info.status !== 'offline') return false;
+                      if (!v.vehicle_info.last_connection) return false;
+                      
+                      const lastConn = new Date(v.vehicle_info.last_connection);
+                      const threeDaysAgo = new Date();
+                      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+                      
+                      return lastConn < threeDaysAgo;
+                    }).length}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">Offline > 3 Days</p>
+                </div>
+                
+                {/* Offline more than 2 weeks */}
+                <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                  <p className="text-4xl font-bold text-red-600">
+                    {vehicles.filter(v => {
+                      if (v.vehicle_info.status !== 'offline') return false;
+                      if (!v.vehicle_info.last_connection) return false;
+                      
+                      const lastConn = new Date(v.vehicle_info.last_connection);
+                      const twoWeeksAgo = new Date();
+                      twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+                      
+                      return lastConn < twoWeeksAgo;
+                    }).length}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">Offline > 2 Weeks</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+
           {Object.keys(snapshotData).length === 0 && (
-            <div className='grid grid-cols-3 gap-6'>
+             <div className='grid grid-cols-3 gap-6'>
               {/* Data Loading Status Panel */}
               {vehicles.length > 0 && isLoading && (
                 <div className='fixed bottom-4 right-4 bg-white shadow-lg rounded-lg p-4 z-50 border border-gray-200'>
@@ -1360,6 +1425,7 @@ const VehicleDashboard: React.FC = () => {
                         <strong>Vehicle Model:</strong>{' '}
                         {vehicle.vehicle_info.vehicle_model}
                       </p>
+
                       <p className='text-base text-gray-600'>
                         <strong>Sim Number:</strong>{' '}
                         {vehicle.vehicle_info.sim_number}
@@ -1369,11 +1435,11 @@ const VehicleDashboard: React.FC = () => {
                         {vehicle.vehicle_info.last_connection}
                       </p>
                       <p className='text-base text-gray-600'>
-                        <strong>Last Driver List:</strong>{' '}
+                        <strong>Last Driver List sync:</strong>{' '}
                         {vehicle.vehicle_info.last_dlist_timestamp}
                       </p>
                       <p className='text-base text-gray-600'>
-                        <strong>Last Checklist:</strong>{' '}
+                        <strong>Last Checklist sync:</strong>{' '}
                         {vehicle.vehicle_info.last_preop_timestamp}
                       </p>
                     </div>
@@ -1428,10 +1494,7 @@ const VehicleDashboard: React.FC = () => {
                           : 'Locked'}
                       </span>
                     </p>
-                    <p>
-                      <strong>LO Reason:</strong>{' '}
-                      {vehicle.vehicle_info.lo_reason}
-                    </p>
+                    
                     <p>
                       <strong>Checklist Schedule:</strong>{' '}
                       {vehicle.vehicle_info.preop_schedule}
@@ -1490,6 +1553,10 @@ const VehicleDashboard: React.FC = () => {
                         ? vehicle.vehicle_info.seat_idle
                         : 'Off'}
                       s
+                    </p>
+                    <p className='text-base text-gray-600'>
+                      <strong>Idle Polarity:</strong>{' '}
+                      {vehicle.vehicle_info.idle_polarity}
                     </p>
                     <p className='text-gray-600 text-base'>
                       <strong>Checklist Timeout:</strong>{' '}
@@ -1565,7 +1632,7 @@ const VehicleDashboard: React.FC = () => {
                         togglePopup('vehicleLogins', vehicle.VEHICLE_CD)
                       }
                     >
-                      <span>Recent Vehicle Logins</span>
+                      <span>Recent Vehicle Logins (7 days)</span>
                       {loadingStates.vehicleLogins &&
                         activeVehicleId === vehicle.VEHICLE_CD && (
                           <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
@@ -1695,7 +1762,7 @@ const VehicleDashboard: React.FC = () => {
                         togglePopup('lastDriverLogins', vehicle.VEHICLE_CD)
                       }
                     >
-                      <span>Last Driver Login</span>
+                      <span>Last 10 Drivers Loged in</span>
                       {loadingStates.lastDriverLogins &&
                         activeVehicleId === vehicle.VEHICLE_CD && (
                           <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
@@ -1709,7 +1776,7 @@ const VehicleDashboard: React.FC = () => {
                             className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'
                           >
                             <h3 className='text-lg font-semibold mb-4'>
-                              Last Driver Login for{' '}
+                              Last 10 Drivers Loged in for{' '}
                               {vehicle.vehicle_info.vehicle_name} (
                               {vehicle.vehicle_info.gmpt_code})
                             </h3>
@@ -1822,7 +1889,7 @@ const VehicleDashboard: React.FC = () => {
                         togglePopup('messagesSent', vehicle.VEHICLE_CD)
                       }
                     >
-                      <span>Messages Sent</span>
+                      <span>Messages Sent (7 days)</span>
                       {loadingStates.MessageSent &&
                         activeVehicleId === vehicle.VEHICLE_CD && (
                           <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
@@ -1920,43 +1987,6 @@ const VehicleDashboard: React.FC = () => {
                           </div>
                         </div>
                       )}
-
-                    {/* Driver List Popup */}
-                    <button
-                      className='text-blue-500 hover:underline mt-2'
-                      onClick={() => togglePopup('driverList')}
-                    >
-                      Driver List
-                    </button>
-                    {showPopup.driverList && (
-                      <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
-                        <div
-                          ref={popupRef}
-                          className='bg-white p-6 rounded-lg shadow-lg w-3/4'
-                        >
-                          <h3 className='text-lg font-semibold mb-4'>
-                            Driver List for{' '}
-                            {vehicle.vehicle_info.vehicle_name}
-                            {' ('}
-                            {vehicle.vehicle_info.gmpt_code}
-                            {')'}
-                          </h3>
-                          <ul className='list-disc pl-6'>
-                            {driverList.map((driver, idx) => (
-                              <li key={idx}>
-                                {driver.firstName} {driver.lastName}
-                              </li>
-                            ))}
-                          </ul>
-                          <button
-                            className='mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700'
-                            onClick={() => togglePopup('driverList')}
-                          >
-                            Close
-                          </button>
-                        </div>
-                      </div>
-                    )}
 
                     {/* Blacklisted Drivers Popup - UPDATED with loading state */}
                     <button
