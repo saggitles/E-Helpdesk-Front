@@ -527,18 +527,39 @@ const VehicleDashboard: React.FC = () => {
   // ✅ Fetch available dates from backend
   const fetchDates = async () => {
     try {
-      const response = await fetch(
-        'http://localhost:8080/api/available-dates'
-      );
-      const data = await response.json();
-
-      // Convert strings to JS Date objects
+      const response = await fetch('http://localhost:8080/api/available-dates');
+    const data = await response.json();
+    
+    // Check if data is an array
+    if (Array.isArray(data)) {
+      // If it's already an array, use it directly
       const formattedDates = data.map((d: string) => new Date(d));
       setDates(formattedDates);
-    } catch (error) {
-      console.error('Error fetching dates:', error);
+    } else if (data && typeof data === 'object') {
+      // If it's an object with dates in some property
+      // Try common patterns for API responses
+      if (Array.isArray(data.dates)) {
+        const formattedDates = data.dates.map((d: string) => new Date(d));
+        setDates(formattedDates);
+      } else if (Array.isArray(data.data)) {
+        const formattedDates = data.data.map((d: string) => new Date(d));
+        setDates(formattedDates);
+      } else if (Array.isArray(data.results)) {
+        const formattedDates = data.results.map((d: string) => new Date(d));
+        setDates(formattedDates);
+      } else {
+        // If we can't find an array, log the actual response structure
+        console.error('Unexpected API response format:', data);
+        setDates([]);
+      }
+    } else {
+      console.error('Invalid data format received:', data);
       setDates([]);
     }
+  } catch (error) {
+    console.error('Error fetching dates:', error);
+    setDates([]);
+  }
   };
 
   const fetchTimes = async (formattedDate: string) => {
@@ -926,6 +947,7 @@ const VehicleDashboard: React.FC = () => {
             >
               <strong>Sim Number:</strong> {snapshot.simNumber || 'N/A'}
             </p>
+
             <p
               className={`text-base text-gray-600 ${compareBeforeAfterSnaps(
                 'lastConnection'
@@ -1415,6 +1437,14 @@ const VehicleDashboard: React.FC = () => {
                         <strong>ExpModu Version:</strong>{' '}
                         {vehicle.vehicle_info.expansion_version}
                       </p>
+                      <p className='text-base text-gray-600'>
+                        <strong>Last Driver List sync:</strong>{' '}
+                        {vehicle.vehicle_info.last_dlist_timestamp}
+                      </p>
+                      <p className='text-base text-gray-600'>
+                        <strong>Last Checklist sync:</strong>{' '}
+                        {vehicle.vehicle_info.last_preop_timestamp}
+                      </p>
                     </div>
                     <div>
                       <p className='text-base text-gray-600'>
@@ -1430,18 +1460,17 @@ const VehicleDashboard: React.FC = () => {
                         <strong>Sim Number:</strong>{' '}
                         {vehicle.vehicle_info.sim_number}
                       </p>
+                      <p className='text-gray-600 text-base'>
+                      <strong>Can-Rules Loaded:</strong>{' '}
+                      {vehicle.vehicle_info.can_rules_loaded
+                        ? 'Yes'
+                        : 'No'}
+                    </p>
                       <p className='text-base text-gray-600'>
                         <strong>Last Connection:</strong>{' '}
                         {vehicle.vehicle_info.last_connection}
                       </p>
-                      <p className='text-base text-gray-600'>
-                        <strong>Last Driver List sync:</strong>{' '}
-                        {vehicle.vehicle_info.last_dlist_timestamp}
-                      </p>
-                      <p className='text-base text-gray-600'>
-                        <strong>Last Checklist sync:</strong>{' '}
-                        {vehicle.vehicle_info.last_preop_timestamp}
-                      </p>
+                      
                     </div>
                   </div>
 
@@ -1462,20 +1491,7 @@ const VehicleDashboard: React.FC = () => {
 
                   <hr className='border-gray-300 mb-4' />
                   <div className='grid grid-cols-2 gap-4 text-base text-gray-600'>
-                    <p>
-                      <span
-                        className={
-                          vehicle.vehicle_info.vor_setting == false
-                            ? 'text-green-500'
-                            : 'text-red-500'
-                        }
-                      >
-                        <strong>VOR: </strong>{' '}
-                        {vehicle.vehicle_info.vor_setting == false
-                          ? 'Off'
-                          : 'On'}
-                      </span>
-                    </p>
+                    
                     <p>
                       <span
                         className={
@@ -1494,10 +1510,19 @@ const VehicleDashboard: React.FC = () => {
                           : 'Locked'}
                       </span>
                     </p>
-                    
                     <p>
-                      <strong>Checklist Schedule:</strong>{' '}
-                      {vehicle.vehicle_info.preop_schedule}
+                      <span
+                        className={
+                          vehicle.vehicle_info.impact_lockout
+                            ? 'text-green-500'
+                            : 'text-red-500'
+                        }
+                      >
+                        <strong>Impact Lockouts:</strong>{' '}
+                        {vehicle.vehicle_info.impact_lockout
+                          ? 'On'
+                          : 'Off'}
+                      </span>
                     </p>
                     <p>
                       <strong>Recalibration Date:</strong>{' '}
@@ -1514,20 +1539,6 @@ const VehicleDashboard: React.FC = () => {
                     >
                       <strong>Red Impact Threshold: </strong>{' '}
                       {vehicle.vehicle_info.red_impact_threshold}g
-                    </p>
-                    <p>
-                      <span
-                        className={
-                          vehicle.vehicle_info.impact_lockout
-                            ? 'text-green-500'
-                            : 'text-red-500'
-                        }
-                      >
-                        <strong>Impact Lockouts:</strong>{' '}
-                        {vehicle.vehicle_info.impact_lockout
-                          ? 'On'
-                          : 'Off'}
-                      </span>
                     </p>
                     <p>
                       <span
@@ -1558,156 +1569,175 @@ const VehicleDashboard: React.FC = () => {
                       <strong>Idle Polarity:</strong>{' '}
                       {vehicle.vehicle_info.idle_polarity}
                     </p>
+                    
+                    <p>
+                      <strong>Checklist Schedule:</strong>{' '}
+                      {vehicle.vehicle_info.preop_schedule}
+                    </p>
                     <p className='text-gray-600 text-base'>
                       <strong>Checklist Timeout:</strong>{' '}
                       {vehicle.vehicle_info.survey_timeout}s
                     </p>
-                    <p className='text-gray-600 text-base'>
-                      <strong>Can-Rules Loaded:</strong>{' '}
-                      {vehicle.vehicle_info.can_rules_loaded
-                        ? 'Yes'
-                        : 'No'}
+                    
+
+                    <p>
+                      <span
+                        className={
+                          vehicle.vehicle_info.vor_setting == false
+                            ? 'text-green-500'
+                            : 'text-red-500'
+                        }
+                      >
+                        <strong>VOR: </strong>{' '}
+                        {vehicle.vehicle_info.vor_setting == false
+                          ? 'Off'
+                          : 'On'}
+                      </span>
                     </p>
+
+                    
+
+                    
                     {/* Master Codes Popup - Updated with search filter */}
-<button
-  className='text-blue-500 hover:underline mt-2 flex items-center'
-  onClick={() =>
-    togglePopup('masterCodes', vehicle.VEHICLE_CD)
-  }
->
-  <span>Master Codes</span>
-  {loadingStates.masterCodes &&
-    activeVehicleId === vehicle.VEHICLE_CD && (
-      <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
-    )}
-</button>
-{showPopup.masterCodes &&
-  activeVehicleId === vehicle.VEHICLE_CD && (
-    <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
-      <div
-        ref={popupRef}
-        className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'
-      >
-        <h3 className='text-lg font-semibold mb-4'>
-          Master Codes for{' '}
-          {vehicle.vehicle_info.vehicle_name} (
-          {vehicle.vehicle_info.gmpt_code})
-        </h3>
-        
-        {/* Search filter input */}
-        <div className="mb-4">
-          <input
-            type="text"
-            placeholder="Search master codes..."
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            onChange={(e) => {
-              // Store search value in a local variable
-              const searchValue = e.target.value.toLowerCase();
-              
-              // Re-render will use this value to filter the table
-              e.target.setAttribute('data-search-mastercode', searchValue);
-              // Force re-render of the component
-              setShowPopup(prev => ({ ...prev }));
-            }}
-          />
-        </div>
+                  <button
+                    className='text-blue-500 hover:underline mt-2 flex items-center'
+                    onClick={() =>
+                      togglePopup('masterCodes', vehicle.VEHICLE_CD)
+                    }
+                  >
+                    <span>Master Codes</span>
+                    {loadingStates.masterCodes &&
+                      activeVehicleId === vehicle.VEHICLE_CD && (
+                        <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                      )}
+                  </button>
+                  {showPopup.masterCodes &&
+                    activeVehicleId === vehicle.VEHICLE_CD && (
+                      <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
+                        <div
+                          ref={popupRef}
+                          className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'
+                        >
+                          <h3 className='text-lg font-semibold mb-4'>
+                            Master Codes for{' '}
+                            {vehicle.vehicle_info.vehicle_name} (
+                            {vehicle.vehicle_info.gmpt_code})
+                          </h3>
+                          
+                          {/* Search filter input */}
+                          <div className="mb-4">
+                            <input
+                              type="text"
+                              placeholder="Search master codes..."
+                              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              onChange={(e) => {
+                                // Store search value in a local variable
+                                const searchValue = e.target.value.toLowerCase();
+                                
+                                // Re-render will use this value to filter the table
+                                e.target.setAttribute('data-search-mastercode', searchValue);
+                                // Force re-render of the component
+                                setShowPopup(prev => ({ ...prev }));
+                              }}
+                            />
+                          </div>
 
-        {loadingStates.masterCodes ? (
-          <div className='flex items-center text-blue-500'>
-            <span className='mr-2 inline-block w-4 h-4 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
-            Loading master codes...
-          </div>
-        ) : masterCodesByVehicle[vehicle.VEHICLE_CD]?.length > 0 ? (
-          <div className='overflow-x-auto'>
-            <table className='min-w-full bg-white'>
-              <thead>
-                <tr className='w-full h-16 border-b border-gray-200 bg-gray-50'>
-                  <th className='text-left pl-4'>
-                    Master Code User
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {masterCodesByVehicle[vehicle.VEHICLE_CD]
-                  .filter(user => {
-                    // Get the current search value from the input element
-                    const searchInput = document.querySelector('[data-search-mastercode]');
-                    const searchValue = searchInput ? searchInput.getAttribute('data-search-mastercode') || '' : '';
-                    
-                    if (!searchValue) return true; // If no search, show all
-                    
-                    // Search in master code user
-                    return user.master_code_user && user.master_code_user.toLowerCase().includes(searchValue);
-                  })
-                  .map((user, idx) => (
-                    <tr
-                      key={idx}
-                      className='h-12 border-b border-gray-200'
-                    >
-                      <td className='text-left pl-4'>
-                        {user.master_code_user}
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-            
-            {/* No results message */}
-            {(() => {
-              const searchInput = document.querySelector('[data-search-mastercode]');
-              const searchValue = searchInput ? searchInput.getAttribute('data-search-mastercode') || '' : '';
-              const filteredUsers = masterCodesByVehicle[vehicle.VEHICLE_CD].filter(user => {
-                if (!searchValue) return true;
-                return user.master_code_user && user.master_code_user.toLowerCase().includes(searchValue);
-              });
-              
-              if (searchValue && filteredUsers.length === 0) {
-                return (
-                  <div className="text-center py-4 text-gray-500">
-                    No master codes match your search
-                  </div>
-                );
-              }
-              return null;
-            })()}
-          </div>
-        ) : (
-          <p className='text-gray-600'>
-            No master codes found.
-          </p>
-        )}
+                          {loadingStates.masterCodes ? (
+                            <div className='flex items-center text-blue-500'>
+                              <span className='mr-2 inline-block w-4 h-4 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                              Loading master codes...
+                            </div>
+                          ) : masterCodesByVehicle[vehicle.VEHICLE_CD]?.length > 0 ? (
+                            <div className='overflow-x-auto'>
+                              <table className='min-w-full bg-white'>
+                                <thead>
+                                  <tr className='w-full h-16 border-b border-gray-200 bg-gray-50'>
+                                    <th className='text-left pl-4'>
+                                      Master Code User
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {masterCodesByVehicle[vehicle.VEHICLE_CD]
+                                    .filter(user => {
+                                      // Get the current search value from the input element
+                                      const searchInput = document.querySelector('[data-search-mastercode]');
+                                      const searchValue = searchInput ? searchInput.getAttribute('data-search-mastercode') || '' : '';
+                                      
+                                      if (!searchValue) return true; // If no search, show all
+                                      
+                                      // Search in master code user
+                                      return user.master_code_user && user.master_code_user.toLowerCase().includes(searchValue);
+                                    })
+                                    .map((user, idx) => (
+                                      <tr
+                                        key={idx}
+                                        className='h-12 border-b border-gray-200'
+                                      >
+                                        <td className='text-left pl-4'>
+                                          {user.master_code_user}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                </tbody>
+                              </table>
+                              
+                              {/* No results message */}
+                              {(() => {
+                                const searchInput = document.querySelector('[data-search-mastercode]');
+                                const searchValue = searchInput ? searchInput.getAttribute('data-search-mastercode') || '' : '';
+                                const filteredUsers = masterCodesByVehicle[vehicle.VEHICLE_CD].filter(user => {
+                                  if (!searchValue) return true;
+                                  return user.master_code_user && user.master_code_user.toLowerCase().includes(searchValue);
+                                });
+                                
+                                if (searchValue && filteredUsers.length === 0) {
+                                  return (
+                                    <div className="text-center py-4 text-gray-500">
+                                      No master codes match your search
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })()}
+                            </div>
+                          ) : (
+                            <p className='text-gray-600'>
+                              No master codes found.
+                            </p>
+                          )}
 
-        {/* Show filter stats */}
-        {(() => {
-          const searchInput = document.querySelector('[data-search-mastercode]');
-          const searchValue = searchInput ? searchInput.getAttribute('data-search-mastercode') || '' : '';
-          
-          if (searchValue && masterCodesByVehicle[vehicle.VEHICLE_CD]?.length > 0) {
-            const filteredCount = masterCodesByVehicle[vehicle.VEHICLE_CD].filter(user => {
-              return user.master_code_user && user.master_code_user.toLowerCase().includes(searchValue);
-            }).length;
-            
-            return (
-              <div className="mt-2 text-sm text-gray-600">
-                Showing {filteredCount} of {masterCodesByVehicle[vehicle.VEHICLE_CD].length} master codes
-              </div>
-            );
-          }
-          return null;
-        })()}
+                          {/* Show filter stats */}
+                          {(() => {
+                            const searchInput = document.querySelector('[data-search-mastercode]');
+                            const searchValue = searchInput ? searchInput.getAttribute('data-search-mastercode') || '' : '';
+                            
+                            if (searchValue && masterCodesByVehicle[vehicle.VEHICLE_CD]?.length > 0) {
+                              const filteredCount = masterCodesByVehicle[vehicle.VEHICLE_CD].filter(user => {
+                                return user.master_code_user && user.master_code_user.toLowerCase().includes(searchValue);
+                              }).length;
+                              
+                              return (
+                                <div className="mt-2 text-sm text-gray-600">
+                                  Showing {filteredCount} of {masterCodesByVehicle[vehicle.VEHICLE_CD].length} master codes
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
 
-        <button
-          className='mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700'
-          onClick={() => togglePopup('masterCodes')}
-        >
-          Close
-        </button>
-      </div>
-    </div>
-  )}
+                          <button
+                            className='mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700'
+                            onClick={() => togglePopup('masterCodes')}
+                          >
+                            Close
+                          </button>
+                        </div>
+                      </div>
+                    )}
 
-  {/* Blacklisted Drivers Popup - Updated with search filter */}
-  <button
+                    {/* Blacklisted Drivers Popup - Updated with search filter */}
+                    <button
                     className='text-blue-500 hover:underline mt-2 flex items-center'
                     onClick={() =>
                       togglePopup('blacklistDrivers', vehicle.VEHICLE_CD)
