@@ -170,6 +170,9 @@ const VehicleDashboard: React.FC = () => {
   const [vehicleLoginsByVehicle, setVehicleLoginsByVehicle] = useState<
     Record<string | number, VehicleLogin[]>
   >({});
+  const [vehicleStatusByVehicle, setVehicleStatusByVehicle] = useState<
+    Record<string | number, { status: string; latest_status_time: string }>
+  >({});
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [masterCodesByVehicle, setMasterCodesByVehicle] = useState<{
     [key: string]: MasterCode[];
@@ -183,6 +186,7 @@ const VehicleDashboard: React.FC = () => {
     vehicleLogins: boolean;
     lastDriverLogins: boolean;
     MessageSent: boolean;
+    vehicleStatus: boolean;
   }>({
     vehicles: false,
     masterCodes: false,
@@ -190,6 +194,7 @@ const VehicleDashboard: React.FC = () => {
     vehicleLogins: false,
     lastDriverLogins: false,
     MessageSent: false,
+    vehicleStatus: false,
   });
   const popupRef = useRef<HTMLDivElement>(null);
   const [loadingDetails, setLoadingDetails] = useState<boolean>(false);
@@ -299,19 +304,21 @@ const VehicleDashboard: React.FC = () => {
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-
+      console.log('Response status: my response with my vehicle cd suposuley', response.status); // Debugging
       const vehicleData = await response.json();
-
+      console.log('Vehicle data received: it is going into my popups', vehicleData);
       if (Array.isArray(vehicleData)) {
         setVehicles(vehicleData);
 
         // Trigger additional data fetches but don't wait for them
-        const vehicleIds = vehicleData.map((v) => v.VEHICLE_CD);
-        fetchMasterCodes(vehicleIds);
-        fetchBlacklistedDrivers(vehicleIds);
-        fetchVehicleLogins(vehicleIds);
-        fetchLastDriverLogins(vehicleIds);
-        fetchMessagesSent(vehicleIds);
+        const vehicleCDs = vehicleData.map((v) => v.VEHICLE_CD);
+        console.log('what i am sending to my popups backend', vehicleCDs);
+        fetchMasterCodes(vehicleCDs);
+        fetchBlacklistedDrivers(vehicleCDs);
+        fetchVehicleLogins(vehicleCDs);
+        fetchLastDriverLogins(vehicleCDs);
+        fetchMessagesSent(vehicleCDs);
+        fetchVehicleStatus(vehicleCDs);
       } else {
         console.error('Unexpected response format:', vehicleData);
       }
@@ -320,6 +327,61 @@ const VehicleDashboard: React.FC = () => {
     } finally {
       setLoadingStates((prev) => ({ ...prev, vehicles: false }));
       setLoadingVehicles(false);
+    }
+  };
+
+
+  const fetchVehicleStatus = async (vehicleIds: (string | number)[]) => {
+    if (!vehicleIds.length) return;
+  
+    // Set loading state for all vehicles
+    setLoadingStates((prev) => ({ ...prev, vehicleStatus: true }));
+    
+    // Set the active vehicle ID to show loading state
+    // If checking all vehicles, you could rotate through them
+    setActiveVehicleId(vehicleIds[0]);
+  
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/vehicle-status`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vehicleCDs: vehicleIds }),
+        }
+      );
+  
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+  
+      const statusData = await response.json();
+      console.log("Received real-time status data:", statusData);
+      setVehicleStatusByVehicle(statusData);
+  
+      // Update the vehicles array with the new status
+      setVehicles(prevVehicles => 
+        prevVehicles.map(vehicle => {
+          const vehicleId = vehicle.VEHICLE_CD;
+          if (statusData[vehicleId]) {
+            return {
+              ...vehicle,
+              vehicle_info: {
+                ...vehicle.vehicle_info,
+                status: statusData[vehicleId].status,
+                latest_status_time: statusData[vehicleId].latest_status_time
+              }
+            };
+          }
+          return vehicle;
+        })
+      );
+    } catch (error) {
+      console.error('Error fetching vehicle status:', error);
+    } finally {
+      setLoadingStates((prev) => ({ ...prev, vehicleStatus: false }));
+      // Reset active vehicle ID when done
+      setActiveVehicleId(null);
     }
   };
 
@@ -344,6 +406,7 @@ const VehicleDashboard: React.FC = () => {
       }
 
       const masterCodesData = await response.json();
+      console.log("Received master codes data:", masterCodesData);
       setMasterCodesByVehicle(masterCodesData);
     } catch (error) {
       console.error('Error fetching master codes:', error);
@@ -787,11 +850,30 @@ const VehicleDashboard: React.FC = () => {
     key: keyof PopupState,
     vehicleId: string | number | null = null
   ) => {
-    setShowPopup((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
-    setActiveVehicleId(vehicleId);
+    console.log(`Toggling popup: ${key}, vehicleId: ${vehicleId}`); // Debug log
+    
+    // Close all popups first
+    const newPopupState = {
+      masterCodes: false,
+      driverList: false,
+      blacklistDrivers: false,
+      expiredLicenses: false,
+      vehicleLogins: false,
+      lastDriverLogins: false,
+      messagesSent: false,
+    };
+    
+    // Only toggle the requested popup
+    newPopupState[key] = !showPopup[key];
+    
+    // Set the new state
+    setShowPopup(newPopupState);
+    
+    // Set active vehicle ID only if we're opening a popup
+    if (newPopupState[key] && vehicleId) {
+      setActiveVehicleId(vehicleId);
+      console.log(`Active vehicle ID set to: ${vehicleId}`);
+    }
   };
 
   interface SnapshotCardProps {
@@ -815,20 +897,7 @@ const VehicleDashboard: React.FC = () => {
       return '';
     };
 
-    const vehicleSummary = useMemo(() => {
-      if (!vehicles || vehicles.length === 0) {
-        return { total: 0, active: 0, inactive: 0 };
-      }
-      return {
-        total: vehicles.length,
-        active: vehicles.filter(
-          (v) => v.status && v.status.toLowerCase() === 'online'
-        ).length,
-        inactive: vehicles.filter(
-          (v) => v.status && v.status.toLowerCase() === 'offline'
-        ).length,
-      };
-    }, [vehicles]);
+    
 
     if (loadingVehicles || loadingSnapshots) {
       console.log('Loading state:', loadingVehicles, loadingSnapshots); // Debugging
@@ -859,6 +928,7 @@ const VehicleDashboard: React.FC = () => {
     }
 
     return (
+      
       <div className='bg-white shadow-lg rounded-lg p-6 border border-gray-300'>
         {/* Top Section: Image and Basic Details */}
         <div className='grid grid-cols-3 gap-4 items-start'>
@@ -961,18 +1031,7 @@ const VehicleDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Status */}
-        <div className='text-center mt-4'>
-          <p
-            className={`text-lg font-bold ${
-              snapshot.status === 'online'
-                ? 'text-green-600'
-                : 'text-red-600'
-            }`}
-          >
-            <strong>Status: {snapshot.status || 'Unknown'}</strong>
-          </p>
-        </div>
+        
         <hr className='border-gray-300 mb-4' />
 
         {/* Bottom Section: Additional Details */}
@@ -1116,13 +1175,12 @@ const VehicleDashboard: React.FC = () => {
           <LoadingOverlay message='Loading vehicles...' />
         )}  {/* This closing bracket was missing */}
 
-        {Object.keys(snapshotData).length === 0 && (
-          <p className="text-center text-gray-600">No snapshot data available.</p>
-        )}
+        
 
         {loadingSnapshots && (
           <LoadingOverlay message='Loading snapshots...' />
         )}
+        
         <div className='bg-gray-100 min-h-screen p-8'>
           {/* Title with Date & Time Filters */}
           <h1 className='text-4xl font-bold text-gray-800 text-center py-5'>
@@ -1221,7 +1279,44 @@ const VehicleDashboard: React.FC = () => {
                 </div>
               </div>
             </div>
+            {/* Color Legend Container */}
+            <div className='shadow-lg rounded-lg p-6 border border-gray-300 bg-white w-1/3'>
+              <h3 className='text-2xl font-bold text-gray-800 mb-3 text-center'>
+                Color Legend
+              </h3>
+              
+              <hr className='border-gray-300 mb-4' />
+              
+              <div className='space-y-3'>
+                <div className='flex items-center'>
+                  <div className='w-6 h-6 bg-yellow-300 mr-3'></div>
+                  <span className='text-gray-700'>Changed values between snapshots</span>
+                </div>
+                
+                <div className='flex items-center'>
+                  <div className='w-6 h-6 bg-green-100 mr-3'></div>
+                  <span className='text-gray-700'>Enabled / On / Authorized status</span>
+                </div>
+                
+                <div className='flex items-center'>
+                  <div className='w-6 h-6 bg-red-100 mr-3'></div>
+                  <span className='text-gray-700'>Disabled / Off / Unauthorized status</span>
+                </div>
+                
+                <div className='flex items-center'>
+                  <div className='w-6 h-6 bg-amber-100 mr-3'></div>
+                  <span className='text-gray-700'>Pending / In Queue status</span>
+                </div>
+                
+                <div className='flex items-center'>
+                  <div className='w-6 h-6 border border-gray-300 mr-3'></div>
+                  <span className='text-gray-700'>Default / No special status</span>
+                </div>
+              </div>
+            </div>
           </div>
+          
+          
 
           {/* Vehicle Cards with Progressive Loading */}
           
@@ -1313,6 +1408,21 @@ const VehicleDashboard: React.FC = () => {
                         <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
                       )}
                     </li>
+                    <li className='flex items-center'>
+                    <span
+                      className={
+                        loadingStates.vehicleStatus
+                          ? 'text-blue-500'
+                          : 'text-green-500'
+                      }
+                    >
+                      {loadingStates.vehicleStatus ? 'Loading' : 'Loaded'}{' '}
+                      Real-time Status
+                    </span>
+                    {loadingStates.vehicleStatus && (
+                      <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                    )}
+                  </li>
                     <li className='flex items-center'>
                       <span
                         className={
@@ -1476,18 +1586,27 @@ const VehicleDashboard: React.FC = () => {
 
                   {/* Status */}
                   <div className='text-center mt-4'>
-                    <p
-                      className={`text-lg font-bold ${
-                        vehicle.vehicle_info.status === 'online'
-                          ? 'text-green-600'
-                          : 'text-red-600'
-                      }`}
-                    >
-                      <strong>
-                        Status: {vehicle.vehicle_info.status}
-                      </strong>
-                    </p>
-                  </div>
+                  <p
+                    className={`text-lg font-bold ${
+                      loadingStates.vehicleStatus
+                        ? 'text-blue-600'
+                        : vehicleStatusByVehicle[vehicle.VEHICLE_CD]?.status === 'online'
+                        ? 'text-green-600'
+                        : 'text-red-600'
+                    }`}
+                  >
+                    <strong>
+                      Status: {
+                        loadingStates.vehicleStatus
+                          ? 'Loading...'
+                          : vehicleStatusByVehicle[vehicle.VEHICLE_CD]?.status || vehicle.vehicle_info.status
+                      }
+                    </strong>
+                    {loadingStates.vehicleStatus && (
+                      <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                    )}
+                  </p>
+                </div>
 
                   <hr className='border-gray-300 mb-4' />
                   <div className='grid grid-cols-2 gap-4 text-base text-gray-600'>
@@ -2602,6 +2721,7 @@ const VehicleDashboard: React.FC = () => {
 
           {/* If we DO have snapshot data, show the side-by-side comparison */}
           {Object.keys(snapshotData).length > 0 && (
+            
             <div className='mt-8'>
               <h2 className='text-2xl font-bold text-gray-800 mb-4'>
                 Snapshot Cards
