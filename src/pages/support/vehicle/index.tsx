@@ -882,6 +882,64 @@ const VehicleDashboard: React.FC = () => {
     isAfter?: boolean;
   }
 
+  const isOlderThanTwoWeeks = (dateString: string | null | undefined): boolean => {
+    if (!dateString) return false;
+    
+    // Parse the date - handle both DD/MM/YYYY and ISO formats
+    let date: Date;
+    if (dateString.includes('/')) {
+      // Format: DD/MM/YYYY HH:MM
+      const [datePart, timePart] = dateString.split(' ');
+      const [day, month, year] = datePart.split('/').map(Number);
+      const [hours, minutes] = timePart ? timePart.split(':').map(Number) : [0, 0];
+      date = new Date(year, month - 1, day, hours, minutes);
+    } else {
+      // ISO format
+      date = new Date(dateString);
+    }
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) return false;
+    
+    // Calculate two weeks ago
+    const twoWeeksAgo = new Date();
+    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+    
+    // Return true if the date is older than two weeks
+    return date < twoWeeksAgo;
+  };
+
+  const getLastConectionColor = (dateString: string | null | undefined): string => {
+    if (!dateString) return 'text-gray-600'; // Default color
+    
+    // Parse the date - handle both DD/MM/YYYY and ISO formats
+    let date: Date;
+    if (dateString.includes('/')) {
+      // Format: DD/MM/YYYY HH:MM
+      const [datePart, timePart] = dateString.split(' ');
+      const [day, month, year] = datePart.split('/').map(Number);
+      const [hours, minutes] = timePart ? timePart.split(':').map(Number) : [0, 0];
+      date = new Date(year, month - 1, day, hours, minutes);
+    } else {
+      // ISO format
+      date = new Date(dateString);
+    }
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) return 'text-gray-600';
+    
+    // Calculate days ago
+    const now = new Date();
+    const diffTime = now.getTime() - date.getTime();
+    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+    
+    // Return appropriate class based on age
+    if (diffDays > 14) return 'text-red-600 font-semibold'; // Older than 2 weeks - red
+    if (diffDays > 3) return 'text-amber-500 font-semibold'; // Older than 3 days - amber
+    return 'text-gray-600'; // Default color
+  };
+
+
   const SnapshotCard: React.FC<SnapshotCardProps> = ({
     snapshot,
     bothSnaps,
@@ -1330,51 +1388,95 @@ const VehicleDashboard: React.FC = () => {
                   <p className="text-sm text-gray-600 mt-1">Total Vehicles</p>
                 </div>
                 
-                {/* Online vehicles */}
+                {/* Online vehicles - Shows loading state */}
                 <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                  <p className="text-4xl font-bold text-green-600">
-                    {vehicles.filter(v => v.vehicle_info.status === 'online').length}
-                  </p>
+                  {loadingStates.vehicleStatus ? (
+                    <div className="flex items-center">
+                      <div className="animate-pulse flex space-x-1">
+                        <div className="h-8 w-8 bg-green-200 rounded-full"></div>
+                        <div className="h-8 w-8 bg-green-200 rounded-full"></div>
+                      </div>
+                      <p className="text-sm text-gray-500 ml-2">Loading...</p>
+                    </div>
+                  ) : (
+                    <p className="text-4xl font-bold text-green-600">
+                      {vehicles.filter(v => v.vehicle_info.status === 'online').length}
+                    </p>
+                  )}
                   <p className="text-sm text-gray-600 mt-1">Online Vehicles</p>
                 </div>
                 
-                {/* Currently offline vehicles */}
+                {/* Currently offline vehicles - Shows loading state */}
                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                  <p className="text-4xl font-bold text-gray-600">
-                    {vehicles.filter(v => v.vehicle_info.status === 'offline').length}
-                  </p>
+                  {loadingStates.vehicleStatus ? (
+                    <div className="flex items-center">
+                      <div className="animate-pulse flex space-x-1">
+                        <div className="h-8 w-8 bg-gray-200 rounded-full"></div>
+                        <div className="h-8 w-8 bg-gray-200 rounded-full"></div>
+                      </div>
+                      <p className="text-sm text-gray-500 ml-2">Loading...</p>
+                    </div>
+                  ) : (
+                    <p className="text-4xl font-bold text-gray-600">
+                      {vehicles.filter(v => v.vehicle_info.status === 'offline').length}
+                    </p>
+                  )}
                   <p className="text-sm text-gray-600 mt-1">Currently Offline</p>
                 </div>
                 
-                {/* Offline more than 3 days */}
+                {/* Offline more than 3 days - Based on last connection */}
                 <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
                   <p className="text-4xl font-bold text-orange-600">
                     {vehicles.filter(v => {
-                      if (v.vehicle_info.status !== 'offline') return false;
                       if (!v.vehicle_info.last_connection) return false;
                       
-                      const lastConn = new Date(v.vehicle_info.last_connection);
+                      // Parse date with proper handling of DD/MM/YYYY format
+                      let connectionDate;
+                      if (typeof v.vehicle_info.last_connection === 'string' && v.vehicle_info.last_connection.includes('/')) {
+                        const [datePart, timePart] = v.vehicle_info.last_connection.split(' ');
+                        const [day, month, year] = datePart.split('/').map(Number);
+                        const [hours, minutes] = timePart ? timePart.split(':').map(Number) : [0, 0];
+                        connectionDate = new Date(year, month - 1, day, hours, minutes);
+                      } else {
+                        connectionDate = new Date(v.vehicle_info.last_connection);
+                      }
+                      
+                      // Check if date is valid
+                      if (isNaN(connectionDate.getTime())) return false;
+                      
                       const threeDaysAgo = new Date();
                       threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
                       
-                      return lastConn < threeDaysAgo;
+                      return connectionDate < threeDaysAgo;
                     }).length}
                   </p>
                   <p className="text-sm text-gray-600 mt-1">Offline > 3 Days</p>
                 </div>
                 
-                {/* Offline more than 2 weeks */}
+                {/* Offline more than 2 weeks - Based on last connection */}
                 <div className="bg-red-50 p-4 rounded-lg border border-red-200">
                   <p className="text-4xl font-bold text-red-600">
                     {vehicles.filter(v => {
-                      if (v.vehicle_info.status !== 'offline') return false;
                       if (!v.vehicle_info.last_connection) return false;
                       
-                      const lastConn = new Date(v.vehicle_info.last_connection);
+                      // Parse date with proper handling of DD/MM/YYYY format
+                      let connectionDate;
+                      if (typeof v.vehicle_info.last_connection === 'string' && v.vehicle_info.last_connection.includes('/')) {
+                        const [datePart, timePart] = v.vehicle_info.last_connection.split(' ');
+                        const [day, month, year] = datePart.split('/').map(Number);
+                        const [hours, minutes] = timePart ? timePart.split(':').map(Number) : [0, 0];
+                        connectionDate = new Date(year, month - 1, day, hours, minutes);
+                      } else {
+                        connectionDate = new Date(v.vehicle_info.last_connection);
+                      }
+                      
+                      // Check if date is valid
+                      if (isNaN(connectionDate.getTime())) return false;
+                      
                       const twoWeeksAgo = new Date();
                       twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
                       
-                      return lastConn < twoWeeksAgo;
+                      return connectionDate < twoWeeksAgo;
                     }).length}
                   </p>
                   <p className="text-sm text-gray-600 mt-1">Offline > 2 Weeks</p>
@@ -1547,14 +1649,23 @@ const VehicleDashboard: React.FC = () => {
                         <strong>ExpModu Version:</strong>{' '}
                         {vehicle.vehicle_info.expansion_version}
                       </p>
-                      <p className='text-base text-gray-600'>
+                      <p className={`text-base ${
+                        isOlderThanTwoWeeks(vehicle.vehicle_info.last_dlist_timestamp) 
+                          ? 'text-amber-500 font-semibold' 
+                          : 'text-gray-600'
+                      }`}>
                         <strong>Last Driver List sync:</strong>{' '}
                         {vehicle.vehicle_info.last_dlist_timestamp}
                       </p>
-                      <p className='text-base text-gray-600'>
+                      <p className={`text-base ${
+                        isOlderThanTwoWeeks(vehicle.vehicle_info.last_preop_timestamp) 
+                          ? 'text-amber-500 font-semibold' 
+                          : 'text-gray-600'
+                      }`}>
                         <strong>Last Checklist sync:</strong>{' '}
                         {vehicle.vehicle_info.last_preop_timestamp}
                       </p>
+                      
                     </div>
                     <div>
                       <p className='text-base text-gray-600'>
@@ -1576,10 +1687,10 @@ const VehicleDashboard: React.FC = () => {
                         ? 'Yes'
                         : 'No'}
                     </p>
-                      <p className='text-base text-gray-600'>
-                        <strong>Last Connection:</strong>{' '}
-                        {vehicle.vehicle_info.last_connection}
-                      </p>
+                    <p className={`text-base ${getLastConectionColor(vehicle.vehicle_info.last_connection)}`}>
+                      <strong>Last Connection:</strong>{' '}
+                      {vehicle.vehicle_info.last_connection}
+                    </p>
                       
                     </div>
                   </div>
