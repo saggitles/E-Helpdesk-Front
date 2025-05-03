@@ -58,6 +58,7 @@ interface MasterCode {
 interface BlacklistedDriver {
   driver_name: string;
   driver_id: string;
+  card_id: string;
 }
 
 interface VehicleLogin {
@@ -1980,145 +1981,154 @@ const VehicleDashboard: React.FC = () => {
                       )}
                   </button>
                   {showPopup.blacklistDrivers &&
-                    activeVehicleId === vehicle.VEHICLE_CD && (
-                      <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
-                        <div
-                          ref={popupRef}
-                          className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'
-                        >
-                          <h3 className='text-lg font-semibold mb-4'>
-                            Drivers on Blacklist for{' '}
-                            {vehicle.vehicle_info.vehicle_name} (
-                            {vehicle.vehicle_info.gmpt_code})
-                          </h3>
+                  activeVehicleId === vehicle.VEHICLE_CD && (
+                    <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
+                      <div
+                        ref={popupRef}
+                        className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'
+                      >
+                        <h3 className='text-lg font-semibold mb-4'>
+                          Drivers on Blacklist for{' '}
+                          {vehicle.vehicle_info.vehicle_name} (
+                          {vehicle.vehicle_info.gmpt_code})
+                        </h3>
 
-                          {/* Search filter input */}
-                          <div className="mb-4">
-                            <input
-                              type="text"
-                              placeholder="Search drivers..."
-                              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              onChange={(e) => {
-                                // Store search value in a local variable
-                                const searchValue = e.target.value.toLowerCase();
-                                
-                                // Re-render will use this value to filter the table
-                                e.target.setAttribute('data-search', searchValue);
-                                // Force re-render of the component
-                                setShowPopup(prev => ({ ...prev }));
-                              }}
-                            />
-                          </div>
-
-                          {loadingStates.blacklistedDrivers ? (
-                            <div className='flex items-center text-blue-500'>
-                              <span className='mr-2 inline-block w-4 h-4 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
-                              Loading blacklisted drivers...
-                            </div>
-                          ) : blacklistedDriversByVehicle[vehicle.VEHICLE_CD]?.length > 0 ? (
-                            <div className='overflow-x-auto'>
-                              <table className='min-w-full bg-white'>
-                                <thead>
-                                  <tr className='w-full h-16 border-b border-gray-200 bg-gray-50'>
-                                    <th className='text-left pl-4'>
-                                      Driver Name
-                                    </th>
-                                    <th className='text-left pl-4'>
-                                      Driver ID
-                                    </th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {/* Filter drivers based on search input */}
-                                  {blacklistedDriversByVehicle[vehicle.VEHICLE_CD]
-                                    .filter(driver => {
-                                      // Get the current search value from the input element
-                                      const searchInput = document.querySelector('[data-search]');
-                                      const searchValue = searchInput ? searchInput.getAttribute('data-search') || '' : '';
-                                      
-                                      if (!searchValue) return true; // If no search, show all
-                                      
-                                      // Search in driver name and ID
-                                      return (
-                                        (driver.driver_name && driver.driver_name.toLowerCase().includes(searchValue)) ||
-                                        (driver.driver_id && driver.driver_id.toLowerCase().includes(searchValue))
-                                      );
-                                    })
-                                    .map((driver, idx) => (
-                                      <tr
-                                        key={idx}
-                                        className='h-12 border-b border-gray-200 bg-red-100/50'
-                                      >
-                                        <td className='text-left pl-4'>
-                                          {driver.driver_name || 'Unknown'}
-                                        </td>
-                                        <td className='text-left pl-4'>
-                                          {driver.driver_id || 'N/A'}
-                                        </td>
-                                      </tr>
-                                    ))}
-                                </tbody>
-                              </table>
+                        {/* Search filter input */}
+                        <div className="mb-4">
+                          <input
+                            type="text"
+                            placeholder="Search drivers..."
+                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            onChange={(e) => {
+                              // Store search value in a local variable
+                              const searchValue = e.target.value.toLowerCase();
                               
-                              {/* No results message */}
-                              {(() => {
-                                const searchInput = document.querySelector('[data-search]');
-                                const searchValue = searchInput ? searchInput.getAttribute('data-search') || '' : '';
-                                const filteredDrivers = blacklistedDriversByVehicle[vehicle.VEHICLE_CD].filter(driver => {
-                                  if (!searchValue) return true;
-                                  return (
-                                    (driver.driver_name && driver.driver_name.toLowerCase().includes(searchValue)) ||
-                                    (driver.driver_id && driver.driver_id.toLowerCase().includes(searchValue))
-                                  );
-                                });
-                                
-                                if (searchValue && filteredDrivers.length === 0) {
-                                  return (
-                                    <div className="text-center py-4 text-gray-500">
-                                      No drivers match your search
-                                    </div>
-                                  );
-                                }
-                                return null;
-                              })()}
-                            </div>
-                          ) : (
-                            <p className='text-gray-600'>
-                              No blacklisted drivers found.
-                            </p>
-                          )}
+                              // Re-render will use this value to filter the table
+                              e.target.setAttribute('data-search', searchValue);
+                              // Force re-render of the component
+                              setShowPopup(prev => ({ ...prev }));
+                            }}
+                          />
+                        </div>
 
-                          {/* Show filter stats */}
-                          {(() => {
-                            const searchInput = document.querySelector('[data-search]');
-                            const searchValue = searchInput ? searchInput.getAttribute('data-search') || '' : '';
+                        {loadingStates.blacklistedDrivers ? (
+                          <div className='flex items-center text-blue-500'>
+                            <span className='mr-2 inline-block w-4 h-4 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                            Loading blacklisted drivers...
+                          </div>
+                        ) : blacklistedDriversByVehicle[vehicle.VEHICLE_CD]?.length > 0 ? (
+                          <div className='overflow-x-auto'>
+                            <table className='min-w-full bg-white'>
+                              <thead>
+                                <tr className='w-full h-16 border-b border-gray-200 bg-gray-50'>
+                                  <th className='text-left pl-4'>
+                                    Driver Name
+                                  </th>
+                                  <th className='text-left pl-4'>
+                                    Driver ID
+                                  </th>
+                                  <th className='text-left pl-4'>
+                                    Weigand
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {/* Filter drivers based on search input */}
+                                {blacklistedDriversByVehicle[vehicle.VEHICLE_CD]
+                                  .filter(driver => {
+                                    // Get the current search value from the input element
+                                    const searchInput = document.querySelector('[data-search]');
+                                    const searchValue = searchInput ? searchInput.getAttribute('data-search') || '' : '';
+                                    
+                                    if (!searchValue) return true; // If no search, show all
+                                    
+                                    // Search in driver name, ID and card ID
+                                    return (
+                                      (driver.driver_name && driver.driver_name.toLowerCase().includes(searchValue)) ||
+                                      (driver.driver_id && driver.driver_id.toLowerCase().includes(searchValue)) ||
+                                      (driver.card_id && driver.card_id.toLowerCase().includes(searchValue))
+                                    );
+                                  })
+                                  .map((driver, idx) => (
+                                    <tr
+                                      key={idx}
+                                      className='h-12 border-b border-gray-200 bg-red-100/50'
+                                    >
+                                      <td className='text-left pl-4'>
+                                        {driver.driver_name || 'Unknown'}
+                                      </td>
+                                      <td className='text-left pl-4'>
+                                        {driver.driver_id || 'N/A'}
+                                      </td>
+                                      <td className='text-left pl-4'>
+                                        {driver.card_id || 'N/A'}
+                                      </td>
+                                    </tr>
+                                  ))}
+                              </tbody>
+                            </table>
                             
-                            if (searchValue && blacklistedDriversByVehicle[vehicle.VEHICLE_CD]?.length > 0) {
-                              const filteredCount = blacklistedDriversByVehicle[vehicle.VEHICLE_CD].filter(driver => {
+                            {/* No results message */}
+                            {(() => {
+                              const searchInput = document.querySelector('[data-search]');
+                              const searchValue = searchInput ? searchInput.getAttribute('data-search') || '' : '';
+                              const filteredDrivers = blacklistedDriversByVehicle[vehicle.VEHICLE_CD].filter(driver => {
+                                if (!searchValue) return true;
                                 return (
                                   (driver.driver_name && driver.driver_name.toLowerCase().includes(searchValue)) ||
-                                  (driver.driver_id && driver.driver_id.toLowerCase().includes(searchValue))
+                                  (driver.driver_id && driver.driver_id.toLowerCase().includes(searchValue)) ||
+                                  (driver.card_id && driver.card_id.toLowerCase().includes(searchValue))
                                 );
-                              }).length;
+                              });
                               
-                              return (
-                                <div className="mt-2 text-sm text-gray-600">
-                                  Showing {filteredCount} of {blacklistedDriversByVehicle[vehicle.VEHICLE_CD].length} drivers
-                                </div>
-                              );
-                            }
-                            return null;
-                          })()}
+                              if (searchValue && filteredDrivers.length === 0) {
+                                return (
+                                  <div className="text-center py-4 text-gray-500">
+                                    No drivers match your search
+                                  </div>
+                                );
+                              }
+                              return null;
+                            })()}
+                          </div>
+                        ) : (
+                          <p className='text-gray-600'>
+                            No blacklisted drivers found.
+                          </p>
+                        )}
 
-                          <button
-                            className='mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700'
-                            onClick={() => togglePopup('blacklistDrivers')}
-                          >
-                            Close
-                          </button>
-                        </div>
+                        {/* Show filter stats */}
+                        {(() => {
+                          const searchInput = document.querySelector('[data-search]');
+                          const searchValue = searchInput ? searchInput.getAttribute('data-search') || '' : '';
+                          
+                          if (searchValue && blacklistedDriversByVehicle[vehicle.VEHICLE_CD]?.length > 0) {
+                            const filteredCount = blacklistedDriversByVehicle[vehicle.VEHICLE_CD].filter(driver => {
+                              return (
+                                (driver.driver_name && driver.driver_name.toLowerCase().includes(searchValue)) ||
+                                (driver.driver_id && driver.driver_id.toLowerCase().includes(searchValue)) ||
+                                (driver.card_id && driver.card_id.toLowerCase().includes(searchValue))
+                              );
+                            }).length;
+                            
+                            return (
+                              <div className="mt-2 text-sm text-gray-600">
+                                Showing {filteredCount} of {blacklistedDriversByVehicle[vehicle.VEHICLE_CD].length} drivers
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
+
+                        <button
+                          className='mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700'
+                          onClick={() => togglePopup('blacklistDrivers')}
+                        >
+                          Close
+                        </button>
                       </div>
-                    )}
+                    </div>
+                  )}
 
                     {/* Vehicle Logins Popup with Enhanced Search Filter */}
 
