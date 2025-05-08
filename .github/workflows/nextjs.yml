@@ -25,7 +25,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "18"
-          cache: 'npm'
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Install PNPM
@@ -49,22 +48,33 @@ jobs:
       - name: Create env file
         run: |
           echo "NEXT_PUBLIC_API_URL=https://e-helpdesk-back-r1nabbk9f-richard-blackers-projects.vercel.app/" > .env.local
-      - name: Check Next.js version
-        run: pnpm list next
       - name: Build with Next.js
         run: pnpm build
-      - name: Create out directory if needed
-        run: mkdir -p out
-      - name: Copy static export
+      - name: List output directory contents (debug)
         run: |
-          if [ -d "dist/static" ]; then
-            cp -r dist/static/* out/
-          elif [ -d ".next/static" ]; then
-            cp -r .next/static/* out/
+          if [ -d "out" ]; then
+            echo "Contents of out directory:"
+            ls -la out/
+          else
+            echo "out directory does not exist"
+            echo "Checking dist directory:"
+            ls -la dist/ || echo "dist directory does not exist"
           fi
-          cp -r public/* out/
-          if [ -f "dist/404.html" ]; then
-            cp dist/404.html out/
+      - name: Check for important files
+        run: |
+          # Check and copy 404.html
+          if [ -f "out/404.html" ]; then
+            echo "404.html exists in out directory"
+          else 
+            echo "404.html not found in out directory, copying from public"
+            cp public/404.html out/ || echo "Failed to copy 404.html"
+          fi
+          
+          # Check if index.html exists in the base directory
+          if [ -f "out/index.html" ]; then
+            echo "index.html exists in out directory"
+          else
+            echo "index.html not found in out directory"
           fi
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

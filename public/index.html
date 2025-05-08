@@ -3,32 +3,33 @@
 <head>
   <meta charset="utf-8">
   <title>E-Helpdesk</title>
-  <script type="text/javascript">
-    // SPA Routing handler for GitHub Pages
+  <script>
+    // Direct to root path but keep the URL path for Next.js client-side routing
     (function() {
-      // Parse query parameters from the URL
-      var params = {};
-      window.location.search.replace(/^\?/, '').split('&').forEach(function(param) {
-        var parts = param.split('=');
-        if (parts.length === 2) {
-          params[parts[0]] = decodeURIComponent(parts[1]);
-        }
-      });
-
-      // If there's a path parameter, handle it
-      var pathParam = params.p;
-      if (pathParam) {
-        // Clean the URL by removing the query parameter
-        var basePath = window.location.origin + window.location.pathname.replace(/\/index\.html$/, '');
-        var cleanPath = basePath + (pathParam.startsWith('/') ? pathParam : '/' + pathParam);
-        window.history.replaceState({}, document.title, cleanPath);
+      var redirectPath = '/';
+      var location = window.location;
+      var baseRepoPath = '/E-Helpdesk-Front';
+      
+      // Check if we need to redirect to a specific page
+      var url = new URL(window.location.href);
+      var path = url.pathname;
+      
+      // If we're at the repo root, redirect to the app
+      if (path === baseRepoPath || path === baseRepoPath + '/') {
+        console.log('At repo root, redirecting to app');
+      } else if (path.startsWith(baseRepoPath)) {
+        // We're already at a subpath, just let Next.js handle it
+        console.log('At subpath:', path);
       }
     })();
   </script>
-  <meta http-equiv="refresh" content="0;URL='/_next/static/html/index.html'" />
+  <meta http-equiv="refresh" content="0;URL=''" />
 </head>
 <body>
-  <h1>Redirecting to E-Helpdesk application...</h1>
+  <h1>Loading E-Helpdesk application...</h1>
   <p>If you are not redirected automatically, please wait a moment.</p>
+  <script>
+    // This will automatically be replaced by Next.js build with the correct content
+  </script>
 </body>
 </html>

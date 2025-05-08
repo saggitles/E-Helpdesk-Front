@@ -9,28 +9,39 @@ function MyApp({ Component, pageProps }: AppProps) {
   const router = useRouter();
 
   useEffect(() => {
-    // Handle GitHub Pages redirect from 404.html
-    const handleGitHubPagesRedirect = () => {
-      if (typeof window !== 'undefined') {
-        // Check if we have a path parameter from 404.html redirect
-        const urlParams = new URLSearchParams(window.location.search);
-        const pathParam = urlParams.get('p');
-        
-        if (pathParam) {
-          console.log('Detected redirect path parameter:', pathParam);
-          
-          // Clean URL by removing the query parameter
-          const cleanUrl = window.location.pathname;
-          window.history.replaceState({}, document.title, cleanUrl);
-          
-          // Navigate to the correct route
-          const normalizedPath = pathParam.startsWith('/') ? pathParam : `/${pathParam}`;
-          router.replace(normalizedPath);
-        }
+    // Handle GitHub Pages URL parsing
+    const handleGitHubPagesRouting = () => {
+      if (typeof window === 'undefined') return;
+      
+      const { pathname, href } = window.location;
+      console.log('Current URL:', href);
+      console.log('Current pathname:', pathname);
+      
+      // Check for direct support/vehicle access
+      if (pathname.includes('/404') || pathname === '/E-Helpdesk-Front') {
+        // If we're at a 404 or the root, redirect to the vehicle dashboard
+        console.log('Redirecting to vehicle dashboard');
+        router.replace('/support/vehicle');
+      }
+      
+      // Check if URL contains a hash with a path (GitHub Pages redirect format)
+      const hash = window.location.hash;
+      if (hash && hash.startsWith('#/')) {
+        const path = hash.substring(1);
+        console.log('Found hash path:', path);
+        router.replace(path);
+      }
+      
+      // Special handling for direct URL access to subpaths
+      if (pathname.includes('/support/vehicle') && !window.location.href.includes('/support/vehicle')) {
+        console.log('Direct access to vehicle path detected, fixing URL');
+        const basePath = process.env.NODE_ENV === 'production' ? '/E-Helpdesk-Front' : '';
+        const newPath = `${basePath}/support/vehicle`;
+        router.replace(newPath);
       }
     };
     
-    handleGitHubPagesRedirect();
+    handleGitHubPagesRouting();
   }, [router]);
 
   return (

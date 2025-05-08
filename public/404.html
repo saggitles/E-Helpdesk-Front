@@ -3,11 +3,13 @@
 <head>
   <meta charset="utf-8">
   <title>E-Helpdesk | Redirecting...</title>
-  <script type="text/javascript">
+  <script>
     // Single Page Apps for GitHub Pages
     // MIT License
-    // Modified version from https://github.com/rafgraph/spa-github-pages
+    // Adapted from https://github.com/rafgraph/spa-github-pages
     
+    // This script takes the current URL and converts the path and query
+    // parameters into a route that Next.js router can handle
     (function(l) {
       if (l.search[1] === '/' ) {
         var decoded = l.search.slice(1).split('&').map(function(s) { 
@@ -17,34 +19,34 @@
           l.pathname.slice(0, -1) + decoded + l.hash
         );
       }
-    }(window.location))
+    }(window.location));
 
-    // Redirect to the index page with the path in the URL
-    var segmentCount = 1; // Adjust this based on your GitHub Pages path
-    var location = window.location;
+    // Gets the path after the GitHub Pages repo part
+    var pathSegmentsToKeep = 1; // Keep /E-Helpdesk-Front prefix
     var repo = '/E-Helpdesk-Front';
-    var path = location.pathname;
+    var l = window.location;
     
-    // Handle paths with or without the repo name
-    if (path.indexOf(repo) === 0) {
-      path = path.substr(repo.length);
+    // Get the current path without the GitHub Pages repo prefix
+    var cleanPath = l.pathname;
+    if (cleanPath.startsWith(repo)) {
+      cleanPath = cleanPath.substring(repo.length);
     }
     
-    // Redirect to index.html with the path in the URL
-    var redirectUrl = location.origin + repo + '/index.html?p=' + path;
+    if (cleanPath === '/404.html') {
+      cleanPath = '/';
+    }
     
-    // Log some debug info
-    console.log('404 redirect: ', {
-      originalPath: location.pathname,
-      redirectUrl: redirectUrl
-    });
+    // Redirect to index.html with the path and query parameters
+    var redirectUrl = l.origin + repo + '/' + 
+      (cleanPath.startsWith('/') ? cleanPath.substring(1) : cleanPath) + 
+      (l.search.startsWith('?') ? l.search : '');
     
-    // Redirect
+    console.log('Redirecting from 404.html to:', redirectUrl);
     window.location.replace(redirectUrl);
   </script>
 </head>
 <body>
   <h1>Redirecting...</h1>
-  <p>If you are not redirected automatically, click <a href="index.html">here</a>.</p>
+  <p>If you are not redirected automatically, click <a href="/">here</a>.</p>
 </body>
 </html>

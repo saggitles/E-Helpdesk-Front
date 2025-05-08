@@ -15,6 +15,10 @@ const nextConfig = {
   },
   // Enable static export for GitHub Pages
   output: 'export',
+  // Ensure 404.html is generated
+  experimental: {
+    errorBoundary: true,
+  },
 };
 
 module.exports = nextConfig;
