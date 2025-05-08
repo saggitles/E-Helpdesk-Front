@@ -13,20 +13,8 @@ const nextConfig = {
     unoptimized: true,
     domains: ['e-helpdesk-back-r1nabbk9f-richard-blackers-projects.vercel.app'],
   },
-  // Set cache headers to improve loading
-  async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=3600, must-revalidate',
-          }
-        ],
-      },
-    ]
-  }
+  // Enable static export for GitHub Pages
+  output: 'export',
 };
 
 module.exports = nextConfig;

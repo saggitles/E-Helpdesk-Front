@@ -10,25 +10,24 @@ permissions:
   pages: write
   id-token: write
 
+# Allow only one concurrent deployment
 concurrency:
   group: "pages"
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: "18"
           cache: 'npm'
       - name: Setup Pages
-        uses: actions/configure-pages@v3
-        with:
-          static_site_generator: next
+        uses: actions/configure-pages@v4
       - name: Install PNPM
         uses: pnpm/action-setup@v2
         with:
@@ -49,13 +48,26 @@ jobs:
         run: pnpm install
       - name: Create env file
         run: |
-          echo "NEXT_PUBLIC_API_URL='https://e-helpdesk-back-r1nabbk9f-richard-blackers-projects.vercel.app/'" > .env.local
+          echo "NEXT_PUBLIC_API_URL=https://e-helpdesk-back-r1nabbk9f-richard-blackers-projects.vercel.app/" > .env.local
+      - name: Check Next.js version
+        run: pnpm list next
       - name: Build with Next.js
         run: pnpm build
-      - name: Static HTML export with Next.js
-        run: pnpm next export
+      - name: Create out directory if needed
+        run: mkdir -p out
+      - name: Copy static export
+        run: |
+          if [ -d "dist/static" ]; then
+            cp -r dist/static/* out/
+          elif [ -d ".next/static" ]; then
+            cp -r .next/static/* out/
+          fi
+          cp -r public/* out/
+          if [ -f "dist/404.html" ]; then
+            cp dist/404.html out/
+          fi
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v3
         with:
           path: ./out
 
@@ -68,4 +80,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4
