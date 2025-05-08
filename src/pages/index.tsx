@@ -26,97 +26,155 @@ import { UnresolvedTicketActionType } from '@/reducers/UnresolvedTickets/types';
 import { useGenerateDetails } from '@/contexts';
 import { Avatar } from '@mui/material';
 
-function Home({
-  token,
-  tokenApp,
-}: InferGetServerSidePropsType<typeof getServerSideProps>) {
-  const [state, dispatch] = useReducer(
-    unresolvedTicketsReducer,
-    initialUnresolvedTicketsState
-  );
-
-  const [isLoad, setIsLoad] = useState(true);
-  const [viewTicket, setViewTicket] = useState<string>('');
-  const [alert, setAlert] = useState(false);
-  const [alertType, setAlertType] = useState<EscalateType>(
-    '' as EscalateType
-  );
-
-  const {
-    displaySiteDetails,
-    equipmentID,
-    displayEquipmentDetails,
-    displayTimeline,
-    displayWebsiteSettings,
-    displayEvent,
-    displayDriverHistory,
-  } = useGenerateDetails();
-
-  const [search, setSearch] = useState(false);
-  const [clearForm, setClearForm] = useState(false);
-
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [selectedOption, setSelectedOption] = useState('Default');
-
+export default function Home() {
   const router = useRouter();
-
-  const handleMenuClick = (option: string) => {
-    setSelectedOption(option);
-    setIsMenuOpen(false);
-  };
-
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
-
-  const userAlert = () => {
-    router.push('/api/auth/logout');
-  };
-
-  const getTickets = async () => {
-    if (token) {
-      const unresolvedTickets = await getUnresolvedTickets();
-
-      if (unresolvedTickets) {
-        dispatch({
-          type: UnresolvedTicketActionType.ADD_UNRESOLVED_TICKETS,
-          payload: unresolvedTickets,
-        });
-      }
-    }
-  };
-
-  const saveTokenLocalStorage = () => {
-    if (token !== null) {
-      localStorage.setItem('accessToken', token);
-      // localStorage.setItem('appToken', tokenApp);
-    }
-  };
-
-  const displayAlert = (type: EscalateType) => {
-    setAlert(true);
-    setAlertType(type);
-  };
-
-  const clearTicket = () => {
-    setViewTicket('');
-    setClearForm(true);
-  };
+  const [apiStatus, setApiStatus] = useState<
+    'loading' | 'online' | 'offline'
+  >('loading');
+  const [diagnosticInfo, setDiagnosticInfo] = useState({
+    apiUrl: '',
+    nodeEnv: '',
+    basePath: '',
+    assetPrefix: '',
+  });
 
   useEffect(() => {
-    saveTokenLocalStorage();
-    getTickets();
+    // Display environment variables for debugging
+    console.log('Environment diagnostics:', {
+      NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+      NODE_ENV: process.env.NODE_ENV,
+      basePath: router.basePath,
+      assetPrefix: process.env.NEXT_PUBLIC_BASE_PATH || '',
+    });
 
-    router.push('/support/create/ticket');
+    // Set diagnostic info for display
+    setDiagnosticInfo({
+      apiUrl: process.env.NEXT_PUBLIC_API_URL || 'Not set',
+      nodeEnv: process.env.NODE_ENV || 'Not set',
+      basePath: router.basePath || 'Not set',
+      assetPrefix: process.env.NEXT_PUBLIC_BASE_PATH || 'Not set',
+    });
 
-    setIsLoad(false);
-  }, []);
+    // Check API status
+    const checkApi = async () => {
+      try {
+        // Simple ping to check if API is online
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/ping`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            // Short timeout to prevent long waiting
+            signal: AbortSignal.timeout(5000),
+          }
+        );
+
+        if (response.ok) {
+          setApiStatus('online');
+        } else {
+          setApiStatus('offline');
+        }
+      } catch (error) {
+        console.error('API check failed:', error);
+        setApiStatus('offline');
+      }
+    };
+
+    checkApi();
+
+    // Auto-redirect to dashboard after 5 seconds
+    const redirectTimer = setTimeout(() => {
+      router.push('/support/vehicle');
+    }, 5000);
+
+    return () => clearTimeout(redirectTimer);
+  }, [router]);
 
   return (
-    <>
-      <Loading />
-    </>
+    <div className='min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4'>
+      <div className='bg-white shadow-xl rounded-lg p-8 max-w-3xl w-full'>
+        <div className='text-center mb-8'>
+          <h1 className='text-3xl font-bold text-gray-800 mb-2'>
+            E-Helpdesk Diagnostic Page
+          </h1>
+          <p className='text-gray-600'>
+            Redirecting to dashboard in a few seconds...
+          </p>
+        </div>
+
+        <div className='mb-6'>
+          <div className='flex items-center justify-center mb-4'>
+            <div
+              className={`w-4 h-4 rounded-full mr-2 ${
+                apiStatus === 'online'
+                  ? 'bg-green-500'
+                  : apiStatus === 'offline'
+                  ? 'bg-red-500'
+                  : 'bg-yellow-500'
+              }`}
+            ></div>
+            <span className='font-semibold'>
+              API Status:{' '}
+              {apiStatus === 'loading'
+                ? 'Checking...'
+                : apiStatus === 'online'
+                ? 'Online'
+                : 'Offline'}
+            </span>
+          </div>
+        </div>
+
+        {/* Environment Information */}
+        <div className='border border-gray-200 rounded-lg p-4 mb-6'>
+          <h2 className='font-bold text-lg mb-2'>
+            Environment Diagnostics
+          </h2>
+          <div className='grid grid-cols-1 gap-2'>
+            <div className='flex items-start'>
+              <span className='font-medium w-28'>API URL:</span>
+              <code className='bg-gray-100 px-2 py-1 rounded text-sm flex-1 overflow-auto'>
+                {diagnosticInfo.apiUrl}
+              </code>
+            </div>
+            <div className='flex items-start'>
+              <span className='font-medium w-28'>Node Env:</span>
+              <code className='bg-gray-100 px-2 py-1 rounded text-sm'>
+                {diagnosticInfo.nodeEnv}
+              </code>
+            </div>
+            <div className='flex items-start'>
+              <span className='font-medium w-28'>Base Path:</span>
+              <code className='bg-gray-100 px-2 py-1 rounded text-sm'>
+                {diagnosticInfo.basePath}
+              </code>
+            </div>
+            <div className='flex items-start'>
+              <span className='font-medium w-28'>Asset Prefix:</span>
+              <code className='bg-gray-100 px-2 py-1 rounded text-sm'>
+                {diagnosticInfo.assetPrefix}
+              </code>
+            </div>
+          </div>
+        </div>
+
+        <div className='flex justify-between'>
+          <button
+            onClick={() => router.push('/support/vehicle')}
+            className='bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline'
+          >
+            Go to Dashboard Now
+          </button>
+
+          <button
+            onClick={() => window.location.reload()}
+            className='bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline'
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
-
-export default Home;

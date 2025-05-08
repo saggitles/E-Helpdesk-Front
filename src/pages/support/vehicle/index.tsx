@@ -11,6 +11,10 @@ import { format } from 'date-fns';
 import { after, before } from 'node:test';
 import { useMemo } from 'react';
 
+// Debug logs for environment variables
+console.log('Environment check - NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+console.log('Environment check - NODE_ENV:', process.env.NODE_ENV);
+
 // Define interfaces for your data types
 interface VehicleInfo {
   preop_schedule: string;
