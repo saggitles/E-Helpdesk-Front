@@ -54,7 +54,9 @@ const CreateTicketPage = () => {
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const res = await fetch('http://localhost:8080/api/customers');
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/customers`
+        );
         const data = await res.json();
         setCustomerOptions(data);
       } catch (err) {
@@ -74,7 +76,7 @@ const CreateTicketPage = () => {
     const fetchSites = async () => {
       try {
         const res = await fetch(
-          `http://localhost:8080/api/sites?customer=${formData.customer_id}`
+          `${process.env.NEXT_PUBLIC_API_URL}/api/sites?customer=${formData.customer_id}`
         );
         if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
         const data = await res.json();
@@ -182,7 +184,7 @@ const CreateTicketPage = () => {
         const site_id = Number(selectedSite.site_id);
         if (!isNaN(site_id) && site_id !== 0) {
           const response = await fetch(
-            `http://localhost:8080/api/ticket/site?site_id=${site_id}`
+            `${process.env.NEXT_PUBLIC_API_URL}/api/ticket/site?site_id=${site_id}`
           );
 
           if (!response.ok) {

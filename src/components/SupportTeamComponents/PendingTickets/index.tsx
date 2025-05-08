@@ -76,7 +76,7 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
 
     try {
       // For exporting all tickets - check your API structure
-      const exportUrl = 'http://localhost:8080/api/tickets/export';
+      const exportUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/export`;
       // OR if your API expects a different format:
       // const exportUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/export/tickets`;
 
@@ -126,7 +126,7 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
 
       // Send a GET request with statuses as query parameters
       const response = await axios.get(
-        `http://localhost:8080/tickets/filterByStatus?status=${statusQuery}`
+        `${process.env.NEXT_PUBLIC_API_URL}/tickets/filterByStatus?status=${statusQuery}`
       );
 
       // Sort the tickets by ID in descending order

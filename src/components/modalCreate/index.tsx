@@ -85,13 +85,16 @@ const TicketModal = ({
       console.log('Ticket Payload:', ticketPayload);
 
       // Send JSON directly with the proper header.
-      const response = await fetch('http://localhost:8080/api/tickets', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(ticketPayload),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/tickets`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(ticketPayload),
+        }
+      );
 
       if (!response.ok) {
         throw new Error('Error creating ticket');
@@ -169,7 +172,7 @@ const TicketModal = ({
 
       try {
         const response = await fetch(
-          `http://localhost:8080/api/gmpt-codes?site_id=${formData.site_id}`
+          `${process.env.NEXT_PUBLIC_API_URL}/api/gmpt-codes?site_id=${formData.site_id}`
         );
         const data = await response.json();
         setAvailableGMPTs(data); // useState to store available GMPT codes

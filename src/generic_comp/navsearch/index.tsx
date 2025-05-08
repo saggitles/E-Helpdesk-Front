@@ -63,7 +63,7 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
       setLoadingCustomers(true);
       try {
         const response = await fetch(
-          'http://localhost:8080/api/customers'
+          `${process.env.NEXT_PUBLIC_API_URL}/api/customers`
         );
         if (!response.ok)
           throw new Error(`HTTP error! Status: ${response.status}`);
@@ -100,7 +100,7 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
       setLoadingSites(true);
       try {
         const response = await fetch(
-          `http://localhost:8080/api/sites?customer=${filters.customer}`
+          `${process.env.NEXT_PUBLIC_API_URL}/api/sites?customer=${filters.customer}`
         );
         if (!response.ok)
           throw new Error(`HTTP error! Status: ${response.status}`);
@@ -128,7 +128,7 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
       console.log('Fetching vehicle by GMPT code:', filters.gmptCode);
       try {
         const response = await fetch(
-          `http://localhost:8080/api/vehicles?gmptCode=${filters.gmptCode}`
+          `${process.env.NEXT_PUBLIC_API_URL}/api/vehicles?gmptCode=${filters.gmptCode}`
         );
         if (!response.ok)
           throw new Error(`HTTP error! Status: ${response.status}`);
@@ -213,7 +213,7 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
     localStorage.setItem('selectedGmpt', filters.gmptCode || '');
 
     // Clear cache to ensure fresh data on parameter change
-    fetch('http://localhost:8080/clear-vehicle-cache', {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/clear-vehicle-cache`, {
       method: 'POST',
     }).catch((err) => console.error('Failed to clear cache:', err));
 

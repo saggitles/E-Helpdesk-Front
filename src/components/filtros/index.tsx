@@ -324,7 +324,7 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
 
       try {
         const response = await fetch(
-          `http://localhost:8080/api/ticket/site?site_id=${site_id}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/api/ticket/site?site_id=${site_id}`,
           {
             method: 'GET',
             headers: {

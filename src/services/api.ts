@@ -7,10 +7,30 @@ import axios, { AxiosRequestConfig } from 'axios';
 
 const BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/`; // TODO: ADD BASE URL FROM ENV
 
+// Log the database connection configuration
+console.log(`API URL configured as: ${process.env.NEXT_PUBLIC_API_URL}`);
+
 const instance = axios.create({
   baseURL: BASE_URL,
   timeout: 1000,
 });
+
+// Add an interceptor to log successful connections
+instance.interceptors.response.use(
+  (response) => {
+    if (response.status >= 200 && response.status < 300) {
+      console.log(`✅ Successful connection to the database at ${process.env.NEXT_PUBLIC_API_URL}`);
+      // You can add more details if the response includes database name information
+      if (response.data?.databaseName) {
+        console.log(`Database name: ${response.data.databaseName}`);
+      }
+    }
+    return response;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 interface IAxios {
   method: 'GET' | 'POST' | 'PUT' | 'DELETE';

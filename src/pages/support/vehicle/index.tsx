@@ -245,24 +245,7 @@ const VehicleDashboard: React.FC = () => {
     string | number | null
   >(null);
 
-  const vehicleSummary = useMemo(() => {
-    if (!vehicles || vehicles.length === 0) {
-      return { total: 0, active: 0, inactive: 0 };
-    }
-    return {
-      total: vehicles.length,
-      active: vehicles.filter(
-        (v) =>
-          v.vehicle_info.status &&
-          v.vehicle_info.status.toLowerCase() === 'online'
-      ).length,
-      inactive: vehicles.filter(
-        (v) =>
-          v.vehicle_info.status &&
-          v.vehicle_info.status.toLowerCase() === 'offline'
-      ).length,
-    };
-  }, [vehicles]);
+  
 
   const fetchVehicles = async () => {
     setVehicles([]);
@@ -299,7 +282,7 @@ const VehicleDashboard: React.FC = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:8080/api/vehicles?${queryParams}`
+        `${process.env.NEXT_PUBLIC_API_URL}/api/vehicles?${queryParams}`
       );
 
       if (!response.ok) {
@@ -344,7 +327,7 @@ const VehicleDashboard: React.FC = () => {
   
     try {
       const response = await fetch(
-        `http://localhost:8080/api/vehicle-status`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/vehicle-status`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -394,7 +377,7 @@ const VehicleDashboard: React.FC = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:8080/api/master-codes`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/master-codes`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -433,7 +416,7 @@ const VehicleDashboard: React.FC = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:8080/api/blacklisted-drivers`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/blacklisted-drivers`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -468,7 +451,7 @@ const VehicleDashboard: React.FC = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:8080/api/vehicle-logins`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/vehicle-logins`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -522,7 +505,7 @@ const VehicleDashboard: React.FC = () => {
 
       try {
         const response = await fetch(
-          `http://localhost:8080/api/last-driver-logins`,
+          `${process.env.NEXT_PUBLIC_API_URL}/api/last-driver-logins`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -559,7 +542,7 @@ const VehicleDashboard: React.FC = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:8080/api/messages-sent`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/messages-sent`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -591,7 +574,7 @@ const VehicleDashboard: React.FC = () => {
   // ✅ Fetch available dates from backend
   const fetchDates = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/available-dates');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/available-dates`);
     const data = await response.json();
     
     // Check if data is an array
@@ -629,7 +612,7 @@ const VehicleDashboard: React.FC = () => {
   const fetchTimes = async (formattedDate: string) => {
     try {
       const response = await fetch(
-        `http://localhost:8080/api/available-times?date=${formattedDate}`
+        `${process.env.NEXT_PUBLIC_API_URL}/api/available-times?date=${formattedDate}`
       );
       const data = await response.json();
       console.log('Available times for', formattedDate, ':', data);
@@ -643,7 +626,7 @@ const VehicleDashboard: React.FC = () => {
   const fetchSecondTimes = async (formattedDate: string) => {
     try {
       const response = await fetch(
-        `http://localhost:8080/api/available-times?date=${formattedDate}`
+        `${process.env.NEXT_PUBLIC_API_URL}/api/available-times?date=${formattedDate}`
       );
       const data = await response.json();
       setAvailableTimes2(Array.isArray(data) ? data : []);
@@ -785,7 +768,7 @@ const VehicleDashboard: React.FC = () => {
     const gmptCode = localStorage.getItem('selectedGmpt'); // optional
 
     // Create the URL and append parameters.
-    const url = new URL('http://localhost:8080/api/snapshots');
+    const url = new URL(`${process.env.NEXT_PUBLIC_API_URL}/api/snapshots`);
     url.searchParams.append('time1', selectedFirstTime);
     url.searchParams.append('time2', selectedSecondTime);
     url.searchParams.append(
