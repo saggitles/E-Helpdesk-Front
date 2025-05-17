@@ -1,9 +1,11 @@
+/* eslint no-use-before-define: 0 */ // --> OFF
+
 import { GetServerSideProps } from 'next';
-import { getServerSession } from 'next-auth/next';
+import { getServerSession } from 'next-auth';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
-export default function ProtectedPage({ data }) {
+export default function ProtectedPage({ data }: { data: string }) {
   return (
     <ProtectedRoute requiredRoles={['admin', 'support']}>
       <div>

@@ -12,7 +12,10 @@ import { after, before } from 'node:test';
 import { useMemo } from 'react';
 
 // Debug logs for environment variables
-console.log('Environment check - NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+console.log(
+  'Environment check - NEXT_PUBLIC_API_URL:',
+  process.env.NEXT_PUBLIC_API_URL
+);
 console.log('Environment check - NODE_ENV:', process.env.NODE_ENV);
 
 // Define interfaces for your data types
@@ -249,8 +252,6 @@ const VehicleDashboard: React.FC = () => {
     string | number | null
   >(null);
 
-  
-
   const fetchVehicles = async () => {
     setVehicles([]);
     setMasterCodesByVehicle({});
@@ -292,9 +293,15 @@ const VehicleDashboard: React.FC = () => {
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-      console.log('Response status: my response with my vehicle cd suposuley', response.status); // Debugging
+      console.log(
+        'Response status: my response with my vehicle cd suposuley',
+        response.status
+      ); // Debugging
       const vehicleData = await response.json();
-      console.log('Vehicle data received: it is going into my popups', vehicleData);
+      console.log(
+        'Vehicle data received: it is going into my popups',
+        vehicleData
+      );
       if (Array.isArray(vehicleData)) {
         setVehicles(vehicleData);
 
@@ -318,17 +325,16 @@ const VehicleDashboard: React.FC = () => {
     }
   };
 
-
   const fetchVehicleStatus = async (vehicleIds: (string | number)[]) => {
     if (!vehicleIds.length) return;
-  
+
     // Set loading state for all vehicles
     setLoadingStates((prev) => ({ ...prev, vehicleStatus: true }));
-    
+
     // Set the active vehicle ID to show loading state
     // If checking all vehicles, you could rotate through them
     setActiveVehicleId(vehicleIds[0]);
-  
+
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/vehicle-status`,
@@ -338,18 +344,18 @@ const VehicleDashboard: React.FC = () => {
           body: JSON.stringify({ vehicleCDs: vehicleIds }),
         }
       );
-  
+
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
       }
-  
+
       const statusData = await response.json();
-      console.log("Received real-time status data:", statusData);
+      console.log('Received real-time status data:', statusData);
       setVehicleStatusByVehicle(statusData);
-  
+
       // Update the vehicles array with the new status
-      setVehicles(prevVehicles => 
-        prevVehicles.map(vehicle => {
+      setVehicles((prevVehicles) =>
+        prevVehicles.map((vehicle) => {
           const vehicleId = vehicle.VEHICLE_CD;
           if (statusData[vehicleId]) {
             return {
@@ -357,8 +363,9 @@ const VehicleDashboard: React.FC = () => {
               vehicle_info: {
                 ...vehicle.vehicle_info,
                 status: statusData[vehicleId].status,
-                latest_status_time: statusData[vehicleId].latest_status_time
-              }
+                latest_status_time:
+                  statusData[vehicleId].latest_status_time,
+              },
             };
           }
           return vehicle;
@@ -394,7 +401,7 @@ const VehicleDashboard: React.FC = () => {
       }
 
       const masterCodesData = await response.json();
-      console.log("Received master codes data:", masterCodesData);
+      console.log('Received master codes data:', masterCodesData);
       setMasterCodesByVehicle(masterCodesData);
     } catch (error) {
       console.error('Error fetching master codes:', error);
@@ -578,39 +585,45 @@ const VehicleDashboard: React.FC = () => {
   // ✅ Fetch available dates from backend
   const fetchDates = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/available-dates`);
-    const data = await response.json();
-    
-    // Check if data is an array
-    if (Array.isArray(data)) {
-      // If it's already an array, use it directly
-      const formattedDates = data.map((d: string) => new Date(d));
-      setDates(formattedDates);
-    } else if (data && typeof data === 'object') {
-      // If it's an object with dates in some property
-      // Try common patterns for API responses
-      if (Array.isArray(data.dates)) {
-        const formattedDates = data.dates.map((d: string) => new Date(d));
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/available-dates`
+      );
+      const data = await response.json();
+
+      // Check if data is an array
+      if (Array.isArray(data)) {
+        // If it's already an array, use it directly
+        const formattedDates = data.map((d: string) => new Date(d));
         setDates(formattedDates);
-      } else if (Array.isArray(data.data)) {
-        const formattedDates = data.data.map((d: string) => new Date(d));
-        setDates(formattedDates);
-      } else if (Array.isArray(data.results)) {
-        const formattedDates = data.results.map((d: string) => new Date(d));
-        setDates(formattedDates);
+      } else if (data && typeof data === 'object') {
+        // If it's an object with dates in some property
+        // Try common patterns for API responses
+        if (Array.isArray(data.dates)) {
+          const formattedDates = data.dates.map(
+            (d: string) => new Date(d)
+          );
+          setDates(formattedDates);
+        } else if (Array.isArray(data.data)) {
+          const formattedDates = data.data.map((d: string) => new Date(d));
+          setDates(formattedDates);
+        } else if (Array.isArray(data.results)) {
+          const formattedDates = data.results.map(
+            (d: string) => new Date(d)
+          );
+          setDates(formattedDates);
+        } else {
+          // If we can't find an array, log the actual response structure
+          console.error('Unexpected API response format:', data);
+          setDates([]);
+        }
       } else {
-        // If we can't find an array, log the actual response structure
-        console.error('Unexpected API response format:', data);
+        console.error('Invalid data format received:', data);
         setDates([]);
       }
-    } else {
-      console.error('Invalid data format received:', data);
+    } catch (error) {
+      console.error('Error fetching dates:', error);
       setDates([]);
     }
-  } catch (error) {
-    console.error('Error fetching dates:', error);
-    setDates([]);
-  }
   };
 
   const fetchTimes = async (formattedDate: string) => {
@@ -772,7 +785,9 @@ const VehicleDashboard: React.FC = () => {
     const gmptCode = localStorage.getItem('selectedGmpt'); // optional
 
     // Create the URL and append parameters.
-    const url = new URL(`${process.env.NEXT_PUBLIC_API_URL}/api/snapshots`);
+    const url = new URL(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/snapshots`
+    );
     url.searchParams.append('time1', selectedFirstTime);
     url.searchParams.append('time2', selectedSecondTime);
     url.searchParams.append(
@@ -839,7 +854,7 @@ const VehicleDashboard: React.FC = () => {
     vehicleId: string | number | null = null
   ) => {
     console.log(`Toggling popup: ${key}, vehicleId: ${vehicleId}`); // Debug log
-    
+
     // Close all popups first
     const newPopupState = {
       masterCodes: false,
@@ -850,13 +865,13 @@ const VehicleDashboard: React.FC = () => {
       lastDriverLogins: false,
       messagesSent: false,
     };
-    
+
     // Only toggle the requested popup
     newPopupState[key] = !showPopup[key];
-    
+
     // Set the new state
     setShowPopup(newPopupState);
-    
+
     // Set active vehicle ID only if we're opening a popup
     if (newPopupState[key] && vehicleId) {
       setActiveVehicleId(vehicleId);
@@ -870,63 +885,70 @@ const VehicleDashboard: React.FC = () => {
     isAfter?: boolean;
   }
 
-  const isOlderThanTwoWeeks = (dateString: string | null | undefined): boolean => {
+  const isOlderThanTwoWeeks = (
+    dateString: string | null | undefined
+  ): boolean => {
     if (!dateString) return false;
-    
+
     // Parse the date - handle both DD/MM/YYYY and ISO formats
     let date: Date;
     if (dateString.includes('/')) {
       // Format: DD/MM/YYYY HH:MM
       const [datePart, timePart] = dateString.split(' ');
       const [day, month, year] = datePart.split('/').map(Number);
-      const [hours, minutes] = timePart ? timePart.split(':').map(Number) : [0, 0];
+      const [hours, minutes] = timePart
+        ? timePart.split(':').map(Number)
+        : [0, 0];
       date = new Date(year, month - 1, day, hours, minutes);
     } else {
       // ISO format
       date = new Date(dateString);
     }
-    
+
     // Check if date is valid
     if (isNaN(date.getTime())) return false;
-    
+
     // Calculate two weeks ago
     const twoWeeksAgo = new Date();
     twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-    
+
     // Return true if the date is older than two weeks
     return date < twoWeeksAgo;
   };
 
-  const getLastConectionColor = (dateString: string | null | undefined): string => {
+  const getLastConectionColor = (
+    dateString: string | null | undefined
+  ): string => {
     if (!dateString) return 'text-gray-600'; // Default color
-    
+
     // Parse the date - handle both DD/MM/YYYY and ISO formats
     let date: Date;
     if (dateString.includes('/')) {
       // Format: DD/MM/YYYY HH:MM
       const [datePart, timePart] = dateString.split(' ');
       const [day, month, year] = datePart.split('/').map(Number);
-      const [hours, minutes] = timePart ? timePart.split(':').map(Number) : [0, 0];
+      const [hours, minutes] = timePart
+        ? timePart.split(':').map(Number)
+        : [0, 0];
       date = new Date(year, month - 1, day, hours, minutes);
     } else {
       // ISO format
       date = new Date(dateString);
     }
-    
+
     // Check if date is valid
     if (isNaN(date.getTime())) return 'text-gray-600';
-    
+
     // Calculate days ago
     const now = new Date();
     const diffTime = now.getTime() - date.getTime();
     const diffDays = diffTime / (1000 * 60 * 60 * 24);
-    
+
     // Return appropriate class based on age
     if (diffDays > 14) return 'text-red-600 font-semibold'; // Older than 2 weeks - red
     if (diffDays > 3) return 'text-amber-500 font-semibold'; // Older than 3 days - amber
     return 'text-gray-600'; // Default color
   };
-
 
   const SnapshotCard: React.FC<SnapshotCardProps> = ({
     snapshot,
@@ -942,8 +964,6 @@ const VehicleDashboard: React.FC = () => {
       }
       return '';
     };
-
-    
 
     if (loadingVehicles || loadingSnapshots) {
       console.log('Loading state:', loadingVehicles, loadingSnapshots); // Debugging
@@ -974,7 +994,6 @@ const VehicleDashboard: React.FC = () => {
     }
 
     return (
-      
       <div className='bg-white shadow-lg rounded-lg p-6 border border-gray-300'>
         {/* Top Section: Image and Basic Details */}
         <div className='grid grid-cols-3 gap-4 items-start'>
@@ -1077,7 +1096,6 @@ const VehicleDashboard: React.FC = () => {
           </div>
         </div>
 
-        
         <hr className='border-gray-300 mb-4' />
 
         {/* Bottom Section: Additional Details */}
@@ -1095,7 +1113,7 @@ const VehicleDashboard: React.FC = () => {
                 {snapshot.vorSetting == 'false' ? 'Off' : 'On'}
               </span>
             </p>
-            
+
             <p
               className={`text-base text-gray-600 ${compareBeforeAfterSnaps(
                 'impactRecalibrationDate'
@@ -1219,14 +1237,11 @@ const VehicleDashboard: React.FC = () => {
         {/* Show loading overlay when loadingVehicles is true */}
         {loadingVehicles && (
           <LoadingOverlay message='Loading vehicles...' />
-        )}  {/* This closing bracket was missing */}
-
-        
-
+        )}{' '}
+        {/* This closing bracket was missing */}
         {loadingSnapshots && (
           <LoadingOverlay message='Loading snapshots...' />
         )}
-        
         <div className='bg-gray-100 min-h-screen p-8'>
           {/* Title with Date & Time Filters */}
           <h1 className='text-4xl font-bold text-gray-800 text-center py-5'>
@@ -1330,152 +1345,223 @@ const VehicleDashboard: React.FC = () => {
               <h3 className='text-2xl font-bold text-gray-800 mb-3 text-center'>
                 Color Legend
               </h3>
-              
+
               <hr className='border-gray-300 mb-4' />
-              
+
               <div className='space-y-3'>
                 <div className='flex items-center'>
                   <div className='w-6 h-6 bg-yellow-300 mr-3'></div>
-                  <span className='text-gray-700'>Changed values between snapshots</span>
+                  <span className='text-gray-700'>
+                    Changed values between snapshots
+                  </span>
                 </div>
-                
+
                 <div className='flex items-center'>
                   <div className='w-6 h-6 bg-green-100 mr-3'></div>
-                  <span className='text-gray-700'>Enabled / On / Authorized status</span>
+                  <span className='text-gray-700'>
+                    Enabled / On / Authorized status
+                  </span>
                 </div>
-                
+
                 <div className='flex items-center'>
                   <div className='w-6 h-6 bg-red-100 mr-3'></div>
-                  <span className='text-gray-700'>Disabled / Off / Unauthorized status</span>
+                  <span className='text-gray-700'>
+                    Disabled / Off / Unauthorized status
+                  </span>
                 </div>
-                
+
                 <div className='flex items-center'>
                   <div className='w-6 h-6 bg-amber-100 mr-3'></div>
-                  <span className='text-gray-700'>Pending / In Queue status</span>
+                  <span className='text-gray-700'>
+                    Pending / In Queue status
+                  </span>
                 </div>
-                
+
                 <div className='flex items-center'>
                   <div className='w-6 h-6 border border-gray-300 mr-3'></div>
-                  <span className='text-gray-700'>Default / No special status</span>
+                  <span className='text-gray-700'>
+                    Default / No special status
+                  </span>
                 </div>
               </div>
             </div>
           </div>
-          
-          
 
           {/* Vehicle Cards with Progressive Loading */}
-          
-          <div className="mb-6">
-            <div className="bg-white shadow-lg rounded-lg p-6 border border-gray-200">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">Vehicle Status Summary</h2>
-              <div className="grid grid-cols-5 gap-4">
+
+          <div className='mb-6'>
+            <div className='bg-white shadow-lg rounded-lg p-6 border border-gray-200'>
+              <h2 className='text-xl font-bold text-gray-800 mb-4'>
+                Vehicle Status Summary
+              </h2>
+              <div className='grid grid-cols-5 gap-4'>
                 {/* Total vehicles */}
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                  <p className="text-4xl font-bold text-blue-600">{vehicles.length}</p>
-                  <p className="text-sm text-gray-600 mt-1">Total Vehicles</p>
+                <div className='bg-blue-50 p-4 rounded-lg border border-blue-200'>
+                  <p className='text-4xl font-bold text-blue-600'>
+                    {vehicles.length}
+                  </p>
+                  <p className='text-sm text-gray-600 mt-1'>
+                    Total Vehicles
+                  </p>
                 </div>
-                
+
                 {/* Online vehicles - Shows loading state */}
-                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                <div className='bg-green-50 p-4 rounded-lg border border-green-200'>
                   {loadingStates.vehicleStatus ? (
-                    <div className="flex items-center">
-                      <div className="animate-pulse flex space-x-1">
-                        <div className="h-8 w-8 bg-green-200 rounded-full"></div>
-                        <div className="h-8 w-8 bg-green-200 rounded-full"></div>
+                    <div className='flex items-center'>
+                      <div className='animate-pulse flex space-x-1'>
+                        <div className='h-8 w-8 bg-green-200 rounded-full'></div>
+                        <div className='h-8 w-8 bg-green-200 rounded-full'></div>
                       </div>
-                      <p className="text-sm text-gray-500 ml-2">Loading...</p>
+                      <p className='text-sm text-gray-500 ml-2'>
+                        Loading...
+                      </p>
                     </div>
                   ) : (
-                    <p className="text-4xl font-bold text-green-600">
-                      {vehicles.filter(v => v.vehicle_info.status === 'online').length}
+                    <p className='text-4xl font-bold text-green-600'>
+                      {
+                        vehicles.filter(
+                          (v) => v.vehicle_info.status === 'online'
+                        ).length
+                      }
                     </p>
                   )}
-                  <p className="text-sm text-gray-600 mt-1">Online Vehicles</p>
+                  <p className='text-sm text-gray-600 mt-1'>
+                    Online Vehicles
+                  </p>
                 </div>
-                
+
                 {/* Currently offline vehicles - Shows loading state */}
-                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <div className='bg-gray-50 p-4 rounded-lg border border-gray-200'>
                   {loadingStates.vehicleStatus ? (
-                    <div className="flex items-center">
-                      <div className="animate-pulse flex space-x-1">
-                        <div className="h-8 w-8 bg-gray-200 rounded-full"></div>
-                        <div className="h-8 w-8 bg-gray-200 rounded-full"></div>
+                    <div className='flex items-center'>
+                      <div className='animate-pulse flex space-x-1'>
+                        <div className='h-8 w-8 bg-gray-200 rounded-full'></div>
+                        <div className='h-8 w-8 bg-gray-200 rounded-full'></div>
                       </div>
-                      <p className="text-sm text-gray-500 ml-2">Loading...</p>
+                      <p className='text-sm text-gray-500 ml-2'>
+                        Loading...
+                      </p>
                     </div>
                   ) : (
-                    <p className="text-4xl font-bold text-gray-600">
-                      {vehicles.filter(v => v.vehicle_info.status === 'offline').length}
+                    <p className='text-4xl font-bold text-gray-600'>
+                      {
+                        vehicles.filter(
+                          (v) => v.vehicle_info.status === 'offline'
+                        ).length
+                      }
                     </p>
                   )}
-                  <p className="text-sm text-gray-600 mt-1">Currently Offline</p>
+                  <p className='text-sm text-gray-600 mt-1'>
+                    Currently Offline
+                  </p>
                 </div>
-                
+
                 {/* Offline more than 3 days - Based on last connection */}
-                <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-                  <p className="text-4xl font-bold text-orange-600">
-                    {vehicles.filter(v => {
-                      if (!v.vehicle_info.last_connection) return false;
-                      
-                      // Parse date with proper handling of DD/MM/YYYY format
-                      let connectionDate;
-                      if (typeof v.vehicle_info.last_connection === 'string' && v.vehicle_info.last_connection.includes('/')) {
-                        const [datePart, timePart] = v.vehicle_info.last_connection.split(' ');
-                        const [day, month, year] = datePart.split('/').map(Number);
-                        const [hours, minutes] = timePart ? timePart.split(':').map(Number) : [0, 0];
-                        connectionDate = new Date(year, month - 1, day, hours, minutes);
-                      } else {
-                        connectionDate = new Date(v.vehicle_info.last_connection);
-                      }
-                      
-                      // Check if date is valid
-                      if (isNaN(connectionDate.getTime())) return false;
-                      
-                      const threeDaysAgo = new Date();
-                      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-                      
-                      return connectionDate < threeDaysAgo;
-                    }).length}
+                <div className='bg-orange-50 p-4 rounded-lg border border-orange-200'>
+                  <p className='text-4xl font-bold text-orange-600'>
+                    {
+                      vehicles.filter((v) => {
+                        if (!v.vehicle_info.last_connection) return false;
+
+                        // Parse date with proper handling of DD/MM/YYYY format
+                        let connectionDate;
+                        if (
+                          typeof v.vehicle_info.last_connection ===
+                            'string' &&
+                          v.vehicle_info.last_connection.includes('/')
+                        ) {
+                          const [datePart, timePart] =
+                            v.vehicle_info.last_connection.split(' ');
+                          const [day, month, year] = datePart
+                            .split('/')
+                            .map(Number);
+                          const [hours, minutes] = timePart
+                            ? timePart.split(':').map(Number)
+                            : [0, 0];
+                          connectionDate = new Date(
+                            year,
+                            month - 1,
+                            day,
+                            hours,
+                            minutes
+                          );
+                        } else {
+                          connectionDate = new Date(
+                            v.vehicle_info.last_connection
+                          );
+                        }
+
+                        // Check if date is valid
+                        if (isNaN(connectionDate.getTime())) return false;
+
+                        const threeDaysAgo = new Date();
+                        threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+                        return connectionDate < threeDaysAgo;
+                      }).length
+                    }
                   </p>
-                  <p className="text-sm text-gray-600 mt-1">Offline > 3 Days</p>
+                  <p className='text-sm text-gray-600 mt-1'>
+                    Offline {'>'} 3 Days
+                  </p>
                 </div>
-                
+
                 {/* Offline more than 2 weeks - Based on last connection */}
-                <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-                  <p className="text-4xl font-bold text-red-600">
-                    {vehicles.filter(v => {
-                      if (!v.vehicle_info.last_connection) return false;
-                      
-                      // Parse date with proper handling of DD/MM/YYYY format
-                      let connectionDate;
-                      if (typeof v.vehicle_info.last_connection === 'string' && v.vehicle_info.last_connection.includes('/')) {
-                        const [datePart, timePart] = v.vehicle_info.last_connection.split(' ');
-                        const [day, month, year] = datePart.split('/').map(Number);
-                        const [hours, minutes] = timePart ? timePart.split(':').map(Number) : [0, 0];
-                        connectionDate = new Date(year, month - 1, day, hours, minutes);
-                      } else {
-                        connectionDate = new Date(v.vehicle_info.last_connection);
-                      }
-                      
-                      // Check if date is valid
-                      if (isNaN(connectionDate.getTime())) return false;
-                      
-                      const twoWeeksAgo = new Date();
-                      twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-                      
-                      return connectionDate < twoWeeksAgo;
-                    }).length}
+                <div className='bg-red-50 p-4 rounded-lg border border-red-200'>
+                  <p className='text-4xl font-bold text-red-600'>
+                    {
+                      vehicles.filter((v) => {
+                        if (!v.vehicle_info.last_connection) return false;
+
+                        // Parse date with proper handling of DD/MM/YYYY format
+                        let connectionDate;
+                        if (
+                          typeof v.vehicle_info.last_connection ===
+                            'string' &&
+                          v.vehicle_info.last_connection.includes('/')
+                        ) {
+                          const [datePart, timePart] =
+                            v.vehicle_info.last_connection.split(' ');
+                          const [day, month, year] = datePart
+                            .split('/')
+                            .map(Number);
+                          const [hours, minutes] = timePart
+                            ? timePart.split(':').map(Number)
+                            : [0, 0];
+                          connectionDate = new Date(
+                            year,
+                            month - 1,
+                            day,
+                            hours,
+                            minutes
+                          );
+                        } else {
+                          connectionDate = new Date(
+                            v.vehicle_info.last_connection
+                          );
+                        }
+
+                        // Check if date is valid
+                        if (isNaN(connectionDate.getTime())) return false;
+
+                        const twoWeeksAgo = new Date();
+                        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+
+                        return connectionDate < twoWeeksAgo;
+                      }).length
+                    }
                   </p>
-                  <p className="text-sm text-gray-600 mt-1">Offline > 2 Weeks</p>
+                  <p className='text-sm text-gray-600 mt-1'>
+                    Offline {'>'} 2 Weeks
+                  </p>
                 </div>
               </div>
             </div>
           </div>
 
-
           {Object.keys(snapshotData).length === 0 && (
-             <div className='grid grid-cols-3 gap-6'>
+            <div className='grid grid-cols-3 gap-6'>
               {/* Data Loading Status Panel */}
               {vehicles.length > 0 && isLoading && (
                 <div className='fixed bottom-4 right-4 bg-white shadow-lg rounded-lg p-4 z-50 border border-gray-200'>
@@ -1499,20 +1585,22 @@ const VehicleDashboard: React.FC = () => {
                       )}
                     </li>
                     <li className='flex items-center'>
-                    <span
-                      className={
-                        loadingStates.vehicleStatus
-                          ? 'text-blue-500'
-                          : 'text-green-500'
-                      }
-                    >
-                      {loadingStates.vehicleStatus ? 'Loading' : 'Loaded'}{' '}
-                      Real-time Status
-                    </span>
-                    {loadingStates.vehicleStatus && (
-                      <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
-                    )}
-                  </li>
+                      <span
+                        className={
+                          loadingStates.vehicleStatus
+                            ? 'text-blue-500'
+                            : 'text-green-500'
+                        }
+                      >
+                        {loadingStates.vehicleStatus
+                          ? 'Loading'
+                          : 'Loaded'}{' '}
+                        Real-time Status
+                      </span>
+                      {loadingStates.vehicleStatus && (
+                        <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                      )}
+                    </li>
                     <li className='flex items-center'>
                       <span
                         className={
@@ -1637,23 +1725,30 @@ const VehicleDashboard: React.FC = () => {
                         <strong>ExpModu Version:</strong>{' '}
                         {vehicle.vehicle_info.expansion_version}
                       </p>
-                      <p className={`text-base ${
-                        isOlderThanTwoWeeks(vehicle.vehicle_info.last_dlist_timestamp) 
-                          ? 'text-amber-500 font-semibold' 
-                          : 'text-gray-600'
-                      }`}>
+                      <p
+                        className={`text-base ${
+                          isOlderThanTwoWeeks(
+                            vehicle.vehicle_info.last_dlist_timestamp
+                          )
+                            ? 'text-amber-500 font-semibold'
+                            : 'text-gray-600'
+                        }`}
+                      >
                         <strong>Last Driver List sync:</strong>{' '}
                         {vehicle.vehicle_info.last_dlist_timestamp}
                       </p>
-                      <p className={`text-base ${
-                        isOlderThanTwoWeeks(vehicle.vehicle_info.last_preop_timestamp) 
-                          ? 'text-amber-500 font-semibold' 
-                          : 'text-gray-600'
-                      }`}>
+                      <p
+                        className={`text-base ${
+                          isOlderThanTwoWeeks(
+                            vehicle.vehicle_info.last_preop_timestamp
+                          )
+                            ? 'text-amber-500 font-semibold'
+                            : 'text-gray-600'
+                        }`}
+                      >
                         <strong>Last Checklist sync:</strong>{' '}
                         {vehicle.vehicle_info.last_preop_timestamp}
                       </p>
-                      
                     </div>
                     <div>
                       <p className='text-base text-gray-600'>
@@ -1670,46 +1765,49 @@ const VehicleDashboard: React.FC = () => {
                         {vehicle.vehicle_info.sim_number}
                       </p>
                       <p className='text-gray-600 text-base'>
-                      <strong>Can-Rules Loaded:</strong>{' '}
-                      {vehicle.vehicle_info.can_rules_loaded
-                        ? 'Yes'
-                        : 'No'}
-                    </p>
-                    <p className={`text-base ${getLastConectionColor(vehicle.vehicle_info.last_connection)}`}>
-                      <strong>Last Connection:</strong>{' '}
-                      {vehicle.vehicle_info.last_connection}
-                    </p>
-                      
+                        <strong>Can-Rules Loaded:</strong>{' '}
+                        {vehicle.vehicle_info.can_rules_loaded
+                          ? 'Yes'
+                          : 'No'}
+                      </p>
+                      <p
+                        className={`text-base ${getLastConectionColor(
+                          vehicle.vehicle_info.last_connection
+                        )}`}
+                      >
+                        <strong>Last Connection:</strong>{' '}
+                        {vehicle.vehicle_info.last_connection}
+                      </p>
                     </div>
                   </div>
 
                   {/* Status */}
                   <div className='text-center mt-4'>
-                  <p
-                    className={`text-lg font-bold ${
-                      loadingStates.vehicleStatus
-                        ? 'text-blue-600'
-                        : vehicleStatusByVehicle[vehicle.VEHICLE_CD]?.status === 'online'
-                        ? 'text-green-600'
-                        : 'text-red-600'
-                    }`}
-                  >
-                    <strong>
-                      Status: {
+                    <p
+                      className={`text-lg font-bold ${
                         loadingStates.vehicleStatus
+                          ? 'text-blue-600'
+                          : vehicleStatusByVehicle[vehicle.VEHICLE_CD]
+                              ?.status === 'online'
+                          ? 'text-green-600'
+                          : 'text-red-600'
+                      }`}
+                    >
+                      <strong>
+                        Status:{' '}
+                        {loadingStates.vehicleStatus
                           ? 'Loading...'
-                          : vehicleStatusByVehicle[vehicle.VEHICLE_CD]?.status || vehicle.vehicle_info.status
-                      }
-                    </strong>
-                    {loadingStates.vehicleStatus && (
-                      <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
-                    )}
-                  </p>
-                </div>
+                          : vehicleStatusByVehicle[vehicle.VEHICLE_CD]
+                              ?.status || vehicle.vehicle_info.status}
+                      </strong>
+                      {loadingStates.vehicleStatus && (
+                        <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                      )}
+                    </p>
+                  </div>
 
                   <hr className='border-gray-300 mb-4' />
                   <div className='grid grid-cols-2 gap-4 text-base text-gray-600'>
-                    
                     <p>
                       <span
                         className={
@@ -1787,7 +1885,7 @@ const VehicleDashboard: React.FC = () => {
                       <strong>Idle Polarity:</strong>{' '}
                       {vehicle.vehicle_info.idle_polarity}
                     </p>
-                    
+
                     <p>
                       <strong>Checklist Schedule:</strong>{' '}
                       {vehicle.vehicle_info.preop_schedule}
@@ -1796,7 +1894,6 @@ const VehicleDashboard: React.FC = () => {
                       <strong>Checklist Timeout:</strong>{' '}
                       {vehicle.vehicle_info.survey_timeout}s
                     </p>
-                    
 
                     <p>
                       <span
@@ -1813,309 +1910,443 @@ const VehicleDashboard: React.FC = () => {
                       </span>
                     </p>
 
-                    
-
-                    
                     {/* Master Codes Popup - Updated with search filter */}
-                  <button
-                    className='text-blue-500 hover:underline mt-2 flex items-center'
-                    onClick={() =>
-                      togglePopup('masterCodes', vehicle.VEHICLE_CD)
-                    }
-                  >
-                    <span>Master Codes</span>
-                    {loadingStates.masterCodes &&
-                      activeVehicleId === vehicle.VEHICLE_CD && (
-                        <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
-                      )}
-                  </button>
-                  {showPopup.masterCodes &&
-                    activeVehicleId === vehicle.VEHICLE_CD && (
-                      <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
-                        <div
-                          ref={popupRef}
-                          className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'
-                        >
-                          <h3 className='text-lg font-semibold mb-4'>
-                            Master Codes for{' '}
-                            {vehicle.vehicle_info.vehicle_name} (
-                            {vehicle.vehicle_info.gmpt_code})
-                          </h3>
-                          
-                          {/* Search filter input */}
-                          <div className="mb-4">
-                            <input
-                              type="text"
-                              placeholder="Search master codes..."
-                              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              onChange={(e) => {
-                                // Store search value in a local variable
-                                const searchValue = e.target.value.toLowerCase();
-                                
-                                // Re-render will use this value to filter the table
-                                e.target.setAttribute('data-search-mastercode', searchValue);
-                                // Force re-render of the component
-                                setShowPopup(prev => ({ ...prev }));
-                              }}
-                            />
-                          </div>
-
-                          {loadingStates.masterCodes ? (
-                            <div className='flex items-center text-blue-500'>
-                              <span className='mr-2 inline-block w-4 h-4 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
-                              Loading master codes...
-                            </div>
-                          ) : masterCodesByVehicle[vehicle.VEHICLE_CD]?.length > 0 ? (
-                            <div className='overflow-x-auto'>
-                              <table className='min-w-full bg-white'>
-                                <thead>
-                                  <tr className='w-full h-16 border-b border-gray-200 bg-gray-50'>
-                                    <th className='text-left pl-4'>
-                                      Master Code User
-                                    </th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {masterCodesByVehicle[vehicle.VEHICLE_CD]
-                                    .filter(user => {
-                                      // Get the current search value from the input element
-                                      const searchInput = document.querySelector('[data-search-mastercode]');
-                                      const searchValue = searchInput ? searchInput.getAttribute('data-search-mastercode') || '' : '';
-                                      
-                                      if (!searchValue) return true; // If no search, show all
-                                      
-                                      // Search in master code user
-                                      return user.master_code_user && user.master_code_user.toLowerCase().includes(searchValue);
-                                    })
-                                    .map((user, idx) => (
-                                      <tr
-                                        key={idx}
-                                        className='h-12 border-b border-gray-200'
-                                      >
-                                        <td className='text-left pl-4'>
-                                          {user.master_code_user}
-                                        </td>
-                                      </tr>
-                                    ))}
-                                </tbody>
-                              </table>
-                              
-                              {/* No results message */}
-                              {(() => {
-                                const searchInput = document.querySelector('[data-search-mastercode]');
-                                const searchValue = searchInput ? searchInput.getAttribute('data-search-mastercode') || '' : '';
-                                const filteredUsers = masterCodesByVehicle[vehicle.VEHICLE_CD].filter(user => {
-                                  if (!searchValue) return true;
-                                  return user.master_code_user && user.master_code_user.toLowerCase().includes(searchValue);
-                                });
-                                
-                                if (searchValue && filteredUsers.length === 0) {
-                                  return (
-                                    <div className="text-center py-4 text-gray-500">
-                                      No master codes match your search
-                                    </div>
-                                  );
-                                }
-                                return null;
-                              })()}
-                            </div>
-                          ) : (
-                            <p className='text-gray-600'>
-                              No master codes found.
-                            </p>
-                          )}
-
-                          {/* Show filter stats */}
-                          {(() => {
-                            const searchInput = document.querySelector('[data-search-mastercode]');
-                            const searchValue = searchInput ? searchInput.getAttribute('data-search-mastercode') || '' : '';
-                            
-                            if (searchValue && masterCodesByVehicle[vehicle.VEHICLE_CD]?.length > 0) {
-                              const filteredCount = masterCodesByVehicle[vehicle.VEHICLE_CD].filter(user => {
-                                return user.master_code_user && user.master_code_user.toLowerCase().includes(searchValue);
-                              }).length;
-                              
-                              return (
-                                <div className="mt-2 text-sm text-gray-600">
-                                  Showing {filteredCount} of {masterCodesByVehicle[vehicle.VEHICLE_CD].length} master codes
-                                </div>
-                              );
-                            }
-                            return null;
-                          })()}
-
-                          <button
-                            className='mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700'
-                            onClick={() => togglePopup('masterCodes')}
-                          >
-                            Close
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Blacklisted Drivers Popup - Updated with search filter */}
                     <button
-                    className='text-blue-500 hover:underline mt-2 flex items-center'
-                    onClick={() =>
-                      togglePopup('blacklistDrivers', vehicle.VEHICLE_CD)
-                    }
-                  >
-                    <span>Drivers on Blacklist</span>
-                    {loadingStates.blacklistedDrivers &&
+                      className='text-blue-500 hover:underline mt-2 flex items-center'
+                      onClick={() =>
+                        togglePopup('masterCodes', vehicle.VEHICLE_CD)
+                      }
+                    >
+                      <span>Master Codes</span>
+                      {loadingStates.masterCodes &&
+                        activeVehicleId === vehicle.VEHICLE_CD && (
+                          <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                        )}
+                    </button>
+                    {showPopup.masterCodes &&
                       activeVehicleId === vehicle.VEHICLE_CD && (
-                        <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
-                      )}
-                  </button>
-                  {showPopup.blacklistDrivers &&
-                  activeVehicleId === vehicle.VEHICLE_CD && (
-                    <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
-                      <div
-                        ref={popupRef}
-                        className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'
-                      >
-                        <h3 className='text-lg font-semibold mb-4'>
-                          Drivers on Blacklist for{' '}
-                          {vehicle.vehicle_info.vehicle_name} (
-                          {vehicle.vehicle_info.gmpt_code})
-                        </h3>
+                        <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
+                          <div
+                            ref={popupRef}
+                            className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'
+                          >
+                            <h3 className='text-lg font-semibold mb-4'>
+                              Master Codes for{' '}
+                              {vehicle.vehicle_info.vehicle_name} (
+                              {vehicle.vehicle_info.gmpt_code})
+                            </h3>
 
-                        {/* Search filter input */}
-                        <div className="mb-4">
-                          <input
-                            type="text"
-                            placeholder="Search drivers..."
-                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            onChange={(e) => {
-                              // Store search value in a local variable
-                              const searchValue = e.target.value.toLowerCase();
-                              
-                              // Re-render will use this value to filter the table
-                              e.target.setAttribute('data-search', searchValue);
-                              // Force re-render of the component
-                              setShowPopup(prev => ({ ...prev }));
-                            }}
-                          />
-                        </div>
+                            {/* Search filter input */}
+                            <div className='mb-4'>
+                              <input
+                                type='text'
+                                placeholder='Search master codes...'
+                                className='w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                                onChange={(e) => {
+                                  // Store search value in a local variable
+                                  const searchValue =
+                                    e.target.value.toLowerCase();
 
-                        {loadingStates.blacklistedDrivers ? (
-                          <div className='flex items-center text-blue-500'>
-                            <span className='mr-2 inline-block w-4 h-4 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
-                            Loading blacklisted drivers...
-                          </div>
-                        ) : blacklistedDriversByVehicle[vehicle.VEHICLE_CD]?.length > 0 ? (
-                          <div className='overflow-x-auto'>
-                            <table className='min-w-full bg-white'>
-                              <thead>
-                                <tr className='w-full h-16 border-b border-gray-200 bg-gray-50'>
-                                  <th className='text-left pl-4'>
-                                    Driver Name
-                                  </th>
-                                  <th className='text-left pl-4'>
-                                    Driver ID
-                                  </th>
-                                  <th className='text-left pl-4'>
-                                    Weigand
-                                  </th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {/* Filter drivers based on search input */}
-                                {blacklistedDriversByVehicle[vehicle.VEHICLE_CD]
-                                  .filter(driver => {
-                                    // Get the current search value from the input element
-                                    const searchInput = document.querySelector('[data-search]');
-                                    const searchValue = searchInput ? searchInput.getAttribute('data-search') || '' : '';
-                                    
-                                    if (!searchValue) return true; // If no search, show all
-                                    
-                                    // Search in driver name, ID and card ID
-                                    return (
-                                      (driver.driver_name && driver.driver_name.toLowerCase().includes(searchValue)) ||
-                                      (driver.driver_id && driver.driver_id.toLowerCase().includes(searchValue)) ||
-                                      (driver.card_id && driver.card_id.toLowerCase().includes(searchValue))
-                                    );
-                                  })
-                                  .map((driver, idx) => (
-                                    <tr
-                                      key={idx}
-                                      className='h-12 border-b border-gray-200 bg-red-100/50'
-                                    >
-                                      <td className='text-left pl-4'>
-                                        {driver.driver_name || 'Unknown'}
-                                      </td>
-                                      <td className='text-left pl-4'>
-                                        {driver.driver_id || 'N/A'}
-                                      </td>
-                                      <td className='text-left pl-4'>
-                                        {driver.card_id || 'N/A'}
-                                      </td>
+                                  // Re-render will use this value to filter the table
+                                  e.target.setAttribute(
+                                    'data-search-mastercode',
+                                    searchValue
+                                  );
+                                  // Force re-render of the component
+                                  setShowPopup((prev) => ({ ...prev }));
+                                }}
+                              />
+                            </div>
+
+                            {loadingStates.masterCodes ? (
+                              <div className='flex items-center text-blue-500'>
+                                <span className='mr-2 inline-block w-4 h-4 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                                Loading master codes...
+                              </div>
+                            ) : masterCodesByVehicle[vehicle.VEHICLE_CD]
+                                ?.length > 0 ? (
+                              <div className='overflow-x-auto'>
+                                <table className='min-w-full bg-white'>
+                                  <thead>
+                                    <tr className='w-full h-16 border-b border-gray-200 bg-gray-50'>
+                                      <th className='text-left pl-4'>
+                                        Master Code User
+                                      </th>
                                     </tr>
-                                  ))}
-                              </tbody>
-                            </table>
-                            
-                            {/* No results message */}
+                                  </thead>
+                                  <tbody>
+                                    {masterCodesByVehicle[
+                                      vehicle.VEHICLE_CD
+                                    ]
+                                      .filter((user) => {
+                                        // Get the current search value from the input element
+                                        const searchInput =
+                                          document.querySelector(
+                                            '[data-search-mastercode]'
+                                          );
+                                        const searchValue = searchInput
+                                          ? searchInput.getAttribute(
+                                              'data-search-mastercode'
+                                            ) || ''
+                                          : '';
+
+                                        if (!searchValue) return true; // If no search, show all
+
+                                        // Search in master code user
+                                        return (
+                                          user.master_code_user &&
+                                          user.master_code_user
+                                            .toLowerCase()
+                                            .includes(searchValue)
+                                        );
+                                      })
+                                      .map((user, idx) => (
+                                        <tr
+                                          key={idx}
+                                          className='h-12 border-b border-gray-200'
+                                        >
+                                          <td className='text-left pl-4'>
+                                            {user.master_code_user}
+                                          </td>
+                                        </tr>
+                                      ))}
+                                  </tbody>
+                                </table>
+
+                                {/* No results message */}
+                                {(() => {
+                                  const searchInput =
+                                    document.querySelector(
+                                      '[data-search-mastercode]'
+                                    );
+                                  const searchValue = searchInput
+                                    ? searchInput.getAttribute(
+                                        'data-search-mastercode'
+                                      ) || ''
+                                    : '';
+                                  const filteredUsers =
+                                    masterCodesByVehicle[
+                                      vehicle.VEHICLE_CD
+                                    ].filter((user) => {
+                                      if (!searchValue) return true;
+                                      return (
+                                        user.master_code_user &&
+                                        user.master_code_user
+                                          .toLowerCase()
+                                          .includes(searchValue)
+                                      );
+                                    });
+
+                                  if (
+                                    searchValue &&
+                                    filteredUsers.length === 0
+                                  ) {
+                                    return (
+                                      <div className='text-center py-4 text-gray-500'>
+                                        No master codes match your search
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                })()}
+                              </div>
+                            ) : (
+                              <p className='text-gray-600'>
+                                No master codes found.
+                              </p>
+                            )}
+
+                            {/* Show filter stats */}
                             {(() => {
-                              const searchInput = document.querySelector('[data-search]');
-                              const searchValue = searchInput ? searchInput.getAttribute('data-search') || '' : '';
-                              const filteredDrivers = blacklistedDriversByVehicle[vehicle.VEHICLE_CD].filter(driver => {
-                                if (!searchValue) return true;
+                              const searchInput = document.querySelector(
+                                '[data-search-mastercode]'
+                              );
+                              const searchValue = searchInput
+                                ? searchInput.getAttribute(
+                                    'data-search-mastercode'
+                                  ) || ''
+                                : '';
+
+                              if (
+                                searchValue &&
+                                masterCodesByVehicle[vehicle.VEHICLE_CD]
+                                  ?.length > 0
+                              ) {
+                                const filteredCount = masterCodesByVehicle[
+                                  vehicle.VEHICLE_CD
+                                ].filter((user) => {
+                                  return (
+                                    user.master_code_user &&
+                                    user.master_code_user
+                                      .toLowerCase()
+                                      .includes(searchValue)
+                                  );
+                                }).length;
+
                                 return (
-                                  (driver.driver_name && driver.driver_name.toLowerCase().includes(searchValue)) ||
-                                  (driver.driver_id && driver.driver_id.toLowerCase().includes(searchValue)) ||
-                                  (driver.card_id && driver.card_id.toLowerCase().includes(searchValue))
-                                );
-                              });
-                              
-                              if (searchValue && filteredDrivers.length === 0) {
-                                return (
-                                  <div className="text-center py-4 text-gray-500">
-                                    No drivers match your search
+                                  <div className='mt-2 text-sm text-gray-600'>
+                                    Showing {filteredCount} of{' '}
+                                    {
+                                      masterCodesByVehicle[
+                                        vehicle.VEHICLE_CD
+                                      ].length
+                                    }{' '}
+                                    master codes
                                   </div>
                                 );
                               }
                               return null;
                             })()}
+
+                            <button
+                              className='mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700'
+                              onClick={() => togglePopup('masterCodes')}
+                            >
+                              Close
+                            </button>
                           </div>
-                        ) : (
-                          <p className='text-gray-600'>
-                            No blacklisted drivers found.
-                          </p>
+                        </div>
+                      )}
+
+                    {/* Blacklisted Drivers Popup - Updated with search filter */}
+                    <button
+                      className='text-blue-500 hover:underline mt-2 flex items-center'
+                      onClick={() =>
+                        togglePopup('blacklistDrivers', vehicle.VEHICLE_CD)
+                      }
+                    >
+                      <span>Drivers on Blacklist</span>
+                      {loadingStates.blacklistedDrivers &&
+                        activeVehicleId === vehicle.VEHICLE_CD && (
+                          <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
                         )}
+                    </button>
+                    {showPopup.blacklistDrivers &&
+                      activeVehicleId === vehicle.VEHICLE_CD && (
+                        <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
+                          <div
+                            ref={popupRef}
+                            className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'
+                          >
+                            <h3 className='text-lg font-semibold mb-4'>
+                              Drivers on Blacklist for{' '}
+                              {vehicle.vehicle_info.vehicle_name} (
+                              {vehicle.vehicle_info.gmpt_code})
+                            </h3>
 
-                        {/* Show filter stats */}
-                        {(() => {
-                          const searchInput = document.querySelector('[data-search]');
-                          const searchValue = searchInput ? searchInput.getAttribute('data-search') || '' : '';
-                          
-                          if (searchValue && blacklistedDriversByVehicle[vehicle.VEHICLE_CD]?.length > 0) {
-                            const filteredCount = blacklistedDriversByVehicle[vehicle.VEHICLE_CD].filter(driver => {
-                              return (
-                                (driver.driver_name && driver.driver_name.toLowerCase().includes(searchValue)) ||
-                                (driver.driver_id && driver.driver_id.toLowerCase().includes(searchValue)) ||
-                                (driver.card_id && driver.card_id.toLowerCase().includes(searchValue))
-                              );
-                            }).length;
-                            
-                            return (
-                              <div className="mt-2 text-sm text-gray-600">
-                                Showing {filteredCount} of {blacklistedDriversByVehicle[vehicle.VEHICLE_CD].length} drivers
+                            {/* Search filter input */}
+                            <div className='mb-4'>
+                              <input
+                                type='text'
+                                placeholder='Search drivers...'
+                                className='w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                                onChange={(e) => {
+                                  // Store search value in a local variable
+                                  const searchValue =
+                                    e.target.value.toLowerCase();
+
+                                  // Re-render will use this value to filter the table
+                                  e.target.setAttribute(
+                                    'data-search',
+                                    searchValue
+                                  );
+                                  // Force re-render of the component
+                                  setShowPopup((prev) => ({ ...prev }));
+                                }}
+                              />
+                            </div>
+
+                            {loadingStates.blacklistedDrivers ? (
+                              <div className='flex items-center text-blue-500'>
+                                <span className='mr-2 inline-block w-4 h-4 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                                Loading blacklisted drivers...
                               </div>
-                            );
-                          }
-                          return null;
-                        })()}
+                            ) : blacklistedDriversByVehicle[
+                                vehicle.VEHICLE_CD
+                              ]?.length > 0 ? (
+                              <div className='overflow-x-auto'>
+                                <table className='min-w-full bg-white'>
+                                  <thead>
+                                    <tr className='w-full h-16 border-b border-gray-200 bg-gray-50'>
+                                      <th className='text-left pl-4'>
+                                        Driver Name
+                                      </th>
+                                      <th className='text-left pl-4'>
+                                        Driver ID
+                                      </th>
+                                      <th className='text-left pl-4'>
+                                        Weigand
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {/* Filter drivers based on search input */}
+                                    {blacklistedDriversByVehicle[
+                                      vehicle.VEHICLE_CD
+                                    ]
+                                      .filter((driver) => {
+                                        // Get the current search value from the input element
+                                        const searchInput =
+                                          document.querySelector(
+                                            '[data-search]'
+                                          );
+                                        const searchValue = searchInput
+                                          ? searchInput.getAttribute(
+                                              'data-search'
+                                            ) || ''
+                                          : '';
 
-                        <button
-                          className='mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700'
-                          onClick={() => togglePopup('blacklistDrivers')}
-                        >
-                          Close
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                                        if (!searchValue) return true; // If no search, show all
+
+                                        // Search in driver name, ID and card ID
+                                        return (
+                                          (driver.driver_name &&
+                                            driver.driver_name
+                                              .toLowerCase()
+                                              .includes(searchValue)) ||
+                                          (driver.driver_id &&
+                                            driver.driver_id
+                                              .toLowerCase()
+                                              .includes(searchValue)) ||
+                                          (driver.card_id &&
+                                            driver.card_id
+                                              .toLowerCase()
+                                              .includes(searchValue))
+                                        );
+                                      })
+                                      .map((driver, idx) => (
+                                        <tr
+                                          key={idx}
+                                          className='h-12 border-b border-gray-200 bg-red-100/50'
+                                        >
+                                          <td className='text-left pl-4'>
+                                            {driver.driver_name ||
+                                              'Unknown'}
+                                          </td>
+                                          <td className='text-left pl-4'>
+                                            {driver.driver_id || 'N/A'}
+                                          </td>
+                                          <td className='text-left pl-4'>
+                                            {driver.card_id || 'N/A'}
+                                          </td>
+                                        </tr>
+                                      ))}
+                                  </tbody>
+                                </table>
+
+                                {/* No results message */}
+                                {(() => {
+                                  const searchInput =
+                                    document.querySelector(
+                                      '[data-search]'
+                                    );
+                                  const searchValue = searchInput
+                                    ? searchInput.getAttribute(
+                                        'data-search'
+                                      ) || ''
+                                    : '';
+                                  const filteredDrivers =
+                                    blacklistedDriversByVehicle[
+                                      vehicle.VEHICLE_CD
+                                    ].filter((driver) => {
+                                      if (!searchValue) return true;
+                                      return (
+                                        (driver.driver_name &&
+                                          driver.driver_name
+                                            .toLowerCase()
+                                            .includes(searchValue)) ||
+                                        (driver.driver_id &&
+                                          driver.driver_id
+                                            .toLowerCase()
+                                            .includes(searchValue)) ||
+                                        (driver.card_id &&
+                                          driver.card_id
+                                            .toLowerCase()
+                                            .includes(searchValue))
+                                      );
+                                    });
+
+                                  if (
+                                    searchValue &&
+                                    filteredDrivers.length === 0
+                                  ) {
+                                    return (
+                                      <div className='text-center py-4 text-gray-500'>
+                                        No drivers match your search
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                })()}
+                              </div>
+                            ) : (
+                              <p className='text-gray-600'>
+                                No blacklisted drivers found.
+                              </p>
+                            )}
+
+                            {/* Show filter stats */}
+                            {(() => {
+                              const searchInput =
+                                document.querySelector('[data-search]');
+                              const searchValue = searchInput
+                                ? searchInput.getAttribute(
+                                    'data-search'
+                                  ) || ''
+                                : '';
+
+                              if (
+                                searchValue &&
+                                blacklistedDriversByVehicle[
+                                  vehicle.VEHICLE_CD
+                                ]?.length > 0
+                              ) {
+                                const filteredCount =
+                                  blacklistedDriversByVehicle[
+                                    vehicle.VEHICLE_CD
+                                  ].filter((driver) => {
+                                    return (
+                                      (driver.driver_name &&
+                                        driver.driver_name
+                                          .toLowerCase()
+                                          .includes(searchValue)) ||
+                                      (driver.driver_id &&
+                                        driver.driver_id
+                                          .toLowerCase()
+                                          .includes(searchValue)) ||
+                                      (driver.card_id &&
+                                        driver.card_id
+                                          .toLowerCase()
+                                          .includes(searchValue))
+                                    );
+                                  }).length;
+
+                                return (
+                                  <div className='mt-2 text-sm text-gray-600'>
+                                    Showing {filteredCount} of{' '}
+                                    {
+                                      blacklistedDriversByVehicle[
+                                        vehicle.VEHICLE_CD
+                                      ].length
+                                    }{' '}
+                                    drivers
+                                  </div>
+                                );
+                              }
+                              return null;
+                            })()}
+
+                            <button
+                              className='mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700'
+                              onClick={() =>
+                                togglePopup('blacklistDrivers')
+                              }
+                            >
+                              Close
+                            </button>
+                          </div>
+                        </div>
+                      )}
 
                     {/* Vehicle Logins Popup with Enhanced Search Filter */}
 
@@ -2145,19 +2376,23 @@ const VehicleDashboard: React.FC = () => {
                             </h3>
 
                             {/* Search filter input - now searches all columns */}
-                            <div className="mb-4">
+                            <div className='mb-4'>
                               <input
-                                type="text"
-                                placeholder="Search logins across all fields..."
-                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                type='text'
+                                placeholder='Search logins across all fields...'
+                                className='w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
                                 onChange={(e) => {
                                   // Store search value in a local variable
-                                  const searchValue = e.target.value.toLowerCase();
-                                  
+                                  const searchValue =
+                                    e.target.value.toLowerCase();
+
                                   // Re-render will use this value to filter the table
-                                  e.target.setAttribute('data-search-logins', searchValue);
+                                  e.target.setAttribute(
+                                    'data-search-logins',
+                                    searchValue
+                                  );
                                   // Force re-render of the component
-                                  setShowPopup(prev => ({ ...prev }));
+                                  setShowPopup((prev) => ({ ...prev }));
                                 }}
                               />
                             </div>
@@ -2167,52 +2402,93 @@ const VehicleDashboard: React.FC = () => {
                                 <span className='mr-2 inline-block w-4 h-4 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
                                 Loading vehicle logins...
                               </div>
-                            ) : vehicleLoginsByVehicle[vehicle.VEHICLE_CD]?.length > 0 ? (
+                            ) : vehicleLoginsByVehicle[vehicle.VEHICLE_CD]
+                                ?.length > 0 ? (
                               <div className='overflow-x-auto'>
                                 <table className='min-w-full bg-white'>
                                   <thead>
                                     <tr className='w-full h-16 border-b border-gray-200 bg-gray-50'>
-                                      <th className='text-left pl-4'>Driver Name</th>
-                                      <th className='text-left pl-4'>Driver ID</th>
-                                      <th className='text-left pl-4'>Facility code</th>
-                                      <th className='text-left pl-4'>Login Time</th>
-                                      <th className='text-left pl-4'>Accepted</th>
+                                      <th className='text-left pl-4'>
+                                        Driver Name
+                                      </th>
+                                      <th className='text-left pl-4'>
+                                        Driver ID
+                                      </th>
+                                      <th className='text-left pl-4'>
+                                        Facility code
+                                      </th>
+                                      <th className='text-left pl-4'>
+                                        Login Time
+                                      </th>
+                                      <th className='text-left pl-4'>
+                                        Accepted
+                                      </th>
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    {vehicleLoginsByVehicle[vehicle.VEHICLE_CD]
-                                      .filter(login => {
+                                    {vehicleLoginsByVehicle[
+                                      vehicle.VEHICLE_CD
+                                    ]
+                                      .filter((login) => {
                                         // Get the current search value from the input element
-                                        const searchInput = document.querySelector('[data-search-logins]');
-                                        const searchValue = searchInput ? searchInput.getAttribute('data-search-logins') || '' : '';
-                                        
-                                        if (!searchValue) return true; // If no search, show all
-                                        
-                                        // Convert login time to string for searching
-                                        const loginTimeStr = login.login_time
-                                          ? typeof login.login_time === 'string'
-                                            ? login.login_time.toLowerCase()
-                                            : new Date(login.login_time).toLocaleString('en-GB', {
-                                                day: '2-digit',
-                                                month: '2-digit',
-                                                year: 'numeric',
-                                                hour: '2-digit',
-                                                minute: '2-digit',
-                                                hour12: false,
-                                              }).toLowerCase()
+                                        const searchInput =
+                                          document.querySelector(
+                                            '[data-search-logins]'
+                                          );
+                                        const searchValue = searchInput
+                                          ? searchInput.getAttribute(
+                                              'data-search-logins'
+                                            ) || ''
                                           : '';
 
+                                        if (!searchValue) return true; // If no search, show all
+
+                                        // Convert login time to string for searching
+                                        const loginTimeStr =
+                                          login.login_time
+                                            ? typeof login.login_time ===
+                                              'string'
+                                              ? login.login_time.toLowerCase()
+                                              : new Date(login.login_time)
+                                                  .toLocaleString(
+                                                    'en-GB',
+                                                    {
+                                                      day: '2-digit',
+                                                      month: '2-digit',
+                                                      year: 'numeric',
+                                                      hour: '2-digit',
+                                                      minute: '2-digit',
+                                                      hour12: false,
+                                                    }
+                                                  )
+                                                  .toLowerCase()
+                                            : '';
+
                                         // Convert accepted status to string for searching
-                                        const acceptedStr = login.accepted !== undefined
-                                          ? login.accepted ? 'yes' : 'no'
-                                          : 'unknown';
-                                        
+                                        const acceptedStr =
+                                          login.accepted !== undefined
+                                            ? login.accepted
+                                              ? 'yes'
+                                              : 'no'
+                                            : 'unknown';
+
                                         // Search in ALL fields
                                         return (
-                                          (login.driver_name && login.driver_name.toLowerCase().includes(searchValue)) ||
-                                          (login.driver_id && login.driver_id.toLowerCase().includes(searchValue)) ||
-                                          (login.facility_code && login.facility_code.toLowerCase().includes(searchValue)) ||
-                                          loginTimeStr.includes(searchValue) ||
+                                          (login.driver_name &&
+                                            login.driver_name
+                                              .toLowerCase()
+                                              .includes(searchValue)) ||
+                                          (login.driver_id &&
+                                            login.driver_id
+                                              .toLowerCase()
+                                              .includes(searchValue)) ||
+                                          (login.facility_code &&
+                                            login.facility_code
+                                              .toLowerCase()
+                                              .includes(searchValue)) ||
+                                          loginTimeStr.includes(
+                                            searchValue
+                                          ) ||
                                           acceptedStr.includes(searchValue)
                                         );
                                       })
@@ -2227,21 +2503,34 @@ const VehicleDashboard: React.FC = () => {
                                               : ''
                                           }`}
                                         >
-                                          <td className='text-left pl-4'>{login.driver_name || 'Unknown'}</td>
-                                          <td className='text-left pl-4'>{login.driver_id || 'N/A'}</td>
-                                          <td className='text-left pl-4'>{login.facility_code || 'N/A'}</td>
+                                          <td className='text-left pl-4'>
+                                            {login.driver_name ||
+                                              'Unknown'}
+                                          </td>
+                                          <td className='text-left pl-4'>
+                                            {login.driver_id || 'N/A'}
+                                          </td>
+                                          <td className='text-left pl-4'>
+                                            {login.facility_code || 'N/A'}
+                                          </td>
                                           <td className='text-left pl-4'>
                                             {login.login_time
-                                              ? typeof login.login_time === 'string'
+                                              ? typeof login.login_time ===
+                                                'string'
                                                 ? login.login_time
-                                                : new Date(login.login_time).toLocaleString('en-GB', {
-                                                    day: '2-digit',
-                                                    month: '2-digit',
-                                                    year: 'numeric',
-                                                    hour: '2-digit',
-                                                    minute: '2-digit',
-                                                    hour12: false,
-                                                  })
+                                                : new Date(
+                                                    login.login_time
+                                                  ).toLocaleString(
+                                                    'en-GB',
+                                                    {
+                                                      day: '2-digit',
+                                                      month: '2-digit',
+                                                      year: 'numeric',
+                                                      hour: '2-digit',
+                                                      minute: '2-digit',
+                                                      hour12: false,
+                                                    }
+                                                  )
                                               : 'N/A'}
                                           </td>
                                           <td
@@ -2263,46 +2552,76 @@ const VehicleDashboard: React.FC = () => {
                                       ))}
                                   </tbody>
                                 </table>
-                                
+
                                 {/* No results message */}
                                 {(() => {
-                                  const searchInput = document.querySelector('[data-search-logins]');
-                                  const searchValue = searchInput ? searchInput.getAttribute('data-search-logins') || '' : '';
-                                  const filteredLogins = vehicleLoginsByVehicle[vehicle.VEHICLE_CD].filter(login => {
-                                    if (!searchValue) return true;
-
-                                    // Convert login time to string for searching
-                                    const loginTimeStr = login.login_time
-                                      ? typeof login.login_time === 'string'
-                                        ? login.login_time.toLowerCase()
-                                        : new Date(login.login_time).toLocaleString('en-GB', {
-                                            day: '2-digit',
-                                            month: '2-digit',
-                                            year: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit',
-                                            hour12: false,
-                                          }).toLowerCase()
-                                      : '';
-
-                                    // Convert accepted status to string for searching
-                                    const acceptedStr = login.accepted !== undefined
-                                      ? login.accepted ? 'yes' : 'no'
-                                      : 'unknown';
-                                    
-                                    // Search in ALL fields
-                                    return (
-                                      (login.driver_name && login.driver_name.toLowerCase().includes(searchValue)) ||
-                                      (login.driver_id && login.driver_id.toLowerCase().includes(searchValue)) ||
-                                      (login.facility_code && login.facility_code.toLowerCase().includes(searchValue)) ||
-                                      loginTimeStr.includes(searchValue) ||
-                                      acceptedStr.includes(searchValue)
+                                  const searchInput =
+                                    document.querySelector(
+                                      '[data-search-logins]'
                                     );
-                                  });
-                                  
-                                  if (searchValue && filteredLogins.length === 0) {
+                                  const searchValue = searchInput
+                                    ? searchInput.getAttribute(
+                                        'data-search-logins'
+                                      ) || ''
+                                    : '';
+                                  const filteredLogins =
+                                    vehicleLoginsByVehicle[
+                                      vehicle.VEHICLE_CD
+                                    ].filter((login) => {
+                                      if (!searchValue) return true;
+
+                                      // Convert login time to string for searching
+                                      const loginTimeStr = login.login_time
+                                        ? typeof login.login_time ===
+                                          'string'
+                                          ? login.login_time.toLowerCase()
+                                          : new Date(login.login_time)
+                                              .toLocaleString('en-GB', {
+                                                day: '2-digit',
+                                                month: '2-digit',
+                                                year: 'numeric',
+                                                hour: '2-digit',
+                                                minute: '2-digit',
+                                                hour12: false,
+                                              })
+                                              .toLowerCase()
+                                        : '';
+
+                                      // Convert accepted status to string for searching
+                                      const acceptedStr =
+                                        login.accepted !== undefined
+                                          ? login.accepted
+                                            ? 'yes'
+                                            : 'no'
+                                          : 'unknown';
+
+                                      // Search in ALL fields
+                                      return (
+                                        (login.driver_name &&
+                                          login.driver_name
+                                            .toLowerCase()
+                                            .includes(searchValue)) ||
+                                        (login.driver_id &&
+                                          login.driver_id
+                                            .toLowerCase()
+                                            .includes(searchValue)) ||
+                                        (login.facility_code &&
+                                          login.facility_code
+                                            .toLowerCase()
+                                            .includes(searchValue)) ||
+                                        loginTimeStr.includes(
+                                          searchValue
+                                        ) ||
+                                        acceptedStr.includes(searchValue)
+                                      );
+                                    });
+
+                                  if (
+                                    searchValue &&
+                                    filteredLogins.length === 0
+                                  ) {
                                     return (
-                                      <div className="text-center py-4 text-gray-500">
+                                      <div className='text-center py-4 text-gray-500'>
                                         No logins match your search
                                       </div>
                                     );
@@ -2315,46 +2634,80 @@ const VehicleDashboard: React.FC = () => {
                                 No vehicle logins found in the last 7 days.
                               </p>
                             )}
-                            
+
                             {/* Show filter stats */}
                             {(() => {
-                              const searchInput = document.querySelector('[data-search-logins]');
-                              const searchValue = searchInput ? searchInput.getAttribute('data-search-logins') || '' : '';
-                              
-                              if (searchValue && vehicleLoginsByVehicle[vehicle.VEHICLE_CD]?.length > 0) {
-                                const filteredCount = vehicleLoginsByVehicle[vehicle.VEHICLE_CD].filter(login => {
-                                  // Convert login time to string for searching
-                                  const loginTimeStr = login.login_time
-                                    ? typeof login.login_time === 'string'
-                                      ? login.login_time.toLowerCase()
-                                      : new Date(login.login_time).toLocaleString('en-GB', {
-                                          day: '2-digit',
-                                          month: '2-digit',
-                                          year: 'numeric',
-                                          hour: '2-digit',
-                                          minute: '2-digit',
-                                          hour12: false,
-                                        }).toLowerCase()
-                                    : '';
+                              const searchInput = document.querySelector(
+                                '[data-search-logins]'
+                              );
+                              const searchValue = searchInput
+                                ? searchInput.getAttribute(
+                                    'data-search-logins'
+                                  ) || ''
+                                : '';
 
-                                  // Convert accepted status to string for searching
-                                  const acceptedStr = login.accepted !== undefined
-                                    ? login.accepted ? 'yes' : 'no'
-                                    : 'unknown';
-                                  
-                                  // Search in ALL fields
-                                  return (
-                                    (login.driver_name && login.driver_name.toLowerCase().includes(searchValue)) ||
-                                    (login.driver_id && login.driver_id.toLowerCase().includes(searchValue)) ||
-                                    (login.facility_code && login.facility_code.toLowerCase().includes(searchValue)) ||
-                                    loginTimeStr.includes(searchValue) ||
-                                    acceptedStr.includes(searchValue)
-                                  );
-                                }).length;
-                                
+                              if (
+                                searchValue &&
+                                vehicleLoginsByVehicle[vehicle.VEHICLE_CD]
+                                  ?.length > 0
+                              ) {
+                                const filteredCount =
+                                  vehicleLoginsByVehicle[
+                                    vehicle.VEHICLE_CD
+                                  ].filter((login) => {
+                                    // Convert login time to string for searching
+                                    const loginTimeStr = login.login_time
+                                      ? typeof login.login_time ===
+                                        'string'
+                                        ? login.login_time.toLowerCase()
+                                        : new Date(login.login_time)
+                                            .toLocaleString('en-GB', {
+                                              day: '2-digit',
+                                              month: '2-digit',
+                                              year: 'numeric',
+                                              hour: '2-digit',
+                                              minute: '2-digit',
+                                              hour12: false,
+                                            })
+                                            .toLowerCase()
+                                      : '';
+
+                                    // Convert accepted status to string for searching
+                                    const acceptedStr =
+                                      login.accepted !== undefined
+                                        ? login.accepted
+                                          ? 'yes'
+                                          : 'no'
+                                        : 'unknown';
+
+                                    // Search in ALL fields
+                                    return (
+                                      (login.driver_name &&
+                                        login.driver_name
+                                          .toLowerCase()
+                                          .includes(searchValue)) ||
+                                      (login.driver_id &&
+                                        login.driver_id
+                                          .toLowerCase()
+                                          .includes(searchValue)) ||
+                                      (login.facility_code &&
+                                        login.facility_code
+                                          .toLowerCase()
+                                          .includes(searchValue)) ||
+                                      loginTimeStr.includes(searchValue) ||
+                                      acceptedStr.includes(searchValue)
+                                    );
+                                  }).length;
+
                                 return (
-                                  <div className="mt-2 text-sm text-gray-600">
-                                    Showing {filteredCount} of {vehicleLoginsByVehicle[vehicle.VEHICLE_CD].length} logins
+                                  <div className='mt-2 text-sm text-gray-600'>
+                                    Showing {filteredCount} of{' '}
+                                    {
+                                      vehicleLoginsByVehicle[
+                                        vehicle.VEHICLE_CD
+                                      ].length
+                                    }{' '}
+                                    logins
                                   </div>
                                 );
                               }
@@ -2370,137 +2723,227 @@ const VehicleDashboard: React.FC = () => {
                           </div>
                         </div>
                       )}
-                      
+
                     {/* Last driver logins Popup with Search Filter */}
-                  <button
-                    className='text-blue-500 hover:underline mt-2 flex items-center'
-                    onClick={() =>
-                      togglePopup('lastDriverLogins', vehicle.VEHICLE_CD)
-                    }
-                  >
-                    <span>Last 10 Drivers Loged in</span>
-                    {loadingStates.lastDriverLogins &&
+                    <button
+                      className='text-blue-500 hover:underline mt-2 flex items-center'
+                      onClick={() =>
+                        togglePopup('lastDriverLogins', vehicle.VEHICLE_CD)
+                      }
+                    >
+                      <span>Last 10 Drivers Loged in</span>
+                      {loadingStates.lastDriverLogins &&
+                        activeVehicleId === vehicle.VEHICLE_CD && (
+                          <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                        )}
+                    </button>
+                    {showPopup.lastDriverLogins &&
                       activeVehicleId === vehicle.VEHICLE_CD && (
-                        <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
-                      )}
-                  </button>
-                  {showPopup.lastDriverLogins &&
-                    activeVehicleId === vehicle.VEHICLE_CD && (
-                      <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
-                        <div
-                          ref={popupRef}
-                          className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'
-                        >
-                          <h3 className='text-lg font-semibold mb-4'>
-                            Last 10 Drivers Loged in for{' '}
-                            {vehicle.vehicle_info.vehicle_name} (
-                            {vehicle.vehicle_info.gmpt_code})
-                          </h3>
+                        <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
+                          <div
+                            ref={popupRef}
+                            className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'
+                          >
+                            <h3 className='text-lg font-semibold mb-4'>
+                              Last 10 Drivers Loged in for{' '}
+                              {vehicle.vehicle_info.vehicle_name} (
+                              {vehicle.vehicle_info.gmpt_code})
+                            </h3>
 
-                          {/* Search filter input - searches all columns */}
-                          <div className="mb-4">
-                            <input
-                              type="text"
-                              placeholder="Search driver logins across all fields..."
-                              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              onChange={(e) => {
-                                // Store search value in a local variable
-                                const searchValue = e.target.value.toLowerCase();
-                                
-                                // Re-render will use this value to filter the table
-                                e.target.setAttribute('data-search-lastdriverlogins', searchValue);
-                                // Force re-render of the component
-                                setShowPopup(prev => ({ ...prev }));
-                              }}
-                            />
-                          </div>
+                            {/* Search filter input - searches all columns */}
+                            <div className='mb-4'>
+                              <input
+                                type='text'
+                                placeholder='Search driver logins across all fields...'
+                                className='w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                                onChange={(e) => {
+                                  // Store search value in a local variable
+                                  const searchValue =
+                                    e.target.value.toLowerCase();
 
-                          {loadingStates.lastDriverLogins ? (
-                            <div className='flex items-center text-blue-500'>
-                              <span className='mr-2 inline-block w-4 h-4 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
-                              Loading last driver login...
+                                  // Re-render will use this value to filter the table
+                                  e.target.setAttribute(
+                                    'data-search-lastdriverlogins',
+                                    searchValue
+                                  );
+                                  // Force re-render of the component
+                                  setShowPopup((prev) => ({ ...prev }));
+                                }}
+                              />
                             </div>
-                          ) : lastDriverLoginsByVehicle[
-                              vehicle.VEHICLE_CD
-                            ]?.length > 0 ? (
-                            <div className='overflow-x-auto'>
-                              <table className='min-w-full bg-white'>
-                                <thead>
-                                  <tr className='w-full h-16 border-b border-gray-200 bg-gray-50'>
-                                    <th className='text-left pl-4'>
-                                      Driver Name
-                                    </th>
-                                    <th className='text-left pl-4'>
-                                      Driver ID
-                                    </th>
-                                    <th className='text-left pl-4'>
-                                      Login Time
-                                    </th>
-                                    <th className='text-left pl-4'>
-                                      Accepted
-                                    </th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {lastDriverLoginsByVehicle[vehicle.VEHICLE_CD]
-                                    .filter(login => {
-                                      // Get the current search value from the input element
-                                      const searchInput = document.querySelector('[data-search-lastdriverlogins]');
-                                      const searchValue = searchInput ? searchInput.getAttribute('data-search-lastdriverlogins') || '' : '';
-                                      
-                                      if (!searchValue) return true; // If no search, show all
-                                      
-                                      // Convert login time to string for searching
-                                      const loginTimeStr = login?.login_time
-                                        ? typeof login.login_time === 'string'
-                                          ? login.login_time.toLowerCase()
-                                          : new Date(login.login_time).toLocaleString('en-GB', {
-                                              day: '2-digit',
-                                              month: '2-digit',
-                                              year: 'numeric',
-                                              hour: '2-digit',
-                                              minute: '2-digit',
-                                              hour12: false,
-                                            }).toLowerCase()
-                                        : '';
 
-                                      // Convert accepted status to string for searching
-                                      const acceptedStr = login?.accepted !== undefined
-                                        ? login.accepted ? 'yes' : 'no'
-                                        : 'unknown';
-                                      
-                                      // Search in ALL fields
-                                      return (
-                                        (login?.driver_name && login.driver_name.toLowerCase().includes(searchValue)) ||
-                                        (login?.driver_id && login.driver_id.toLowerCase().includes(searchValue)) ||
-                                        loginTimeStr.includes(searchValue) ||
-                                        acceptedStr.includes(searchValue)
-                                      );
-                                    })
-                                    .map((login, idx) => (
-                                      <tr
-                                        key={idx}
-                                        className={`h-12 border-b border-gray-200 ${
+                            {loadingStates.lastDriverLogins ? (
+                              <div className='flex items-center text-blue-500'>
+                                <span className='mr-2 inline-block w-4 h-4 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                                Loading last driver login...
+                              </div>
+                            ) : lastDriverLoginsByVehicle[
+                                vehicle.VEHICLE_CD
+                              ]?.length > 0 ? (
+                              <div className='overflow-x-auto'>
+                                <table className='min-w-full bg-white'>
+                                  <thead>
+                                    <tr className='w-full h-16 border-b border-gray-200 bg-gray-50'>
+                                      <th className='text-left pl-4'>
+                                        Driver Name
+                                      </th>
+                                      <th className='text-left pl-4'>
+                                        Driver ID
+                                      </th>
+                                      <th className='text-left pl-4'>
+                                        Login Time
+                                      </th>
+                                      <th className='text-left pl-4'>
+                                        Accepted
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {lastDriverLoginsByVehicle[
+                                      vehicle.VEHICLE_CD
+                                    ]
+                                      .filter((login) => {
+                                        // Get the current search value from the input element
+                                        const searchInput =
+                                          document.querySelector(
+                                            '[data-search-lastdriverlogins]'
+                                          );
+                                        const searchValue = searchInput
+                                          ? searchInput.getAttribute(
+                                              'data-search-lastdriverlogins'
+                                            ) || ''
+                                          : '';
+
+                                        if (!searchValue) return true; // If no search, show all
+
+                                        // Convert login time to string for searching
+                                        const loginTimeStr =
+                                          login?.login_time
+                                            ? typeof login.login_time ===
+                                              'string'
+                                              ? login.login_time.toLowerCase()
+                                              : new Date(login.login_time)
+                                                  .toLocaleString(
+                                                    'en-GB',
+                                                    {
+                                                      day: '2-digit',
+                                                      month: '2-digit',
+                                                      year: 'numeric',
+                                                      hour: '2-digit',
+                                                      minute: '2-digit',
+                                                      hour12: false,
+                                                    }
+                                                  )
+                                                  .toLowerCase()
+                                            : '';
+
+                                        // Convert accepted status to string for searching
+                                        const acceptedStr =
                                           login?.accepted !== undefined
                                             ? login.accepted
-                                              ? 'bg-green-100/50'
-                                              : 'bg-red-100/50'
-                                            : ''
-                                        }`}
-                                      >
-                                        <td className='text-left pl-4'>
-                                          {login?.driver_name || 'Unknown'}
-                                        </td>
-                                        <td className='text-left pl-4'>
-                                          {login?.driver_id || 'N/A'}
-                                        </td>
-                                        <td className='text-left pl-4'>
-                                          {login?.login_time
-                                            ? typeof login.login_time === 'string'
-                                              ? login.login_time
-                                              : new Date(
-                                                  login.login_time
-                                                ).toLocaleString('en-GB', {
+                                              ? 'yes'
+                                              : 'no'
+                                            : 'unknown';
+
+                                        // Search in ALL fields
+                                        return (
+                                          (login?.driver_name &&
+                                            login.driver_name
+                                              .toLowerCase()
+                                              .includes(searchValue)) ||
+                                          (login?.driver_id &&
+                                            login.driver_id
+                                              .toLowerCase()
+                                              .includes(searchValue)) ||
+                                          loginTimeStr.includes(
+                                            searchValue
+                                          ) ||
+                                          acceptedStr.includes(searchValue)
+                                        );
+                                      })
+                                      .map((login, idx) => (
+                                        <tr
+                                          key={idx}
+                                          className={`h-12 border-b border-gray-200 ${
+                                            login?.accepted !== undefined
+                                              ? login.accepted
+                                                ? 'bg-green-100/50'
+                                                : 'bg-red-100/50'
+                                              : ''
+                                          }`}
+                                        >
+                                          <td className='text-left pl-4'>
+                                            {login?.driver_name ||
+                                              'Unknown'}
+                                          </td>
+                                          <td className='text-left pl-4'>
+                                            {login?.driver_id || 'N/A'}
+                                          </td>
+                                          <td className='text-left pl-4'>
+                                            {login?.login_time
+                                              ? typeof login.login_time ===
+                                                'string'
+                                                ? login.login_time
+                                                : new Date(
+                                                    login.login_time
+                                                  ).toLocaleString(
+                                                    'en-GB',
+                                                    {
+                                                      day: '2-digit',
+                                                      month: '2-digit',
+                                                      year: 'numeric',
+                                                      hour: '2-digit',
+                                                      minute: '2-digit',
+                                                      hour12: false,
+                                                    }
+                                                  )
+                                              : 'N/A'}
+                                          </td>
+                                          <td
+                                            className={`text-left pl-4 ${
+                                              login?.accepted !== undefined
+                                                ? login.accepted
+                                                  ? 'text-green-600'
+                                                  : 'text-red-600'
+                                                : 'text-gray-500'
+                                            }`}
+                                          >
+                                            {login?.accepted !== undefined
+                                              ? login.accepted
+                                                ? 'Yes'
+                                                : 'No'
+                                              : 'Unknown'}
+                                          </td>
+                                        </tr>
+                                      ))}
+                                  </tbody>
+                                </table>
+
+                                {/* No results message */}
+                                {(() => {
+                                  const searchInput =
+                                    document.querySelector(
+                                      '[data-search-lastdriverlogins]'
+                                    );
+                                  const searchValue = searchInput
+                                    ? searchInput.getAttribute(
+                                        'data-search-lastdriverlogins'
+                                      ) || ''
+                                    : '';
+                                  const filteredLogins =
+                                    lastDriverLoginsByVehicle[
+                                      vehicle.VEHICLE_CD
+                                    ].filter((login) => {
+                                      if (!searchValue) return true;
+
+                                      // Convert login time to string for searching
+                                      const loginTimeStr =
+                                        login?.login_time
+                                          ? typeof login.login_time ===
+                                            'string'
+                                            ? login.login_time.toLowerCase()
+                                            : new Date(login.login_time)
+                                                .toLocaleString('en-GB', {
                                                   day: '2-digit',
                                                   month: '2-digit',
                                                   year: 'numeric',
@@ -2508,132 +2951,140 @@ const VehicleDashboard: React.FC = () => {
                                                   minute: '2-digit',
                                                   hour12: false,
                                                 })
-                                            : 'N/A'}
-                                        </td>
-                                        <td
-                                          className={`text-left pl-4 ${
-                                            login?.accepted !== undefined
-                                              ? login.accepted
-                                                ? 'text-green-600'
-                                                : 'text-red-600'
-                                              : 'text-gray-500'
-                                          }`}
-                                        >
-                                          {login?.accepted !== undefined
-                                            ? login.accepted
-                                              ? 'Yes'
-                                              : 'No'
-                                            : 'Unknown'}
-                                        </td>
-                                      </tr>
-                                    ))}
-                                </tbody>
-                              </table>
-                              
-                              {/* No results message */}
-                              {(() => {
-                                const searchInput = document.querySelector('[data-search-lastdriverlogins]');
-                                const searchValue = searchInput ? searchInput.getAttribute('data-search-lastdriverlogins') || '' : '';
-                                const filteredLogins = lastDriverLoginsByVehicle[vehicle.VEHICLE_CD].filter(login => {
-                                  if (!searchValue) return true;
+                                                .toLowerCase()
+                                          : '';
 
-                                  // Convert login time to string for searching
-                                  const loginTimeStr = login?.login_time
-                                    ? typeof login.login_time === 'string'
-                                      ? login.login_time.toLowerCase()
-                                      : new Date(login.login_time).toLocaleString('en-GB', {
-                                          day: '2-digit',
-                                          month: '2-digit',
-                                          year: 'numeric',
-                                          hour: '2-digit',
-                                          minute: '2-digit',
-                                          hour12: false,
-                                        }).toLowerCase()
-                                    : '';
+                                      // Convert accepted status to string for searching
+                                      const acceptedStr =
+                                        login?.accepted !== undefined
+                                          ? login.accepted
+                                            ? 'yes'
+                                            : 'no'
+                                          : 'unknown';
 
-                                  // Convert accepted status to string for searching
-                                  const acceptedStr = login?.accepted !== undefined
-                                    ? login.accepted ? 'yes' : 'no'
-                                    : 'unknown';
-                                  
-                                  // Search in ALL fields
-                                  return (
-                                    (login?.driver_name && login.driver_name.toLowerCase().includes(searchValue)) ||
-                                    (login?.driver_id && login.driver_id.toLowerCase().includes(searchValue)) ||
-                                    loginTimeStr.includes(searchValue) ||
-                                    acceptedStr.includes(searchValue)
-                                  );
-                                });
-                                
-                                if (searchValue && filteredLogins.length === 0) {
-                                  return (
-                                    <div className="text-center py-4 text-gray-500">
-                                      No driver logins match your search
-                                    </div>
-                                  );
-                                }
-                                return null;
-                              })()}
-                            </div>
-                          ) : (
-                            <p className='text-gray-600'>
-                              No login information available.
-                            </p>
-                          )}
-                          
-                          {/* Show filter stats */}
-                          {(() => {
-                            const searchInput = document.querySelector('[data-search-lastdriverlogins]');
-                            const searchValue = searchInput ? searchInput.getAttribute('data-search-lastdriverlogins') || '' : '';
-                            
-                            if (searchValue && lastDriverLoginsByVehicle[vehicle.VEHICLE_CD]?.length > 0) {
-                              const filteredCount = lastDriverLoginsByVehicle[vehicle.VEHICLE_CD].filter(login => {
-                                // Convert login time to string for searching
-                                const loginTimeStr = login?.login_time
-                                  ? typeof login.login_time === 'string'
-                                    ? login.login_time.toLowerCase()
-                                    : new Date(login.login_time).toLocaleString('en-GB', {
-                                        day: '2-digit',
-                                        month: '2-digit',
-                                        year: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                        hour12: false,
-                                      }).toLowerCase()
-                                  : '';
+                                      // Search in ALL fields
+                                      return (
+                                        (login?.driver_name &&
+                                          login.driver_name
+                                            .toLowerCase()
+                                            .includes(searchValue)) ||
+                                        (login?.driver_id &&
+                                          login.driver_id
+                                            .toLowerCase()
+                                            .includes(searchValue)) ||
+                                        loginTimeStr.includes(
+                                          searchValue
+                                        ) ||
+                                        acceptedStr.includes(searchValue)
+                                      );
+                                    });
 
-                                // Convert accepted status to string for searching
-                                const acceptedStr = login?.accepted !== undefined
-                                  ? login.accepted ? 'yes' : 'no'
-                                  : 'unknown';
-                                
-                                // Search in ALL fields
-                                return (
-                                  (login?.driver_name && login.driver_name.toLowerCase().includes(searchValue)) ||
-                                  (login?.driver_id && login.driver_id.toLowerCase().includes(searchValue)) ||
-                                  loginTimeStr.includes(searchValue) ||
-                                  acceptedStr.includes(searchValue)
-                                );
-                              }).length;
-                              
-                              return (
-                                <div className="mt-2 text-sm text-gray-600">
-                                  Showing {filteredCount} of {lastDriverLoginsByVehicle[vehicle.VEHICLE_CD].length} driver logins
-                                </div>
+                                  if (
+                                    searchValue &&
+                                    filteredLogins.length === 0
+                                  ) {
+                                    return (
+                                      <div className='text-center py-4 text-gray-500'>
+                                        No driver logins match your search
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                })()}
+                              </div>
+                            ) : (
+                              <p className='text-gray-600'>
+                                No login information available.
+                              </p>
+                            )}
+
+                            {/* Show filter stats */}
+                            {(() => {
+                              const searchInput = document.querySelector(
+                                '[data-search-lastdriverlogins]'
                               );
-                            }
-                            return null;
-                          })()}
+                              const searchValue = searchInput
+                                ? searchInput.getAttribute(
+                                    'data-search-lastdriverlogins'
+                                  ) || ''
+                                : '';
 
-                          <button
-                            className='mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700'
-                            onClick={() => togglePopup('lastDriverLogins')}
-                          >
-                            Close
-                          </button>
+                              if (
+                                searchValue &&
+                                lastDriverLoginsByVehicle[
+                                  vehicle.VEHICLE_CD
+                                ]?.length > 0
+                              ) {
+                                const filteredCount =
+                                  lastDriverLoginsByVehicle[
+                                    vehicle.VEHICLE_CD
+                                  ].filter((login) => {
+                                    // Convert login time to string for searching
+                                    const loginTimeStr = login?.login_time
+                                      ? typeof login.login_time ===
+                                        'string'
+                                        ? login.login_time.toLowerCase()
+                                        : new Date(login.login_time)
+                                            .toLocaleString('en-GB', {
+                                              day: '2-digit',
+                                              month: '2-digit',
+                                              year: 'numeric',
+                                              hour: '2-digit',
+                                              minute: '2-digit',
+                                              hour12: false,
+                                            })
+                                            .toLowerCase()
+                                      : '';
+
+                                    // Convert accepted status to string for searching
+                                    const acceptedStr =
+                                      login?.accepted !== undefined
+                                        ? login.accepted
+                                          ? 'yes'
+                                          : 'no'
+                                        : 'unknown';
+
+                                    // Search in ALL fields
+                                    return (
+                                      (login?.driver_name &&
+                                        login.driver_name
+                                          .toLowerCase()
+                                          .includes(searchValue)) ||
+                                      (login?.driver_id &&
+                                        login.driver_id
+                                          .toLowerCase()
+                                          .includes(searchValue)) ||
+                                      loginTimeStr.includes(searchValue) ||
+                                      acceptedStr.includes(searchValue)
+                                    );
+                                  }).length;
+
+                                return (
+                                  <div className='mt-2 text-sm text-gray-600'>
+                                    Showing {filteredCount} of{' '}
+                                    {
+                                      lastDriverLoginsByVehicle[
+                                        vehicle.VEHICLE_CD
+                                      ].length
+                                    }{' '}
+                                    driver logins
+                                  </div>
+                                );
+                              }
+                              return null;
+                            })()}
+
+                            <button
+                              className='mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700'
+                              onClick={() =>
+                                togglePopup('lastDriverLogins')
+                              }
+                            >
+                              Close
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
                     {/* messagesSent Popup with Search Filter */}
                     <button
@@ -2662,19 +3113,23 @@ const VehicleDashboard: React.FC = () => {
                             </h3>
 
                             {/* Search filter input */}
-                            <div className="mb-4">
+                            <div className='mb-4'>
                               <input
-                                type="text"
-                                placeholder="Search messages across all fields..."
-                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                type='text'
+                                placeholder='Search messages across all fields...'
+                                className='w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
                                 onChange={(e) => {
                                   // Store search value in a local variable
-                                  const searchValue = e.target.value.toLowerCase();
-                                  
+                                  const searchValue =
+                                    e.target.value.toLowerCase();
+
                                   // Re-render will use this value to filter the table
-                                  e.target.setAttribute('data-search-messages', searchValue);
+                                  e.target.setAttribute(
+                                    'data-search-messages',
+                                    searchValue
+                                  );
                                   // Force re-render of the component
-                                  setShowPopup(prev => ({ ...prev }));
+                                  setShowPopup((prev) => ({ ...prev }));
                                 }}
                               />
                             </div>
@@ -2684,7 +3139,8 @@ const VehicleDashboard: React.FC = () => {
                                 <span className='mr-2 inline-block w-4 h-4 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
                                 Loading messages...
                               </div>
-                            ) : messagesSentByVehicle[vehicle.VEHICLE_CD]?.length > 0 ? (
+                            ) : messagesSentByVehicle[vehicle.VEHICLE_CD]
+                                ?.length > 0 ? (
                               <div className='overflow-x-auto'>
                                 <table className='min-w-full bg-white'>
                                   <thead>
@@ -2704,20 +3160,41 @@ const VehicleDashboard: React.FC = () => {
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    {messagesSentByVehicle[vehicle.VEHICLE_CD]
-                                      .filter(msg => {
+                                    {messagesSentByVehicle[
+                                      vehicle.VEHICLE_CD
+                                    ]
+                                      .filter((msg) => {
                                         // Get the current search value from the input element
-                                        const searchInput = document.querySelector('[data-search-messages]');
-                                        const searchValue = searchInput ? searchInput.getAttribute('data-search-messages') || '' : '';
-                                        
+                                        const searchInput =
+                                          document.querySelector(
+                                            '[data-search-messages]'
+                                          );
+                                        const searchValue = searchInput
+                                          ? searchInput.getAttribute(
+                                              'data-search-messages'
+                                            ) || ''
+                                          : '';
+
                                         if (!searchValue) return true; // If no search, show all
-                                        
+
                                         // Search in all message fields
                                         return (
-                                          (msg.message_type && msg.message_type.toLowerCase().includes(searchValue)) ||
-                                          (msg.message_text && msg.message_text.toLowerCase().includes(searchValue)) ||
-                                          (msg.message_timestamp && msg.message_timestamp.toLowerCase().includes(searchValue)) ||
-                                          (msg.status && msg.status.toLowerCase().includes(searchValue))
+                                          (msg.message_type &&
+                                            msg.message_type
+                                              .toLowerCase()
+                                              .includes(searchValue)) ||
+                                          (msg.message_text &&
+                                            msg.message_text
+                                              .toLowerCase()
+                                              .includes(searchValue)) ||
+                                          (msg.message_timestamp &&
+                                            msg.message_timestamp
+                                              .toLowerCase()
+                                              .includes(searchValue)) ||
+                                          (msg.status &&
+                                            msg.status
+                                              .toLowerCase()
+                                              .includes(searchValue))
                                         );
                                       })
                                       .map((msg, idx) => (
@@ -2738,7 +3215,8 @@ const VehicleDashboard: React.FC = () => {
                                             {msg.message_text || 'N/A'}
                                           </td>
                                           <td className='text-left pl-4'>
-                                            {msg.message_timestamp || 'N/A'}
+                                            {msg.message_timestamp ||
+                                              'N/A'}
                                           </td>
                                           <td
                                             className={`text-left pl-4 ${
@@ -2755,24 +3233,49 @@ const VehicleDashboard: React.FC = () => {
                                       ))}
                                   </tbody>
                                 </table>
-                                
+
                                 {/* No results message */}
                                 {(() => {
-                                  const searchInput = document.querySelector('[data-search-messages]');
-                                  const searchValue = searchInput ? searchInput.getAttribute('data-search-messages') || '' : '';
-                                  const filteredMessages = messagesSentByVehicle[vehicle.VEHICLE_CD].filter(msg => {
-                                    if (!searchValue) return true;
-                                    return (
-                                      (msg.message_type && msg.message_type.toLowerCase().includes(searchValue)) ||
-                                      (msg.message_text && msg.message_text.toLowerCase().includes(searchValue)) ||
-                                      (msg.message_timestamp && msg.message_timestamp.toLowerCase().includes(searchValue)) ||
-                                      (msg.status && msg.status.toLowerCase().includes(searchValue))
+                                  const searchInput =
+                                    document.querySelector(
+                                      '[data-search-messages]'
                                     );
-                                  });
-                                  
-                                  if (searchValue && filteredMessages.length === 0) {
+                                  const searchValue = searchInput
+                                    ? searchInput.getAttribute(
+                                        'data-search-messages'
+                                      ) || ''
+                                    : '';
+                                  const filteredMessages =
+                                    messagesSentByVehicle[
+                                      vehicle.VEHICLE_CD
+                                    ].filter((msg) => {
+                                      if (!searchValue) return true;
+                                      return (
+                                        (msg.message_type &&
+                                          msg.message_type
+                                            .toLowerCase()
+                                            .includes(searchValue)) ||
+                                        (msg.message_text &&
+                                          msg.message_text
+                                            .toLowerCase()
+                                            .includes(searchValue)) ||
+                                        (msg.message_timestamp &&
+                                          msg.message_timestamp
+                                            .toLowerCase()
+                                            .includes(searchValue)) ||
+                                        (msg.status &&
+                                          msg.status
+                                            .toLowerCase()
+                                            .includes(searchValue))
+                                      );
+                                    });
+
+                                  if (
+                                    searchValue &&
+                                    filteredMessages.length === 0
+                                  ) {
                                     return (
-                                      <div className="text-center py-4 text-gray-500">
+                                      <div className='text-center py-4 text-gray-500'>
                                         No messages match your search
                                       </div>
                                     );
@@ -2785,25 +3288,56 @@ const VehicleDashboard: React.FC = () => {
                                 No messages found in the last 7 days.
                               </p>
                             )}
-                            
+
                             {/* Show filter stats */}
                             {(() => {
-                              const searchInput = document.querySelector('[data-search-messages]');
-                              const searchValue = searchInput ? searchInput.getAttribute('data-search-messages') || '' : '';
-                              
-                              if (searchValue && messagesSentByVehicle[vehicle.VEHICLE_CD]?.length > 0) {
-                                const filteredCount = messagesSentByVehicle[vehicle.VEHICLE_CD].filter(msg => {
-                                  return (
-                                    (msg.message_type && msg.message_type.toLowerCase().includes(searchValue)) ||
-                                    (msg.message_text && msg.message_text.toLowerCase().includes(searchValue)) ||
-                                    (msg.message_timestamp && msg.message_timestamp.toLowerCase().includes(searchValue)) ||
-                                    (msg.status && msg.status.toLowerCase().includes(searchValue))
-                                  );
-                                }).length;
-                                
+                              const searchInput = document.querySelector(
+                                '[data-search-messages]'
+                              );
+                              const searchValue = searchInput
+                                ? searchInput.getAttribute(
+                                    'data-search-messages'
+                                  ) || ''
+                                : '';
+
+                              if (
+                                searchValue &&
+                                messagesSentByVehicle[vehicle.VEHICLE_CD]
+                                  ?.length > 0
+                              ) {
+                                const filteredCount =
+                                  messagesSentByVehicle[
+                                    vehicle.VEHICLE_CD
+                                  ].filter((msg) => {
+                                    return (
+                                      (msg.message_type &&
+                                        msg.message_type
+                                          .toLowerCase()
+                                          .includes(searchValue)) ||
+                                      (msg.message_text &&
+                                        msg.message_text
+                                          .toLowerCase()
+                                          .includes(searchValue)) ||
+                                      (msg.message_timestamp &&
+                                        msg.message_timestamp
+                                          .toLowerCase()
+                                          .includes(searchValue)) ||
+                                      (msg.status &&
+                                        msg.status
+                                          .toLowerCase()
+                                          .includes(searchValue))
+                                    );
+                                  }).length;
+
                                 return (
-                                  <div className="mt-2 text-sm text-gray-600">
-                                    Showing {filteredCount} of {messagesSentByVehicle[vehicle.VEHICLE_CD].length} messages
+                                  <div className='mt-2 text-sm text-gray-600'>
+                                    Showing {filteredCount} of{' '}
+                                    {
+                                      messagesSentByVehicle[
+                                        vehicle.VEHICLE_CD
+                                      ].length
+                                    }{' '}
+                                    messages
                                   </div>
                                 );
                               }
@@ -2819,8 +3353,6 @@ const VehicleDashboard: React.FC = () => {
                           </div>
                         </div>
                       )}
-
-                   
                   </div>
                 </div>
               ))}
@@ -2829,7 +3361,6 @@ const VehicleDashboard: React.FC = () => {
 
           {/* If we DO have snapshot data, show the side-by-side comparison */}
           {Object.keys(snapshotData).length > 0 && (
-            
             <div className='mt-8'>
               <h2 className='text-2xl font-bold text-gray-800 mb-4'>
                 Snapshot Cards

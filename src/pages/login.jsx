@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { GetServerSideProps } from 'next';
 import { getProviders, signIn, getCsrfToken } from 'next-auth/react';
 import { getServerSession } from 'next-auth/next';
 import { useRouter } from 'next/router';
@@ -181,7 +180,7 @@ export default function Login({ providers, csrfToken }) {
   );
 }
 
-export const getServerSideProps = async (context) => {
+const getServerSideProps = async (context) => {
   const session = await getServerSession(context.req, context.res, authOptions);
 
   if (session) {

@@ -1,13 +1,30 @@
-import { GetServerSideProps } from 'next';
-import { getProviders, signIn } from 'next-auth/react';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../api/auth/[...nextauth]';
+import { useEffect, useState } from 'react';
+import { getProviders, signIn, useSession } from 'next-auth/react';
+import { useRouter } from 'next/router';
 
-interface SignInProps {
-  providers: any;
-}
+export default function SignIn() {
+  const [providers, setProviders] = useState<any>({});
+  const { data: session } = useSession();
+  const router = useRouter();
+  const callbackUrl =
+    router.query.callbackUrl?.toString() || '/support/create/ticket';
 
-export default function SignIn({ providers }: SignInProps) {
+  useEffect(() => {
+    // If user is already signed in, redirect to callback URL or homepage
+    if (session) {
+      router.push(callbackUrl);
+      return;
+    }
+
+    // Fetch providers client-side
+    const loadProviders = async () => {
+      const response = await getProviders();
+      setProviders(response || {});
+    };
+
+    loadProviders();
+  }, [session, router, callbackUrl]);
+
   return (
     <div className='min-h-screen flex items-center justify-center bg-teal-50'>
       <div className='bg-white p-8 rounded-lg shadow-md max-w-md w-full'>
@@ -23,7 +40,7 @@ export default function SignIn({ providers }: SignInProps) {
             <button
               onClick={() =>
                 signIn(provider.id, {
-                  callbackUrl: '/support/create/ticket',
+                  callbackUrl: callbackUrl,
                 })
               }
               className='w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-4 rounded transition-colors'
@@ -36,28 +53,3 @@ export default function SignIn({ providers }: SignInProps) {
     </div>
   );
 }
-
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  const session = await getServerSession(
-    context.req,
-    context.res,
-    authOptions
-  );
-
-  // If user is already signed in, redirect to callback URL or homepage
-  if (session) {
-    return {
-      redirect: {
-        destination: context.query.callbackUrl?.toString() || '/',
-        permanent: false,
-      },
-    };
-  }
-
-  // Get providers for sign in page
-  const providers = await getProviders();
-
-  return {
-    props: { providers: providers ?? {} },
-  };
-};
