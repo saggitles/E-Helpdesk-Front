@@ -1,6 +1,9 @@
-/** @type {import('next').NextConfig} */
+/** 
+ * @type {import('next').NextConfig} 
+ */
 const nextConfig = {
   reactStrictMode: false,
+  output: 'export',
   distDir: "dist",
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://e-helpdesk-back-r1nabbk9f-richard-blackers-projects.vercel.app/',
@@ -13,17 +16,12 @@ const nextConfig = {
     unoptimized: true,
     domains: ['e-helpdesk-back-r1nabbk9f-richard-blackers-projects.vercel.app'],
   },
-  // Enable static export for GitHub Pages
-  output: 'export',
+  
   // Ensure 404.html is generated
   experimental: {
     errorBoundary: true,
   },
   typescript: {
-    // !! WARN !!
-    // Dangerously allow production builds to successfully complete even if
-    // your project has type errors.
-    // !! WARN !!
     ignoreBuildErrors: true,
   },
 
