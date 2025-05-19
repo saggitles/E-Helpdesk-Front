@@ -16,42 +16,64 @@ export default function Login({ providers, csrfToken }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    router.push(callbackUrl ? String(callbackUrl) : '/');
     setError('');
 
     try {
       // Special case for admin login
-    if (email === 'admin' && password === 'admin12345') {
-      // Admin login success
-      const result = await signIn('credentials', {
-        redirect: false,
-        email,
-        password,
-        isAdmin: true, // Add a flag to identify admin login
-      });
-
-      if (result?.error) {
-        setError('Invalid credentials');
-        setIsLoading(false);
+      if (email === 'admin' && password === 'admin12345') {
+        // Admin login success
+        console.log('admin', email);
+        console.log('password', password);
+        const result = await signIn('credentials', {
+          redirect: false,
+          email,
+          password,
+          isAdmin: true, // Add a flag to identify admin login
+        });
+        console.log('Admin login result:', result);
+         router.push(callbackUrl ? String(callbackUrl) : '/');
+        if (result?.error) {
+          setError('Invalid credentials');
+          setIsLoading(false);
+        } else {
+          router.push(callbackUrl ? String(callbackUrl) : '/');
+        }
       } else {
-        router.push(callbackUrl ? String(callbackUrl) : '/');
+        // Regular user login (still disabled for non-admin)
+        setError('Only admin login is enabled with credentials');
+        setIsLoading(false);
       }
-    } else {
-      // Regular user login (still disabled for non-admin)
-      setError('Only admin login is enabled with credentials');
+    } catch (error) {
+      console.error('Login error:', error);
+      setError('An unexpected error occurred');
       setIsLoading(false);
     }
-  } catch (error) {
-    console.error('Login error:', error);
-    setError('An unexpected error occurred');
-    setIsLoading(false);
-  }
 };
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
-    await signIn('google', { 
-      callbackUrl: callbackUrl !== '/login' ? callbackUrl : '/'
-    });
+    try {
+      const result = await signIn('google', { 
+        redirect: false,
+        callbackUrl: callbackUrl ? String(callbackUrl) : '/' 
+      });
+      
+      if (result?.error) {
+        console.error('Google sign-in error:', result.error);
+        setError(result.error === 'DomainNotAllowed' 
+          ? 'Your email domain is not authorized for this application' 
+          : 'An error occurred during sign in');
+        setIsLoading(false);
+      } else {
+        // Successful login, redirect will be handled automatically by NextAuth
+        console.log('Login successful, redirecting...');
+      }
+    } catch (error) {
+      console.error('Google login exception:', error);
+      setError('An unexpected error occurred');
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -180,7 +202,7 @@ export default function Login({ providers, csrfToken }) {
   );
 }
 
-const getServerSideProps = async (context) => {
+export async function getServerSideProps(context) {
   const session = await getServerSession(context.req, context.res, authOptions);
 
   if (session) {

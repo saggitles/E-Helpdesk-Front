@@ -4,16 +4,16 @@ import Link from 'next/link';
 
 export default function ErrorPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     // Ensure this runs only on the client side
-    if (typeof window !== 'undefined') {
-      const router = useRouter();
+    if (typeof window !== 'undefined' && router.isReady) {
       if (router.query.message) {
         setErrorMessage(router.query.message as string);
       }
     }
-  }, []);
+  }, [router.isReady, router.query.message]);
 
   return (
     <div className='flex flex-col items-center justify-center min-h-screen bg-gray-100'>
@@ -30,7 +30,7 @@ export default function ErrorPage() {
               Go to Home
             </a>
           </Link>
-          <Link href='/api/auth/login' legacyBehavior>
+          <Link href='/login' legacyBehavior>
             <a className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded'>
               Try Again
             </a>
