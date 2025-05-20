@@ -30,7 +30,7 @@ export default function RestrictedPage({ content }) {
   );
 }
 
-async function getServerSideProps(context) {
+export async function getServerSideProps(context) {
   const session = await getServerSession(
     context.req,
     context.res,

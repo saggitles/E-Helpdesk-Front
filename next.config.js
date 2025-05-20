@@ -3,9 +3,6 @@
  */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
-  // output: 'export',
-  // distDir: "dist",
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://e-helpdesk-back-r1nabbk9f-richard-blackers-projects.vercel.app/',
   },
@@ -18,14 +15,10 @@ const nextConfig = {
     domains: ['e-helpdesk-back-r1nabbk9f-richard-blackers-projects.vercel.app'],
   },
   
-  // Ensure 404.html is generated
-  experimental: {
-    errorBoundary: true,
-  },
+  experimental: {},
   typescript: {
     ignoreBuildErrors: true,
   },
-
 };
 
 module.exports = nextConfig;
