@@ -1,17 +1,16 @@
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from './api/auth/[...nextauth]';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
-export default function RestrictedPage() {
+export default function RestrictedPage({ content }) {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [content, setContent] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login?callbackUrl=/restricted');
-    } else if (status === 'authenticated') {
-      setContent('This is protected content. You can access this content because you are signed in.');
     }
   }, [status, router]);
 
@@ -29,4 +28,28 @@ export default function RestrictedPage() {
       <p>{content}</p>
     </div>
   );
+}
+
+sync function getServerSideProps(context) {
+  const session = await getServerSession(
+    context.req,
+    context.res,
+    authOptions
+  );
+
+  if (!session) {
+    return {
+      redirect: {
+        destination: '/login?callbackUrl=/restricted',
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: {
+      content:
+        'This is protected content. You can access this content because you are signed in.',
+    },
+  };
 }
