@@ -5,22 +5,25 @@ import { TicketInfo } from '@/reducers/UnresolvedTickets/types';
 import { getToken } from '@/utils';
 import axios, { AxiosRequestConfig } from 'axios';
 
-const BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/`; // TODO: ADD BASE URL FROM ENV
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
-// Log the database connection configuration
-console.log(`API URL configured as: ${process.env.NEXT_PUBLIC_API_URL}`);
+console.log(`API URL configured as: ${BASE_URL}`);
 
 const instance = axios.create({
   baseURL: BASE_URL,
-  timeout: 1000,
+  timeout: 10000, // Increased timeout
+  withCredentials: true, // Important for CORS
+  headers: {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+  },
 });
 
 // Add an interceptor to log successful connections
 instance.interceptors.response.use(
   (response) => {
     if (response.status >= 200 && response.status < 300) {
-      console.log(`✅ Successful connection to the database at ${process.env.NEXT_PUBLIC_API_URL}`);
-      // You can add more details if the response includes database name information
+      console.log(`✅ Successful connection to the API at ${BASE_URL}`);
       if (response.data?.databaseName) {
         console.log(`Database name: ${response.data.databaseName}`);
       }
@@ -28,6 +31,7 @@ instance.interceptors.response.use(
     return response;
   },
   (error) => {
+    console.error('API Error:', error.message);
     return Promise.reject(error);
   }
 );
@@ -46,8 +50,6 @@ const useAxios = async <T>({
   config,
 }: IAxios): Promise<T> => {
   const token = await getToken();
-
-  
 
   const defaultInstance = async () => {
     return (await instance
@@ -150,7 +152,6 @@ export const getTimeline = (equipmentId: string) => {
 };
 
 export const getEquipment = async <T>(equipmentId: string) => {
-  
   return await useAxios<T>({
     method: 'GET',
     url: `/api/equipment/${equipmentId}`,
@@ -226,18 +227,16 @@ export const getExpiredLicenses = async (equipmentID: string) => {
 };
 
 export const getAllDrivers = async (equipmentID: string) => {
-
-  console.log("Aca debe estar el token. Caul es el problema????")
+  console.log("Aca debe estar el token. Caul es el problema????");
 
   const token = localStorage.getItem('token');
 
-  console.log(token)
+  console.log(token);
 
   await axios
     .get(`/api/driver/history/${equipmentID}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
-
     .catch((error) => {
       console.log(error);
     });
