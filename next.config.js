@@ -19,15 +19,25 @@ const nextConfig = {
   },
 
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://www.support-xq.org',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://e-helpdesk-back-dgcjdsb9djh2hgbn.eastus-01.azurewebsites.net',
   },
   images: {
     unoptimized: true,
-    domains: ['e-helpdesk-back-r1nabbk9f-richard-blackers-projects.vercel.app'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*.azurewebsites.net',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.vercel.app',
+      }
+    ],
   },
   typescript: {
     ignoreBuildErrors: true,
   },
+  output: 'standalone',
 };
 
 module.exports = nextConfig;
