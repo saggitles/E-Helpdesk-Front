@@ -1,30 +1,17 @@
-/** 
- * @type {import('next').NextConfig} 
- */
+/** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-
-  env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://e-helpdesk-back-dgcjdsb9djh2hgbn.eastus-01.azurewebsites.net',
-  },
+  output: 'export',
+  trailingSlash: true,
   images: {
     unoptimized: true,
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '*.azurewebsites.net',
-      },
-      {
-        protocol: 'https',
-        hostname: '*.vercel.app',
-      }
-    ],
   },
   typescript: {
     ignoreBuildErrors: true,
   },
-  output: 'export',
-  trailingSlash: true,
+  env: {
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://e-helpdesk-back-dgcjdsb9djh2hgbn.eastus-01.azurewebsites.net',
+  },
 };
 
 module.exports = nextConfig;
