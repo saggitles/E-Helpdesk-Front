@@ -11,26 +11,48 @@ console.log(`API URL configured as: ${BASE_URL}`);
 
 const instance = axios.create({
   baseURL: BASE_URL,
-  timeout: 10000, // Increased timeout
-  withCredentials: true, // Important for CORS
+  timeout: 30000, // Increased timeout for slower connections
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Add an interceptor to log successful connections
+// Add request interceptor to handle CORS and authentication
+instance.interceptors.request.use(
+  async (config) => {
+    // Add CORS headers
+    config.headers['Access-Control-Allow-Origin'] = '*';
+    config.headers['Access-Control-Allow-Methods'] = 'GET,PUT,POST,DELETE,OPTIONS';
+    config.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization';
+
+    // Get token and add to headers if available
+    const token = await getToken();
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor for logging and error handling
 instance.interceptors.response.use(
   (response) => {
     if (response.status >= 200 && response.status < 300) {
-      console.log(`✅ Successful connection to the API at ${BASE_URL}`);
-      if (response.data?.databaseName) {
-        console.log(`Database name: ${response.data.databaseName}`);
-      }
+      console.log(`✅ Successful API call to ${response.config.url}`);
     }
     return response;
   },
   (error) => {
-    console.error('API Error:', error.message);
+    console.error('API Error:', {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      message: error.message,
+    });
     return Promise.reject(error);
   }
 );
@@ -226,7 +248,7 @@ export const getExpiredLicenses = async (equipmentID: string) => {
 };
 
 export const getAllDrivers = async (equipmentID: string) => {
-  console.log("Aca debe estar el token. Caul es el problema????");
+  console.log('Aca debe estar el token. Caul es el problema????');
 
   const token = localStorage.getItem('token');
 

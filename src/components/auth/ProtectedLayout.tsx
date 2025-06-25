@@ -22,33 +22,33 @@ export default function Layout({ children }: LayoutProps) {
   );
 
   useEffect(() => {
-    // If not authenticated and not on a public page, redirect to login
-    if (status === 'unauthenticated' && !isPublicPath) {
-      router.push(
-        `/login?callbackUrl=${encodeURIComponent(router.asPath)}`
-      );
+    if (status === 'loading') return;
+
+    // If not authenticated and trying to access a protected route, redirect to login
+    if (!session && !isPublicPath) {
+      router.push(`/login?callbackUrl=${encodeURIComponent(router.asPath)}`);
     }
-  }, [status, router, isPublicPath]);
+  }, [session, status, router, isPublicPath]);
+
+  // Show loading state while checking authentication
+  if (status === 'loading') {
+    return (
+      <div className='flex items-center justify-center min-h-screen'>
+        <div className='text-center'>
+          <div className='spinner-border text-primary' role='status'>
+            <span className='sr-only'>Loading...</span>
+          </div>
+          <p className='mt-2'>Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className='flex flex-col min-h-screen'>
       {/* Always render the NavBar once from here - this is the single source of truth */}
-
-      <main className='flex-grow'>
-        {isPublicPath || status === 'authenticated' ? (
-          children
-        ) : (
-          // Loading state
-          <div className='flex items-center justify-center min-h-screen'>
-            <div className='text-center'>
-              <div className='spinner-border' role='status'>
-                <span className='sr-only'>Loading...</span>
-              </div>
-              <p className='mt-2'>Verifying authentication...</p>
-            </div>
-          </div>
-        )}
-      </main>
+      <NavBar />
+      <main className='flex-grow'>{isPublicPath || session ? children : null}</main>
     </div>
   );
 }
