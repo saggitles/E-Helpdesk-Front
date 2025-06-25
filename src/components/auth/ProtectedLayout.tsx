@@ -26,7 +26,9 @@ export default function Layout({ children }: LayoutProps) {
 
     // If not authenticated and trying to access a protected route, redirect to login
     if (!session && !isPublicPath) {
-      router.push(`/login?callbackUrl=${encodeURIComponent(router.asPath)}`);
+      router.push(
+        `/login?callbackUrl=${encodeURIComponent(router.asPath)}`
+      );
     }
   }, [session, status, router, isPublicPath]);
 
@@ -48,7 +50,9 @@ export default function Layout({ children }: LayoutProps) {
     <div className='flex flex-col min-h-screen'>
       {/* Always render the NavBar once from here - this is the single source of truth */}
       <NavBar />
-      <main className='flex-grow'>{isPublicPath || session ? children : null}</main>
+      <main className='flex-grow'>
+        {isPublicPath || session ? children : null}
+      </main>
     </div>
   );
 }
