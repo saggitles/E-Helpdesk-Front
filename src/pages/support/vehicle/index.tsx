@@ -1,6 +1,5 @@
 'use client';
 
-import NavBar from '@/generic_comp/navbar';
 import Navsearch from '@/generic_comp/navsearch';
 import { dateType } from 'aws-sdk/clients/iam';
 import React, { useState, useEffect, useRef } from 'react';
@@ -1232,7 +1231,6 @@ const VehicleDashboard: React.FC = () => {
   return (
     <div>
       <div>
-        <NavBar />
         <Navsearch onFilterChange={fetchVehicles} />
         {/* Show loading overlay when loadingVehicles is true */}
         {loadingVehicles && (
@@ -2170,7 +2168,7 @@ const VehicleDashboard: React.FC = () => {
                                     <tr className='w-full h-16 border-b border-gray-200 bg-gray-50'>
                                       <th className='text-left pl-4'>
                                         Driver Name
-                                      </th>
+                                                                           </th>
                                       <th className='text-left pl-4'>
                                         Driver ID
                                       </th>
@@ -2609,9 +2607,7 @@ const VehicleDashboard: React.FC = () => {
                                           login.facility_code
                                             .toLowerCase()
                                             .includes(searchValue)) ||
-                                        loginTimeStr.includes(
-                                          searchValue
-                                        ) ||
+                                        loginTimeStr.includes(searchValue) ||
                                         acceptedStr.includes(searchValue)
                                       );
                                     });
@@ -2937,22 +2933,21 @@ const VehicleDashboard: React.FC = () => {
                                       if (!searchValue) return true;
 
                                       // Convert login time to string for searching
-                                      const loginTimeStr =
-                                        login?.login_time
-                                          ? typeof login.login_time ===
-                                            'string'
-                                            ? login.login_time.toLowerCase()
-                                            : new Date(login.login_time)
-                                                .toLocaleString('en-GB', {
-                                                  day: '2-digit',
-                                                  month: '2-digit',
-                                                  year: 'numeric',
-                                                  hour: '2-digit',
-                                                  minute: '2-digit',
-                                                  hour12: false,
-                                                })
-                                                .toLowerCase()
-                                          : '';
+                                      const loginTimeStr = login?.login_time
+                                        ? typeof login.login_time ===
+                                          'string'
+                                          ? login.login_time.toLowerCase()
+                                          : new Date(login.login_time)
+                                              .toLocaleString('en-GB', {
+                                                day: '2-digit',
+                                                month: '2-digit',
+                                                year: 'numeric',
+                                                hour: '2-digit',
+                                                minute: '2-digit',
+                                                hour12: false,
+                                              })
+                                              .toLowerCase()
+                                        : '';
 
                                       // Convert accepted status to string for searching
                                       const acceptedStr =
@@ -3218,15 +3213,7 @@ const VehicleDashboard: React.FC = () => {
                                             {msg.message_timestamp ||
                                               'N/A'}
                                           </td>
-                                          <td
-                                            className={`text-left pl-4 ${
-                                              msg.status === 'done'
-                                                ? 'text-green-600 font-semibold'
-                                                : msg.status === 'in_queue'
-                                                ? 'text-amber-600 font-semibold'
-                                                : 'text-gray-500'
-                                            }`}
-                                          >
+                                          <td className={`text-left pl-4 ${msg.status === 'done' ? 'text-green-600 font-semibold' : msg.status === 'in_queue' ? 'text-amber-600 font-semibold' : 'text-gray-500'}`}>
                                             {msg.status || 'N/A'}
                                           </td>
                                         </tr>
