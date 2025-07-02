@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 
-import Navbar from '../../../generic_comp/navbar';
-
 interface FAQ {
   question: string;
   answer: string;
@@ -76,8 +74,7 @@ const FAQsPage = () => {
       : faqs.filter((faq) => faq.category === selectedCategory);
 
   return (
-    <>
-      <Navbar />
+    <div>
       <div className='min-h-screen bg-gray-50 py-8'>
         <div className='max-w-4xl mx-auto px-4'>
           <h1 className='text-3xl font-bold text-teal-600 mb-8 text-center'>
@@ -158,7 +155,7 @@ const FAQsPage = () => {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

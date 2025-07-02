@@ -3,7 +3,6 @@ import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import { useRouter } from 'next/router';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import Navbar from '@/generic_comp/navbar';
 import { PendingTickets } from '../../../components/filtros';
 import TicketModal from '../../../components/modalCreate'; // Importa el componente modal
 import {
@@ -233,8 +232,6 @@ const CreateTicketPage = () => {
   // render JSX remains mostly the same, but now uses formData directly
   return (
     <>
-      <Navbar />
-
       <div className='min-h-screen bg-gray-100 p-4'>
         <div className='max-w-2xl mx-auto'>
           <div className='bg-white rounded-lg shadow-sm'>

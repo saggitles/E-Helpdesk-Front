@@ -1,6 +1,5 @@
 import { useRouter } from 'next/router';
 import { useState } from 'react';
-import Navbar from '@/generic_comp/navbar';
 
 const Ticket = () => {
   const router = useRouter();
@@ -105,7 +104,6 @@ const Ticket = () => {
 
   return (
     <div>
-      <Navbar />
       <div className='bg-gray-100 min-h-screen p-4 border'>
         <div className='max-w-5xl mx-auto bg-white p-8 mt-8 rounded shadow-md'>
           <h1 className='text-2xl font-semibold mb-4'>

@@ -12,7 +12,6 @@ import {
   YAxis,
   CartesianGrid,
 } from 'recharts';
-import Navbar from '../../../generic_comp/navbar';
 
 const COLORS = [
   '#4169E1', // Royal Blue
@@ -92,8 +91,7 @@ const DashboardWithChat = () => {
   }
 
   return (
-    <>
-      <Navbar />
+    <div className='bg-gray-100 min-h-screen'>
       <div className='p-6 px-64 bg-gray-50'>
         {/* 1. Pie Chart - Agents Distribution */}
         <h1 className='text-2xl font-bold mb-6'>
@@ -253,7 +251,7 @@ const DashboardWithChat = () => {
           </ResponsiveContainer>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
