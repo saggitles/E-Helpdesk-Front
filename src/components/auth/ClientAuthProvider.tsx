@@ -1,5 +1,10 @@
 // Simple client-side authentication provider
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+} from 'react';
 
 interface User {
   id: string;
@@ -18,7 +23,11 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function ClientAuthProvider({ children }: { children: React.ReactNode }) {
+export function ClientAuthProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -35,14 +44,17 @@ export function ClientAuthProvider({ children }: { children: React.ReactNode }) 
     setIsLoading(false);
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (
+    email: string,
+    password: string
+  ): Promise<boolean> => {
     // Admin login
     if (email === 'admin' && password === 'admin12345') {
       const adminUser = {
         id: 'admin-user',
         name: 'Admin User',
         email: 'admin@example.com',
-        roles: ['admin']
+        roles: ['admin'],
       };
       setUser(adminUser);
       localStorage.setItem('auth-user', JSON.stringify(adminUser));
@@ -64,7 +76,9 @@ export function ClientAuthProvider({ children }: { children: React.ReactNode }) 
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, loginWithGoogle, logout, isLoading }}>
+    <AuthContext.Provider
+      value={{ user, login, loginWithGoogle, logout, isLoading }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -73,7 +87,9 @@ export function ClientAuthProvider({ children }: { children: React.ReactNode }) 
 export function useClientAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useClientAuth must be used within a ClientAuthProvider');
+    throw new Error(
+      'useClientAuth must be used within a ClientAuthProvider'
+    );
   }
   return context;
 }

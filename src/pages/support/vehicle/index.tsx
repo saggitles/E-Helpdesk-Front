@@ -1230,791 +1230,791 @@ const VehicleDashboard: React.FC = () => {
 
   return (
     <div>
-      <div>
-        <Navsearch onFilterChange={fetchVehicles} />
-        {/* Show loading overlay when loadingVehicles is true */}
-        {loadingVehicles && (
-          <LoadingOverlay message='Loading vehicles...' />
-        )}{' '}
-        {/* This closing bracket was missing */}
-        {loadingSnapshots && (
-          <LoadingOverlay message='Loading snapshots...' />
-        )}
-        <div className='bg-gray-100 min-h-screen p-8'>
-          {/* Title with Date & Time Filters */}
-          <h1 className='text-4xl font-bold text-gray-800 text-center py-5'>
-            Vehicle Diagnostics Dashboard
-          </h1>
-          <div className='flex justify-between items-center mb-6'>
-            <div className='shadow-lg rounded-lg p-6 border border-gray-300 bg-white'>
-              <h3 className='text-2xl font-bold text-gray-800 px-4 py-2 text-center'>
-                Compare vehicles at 2 points in time
-              </h3>
+      {/* Removed <NavBar /> - it's already rendered globally in ProtectedLayout */}
+      <Navsearch onFilterChange={fetchVehicles} />
+      {/* Show loading overlay when loadingVehicles is true */}
+      {loadingVehicles && (
+        <LoadingOverlay message='Loading vehicles...' />
+      )}
+      {loadingSnapshots && (
+        <LoadingOverlay message='Loading snapshots...' />
+      )}
+      <div className='bg-gray-100 min-h-screen p-8'>
+        {/* Title with Date & Time Filters */}
+        <h1 className='text-4xl font-bold text-gray-800 text-center py-5'>
+          Vehicle Diagnostics Dashboard
+        </h1>
+        <div className='flex justify-between items-center mb-6'>
+          <div className='shadow-lg rounded-lg p-6 border border-gray-300 bg-white'>
+            <h3 className='text-2xl font-bold text-gray-800 px-4 py-2 text-center'>
+              Compare vehicles at 2 points in time
+            </h3>
 
-              <hr className='border-gray-300 mb-4' />
+            <hr className='border-gray-300 mb-4' />
 
-              <div className='grid grid-cols-3 gap-4 items-center'>
-                {/* First Date & Time */}
-                <div>
-                  <label className='block text-base font-medium text-gray-700 mb-1'>
-                    First Date
-                  </label>
-                  <DatePicker
-                    selected={selectedFirstDate}
-                    onChange={(date: Date) => setSelectedFirstDate(date)}
-                    includeDates={dates}
-                    dateFormat='dd/MM/yyyy'
-                    className='border border-gray-300 rounded-md px-2 py-1 text-black w-full'
-                  />
-                  <label className='block text-base font-medium text-gray-700 mt-2 mb-1'>
-                    First Time
-                  </label>
-                  <select
-                    onChange={handleFirstTimeSelect}
-                    value={selectedFirstTime as string}
-                    className='border border-gray-300 rounded-md px-2 py-1 text-black w-full'
-                  >
-                    <option value=''>Select a time</option>
-                    {availableTimes1.map(({ time, ID }) => (
-                      <option key={ID} value={time}>
-                        {time}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Second Date & Time */}
-                <div>
-                  <label className='block text-base font-medium text-gray-700 mb-1'>
-                    Second Date
-                  </label>
-                  <DatePicker
-                    selected={selectedSecondDate}
-                    onChange={(date: Date) => setSelectedSecondDate(date)}
-                    includeDates={
-                      selectedFirstDate
-                        ? dates.filter(
-                            (d) =>
-                              d.getTime() > selectedFirstDate.getTime()
-                          )
-                        : dates
-                    }
-                    dateFormat='dd/MM/yyyy'
-                    className='border border-gray-300 rounded-md px-2 py-1 text-black w-full'
-                  />
-                  <label className='block text-base font-medium text-gray-700 mt-2 mb-1'>
-                    Second Time
-                  </label>
-                  <select
-                    onChange={handleSecondTimeSelect}
-                    value={selectedSecondTime as string}
-                    className='border border-gray-300 rounded-md px-2 py-1 text-black w-full'
-                  >
-                    <option value=''>Select a time</option>
-                    {availableTimes2.map(({ time, ID }) => (
-                      <option key={ID} value={time}>
-                        {time}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className='flex flex-col items-center justify-center gap-2'>
-                  <button
-                    className='bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition w-full'
-                    onClick={fetchSnapshots}
-                    disabled={!selectedFirstTime || !selectedSecondTime}
-                  >
-                    Fetch Vehicle Snapshots
-                  </button>
-
-                  <button
-                    className='text-blue-600 hover:text-blue-800 px-4 py-2 border border-blue-300 rounded-md hover:bg-blue-50 transition w-full'
-                    onClick={clearDateFilters}
-                    disabled={!selectedFirstDate && !selectedSecondDate}
-                  >
-                    Clear Dates
-                  </button>
-                </div>
-              </div>
-            </div>
-            {/* Color Legend Container */}
-            <div className='shadow-lg rounded-lg p-6 border border-gray-300 bg-white w-1/3'>
-              <h3 className='text-2xl font-bold text-gray-800 mb-3 text-center'>
-                Color Legend
-              </h3>
-
-              <hr className='border-gray-300 mb-4' />
-
-              <div className='space-y-3'>
-                <div className='flex items-center'>
-                  <div className='w-6 h-6 bg-yellow-300 mr-3'></div>
-                  <span className='text-gray-700'>
-                    Changed values between snapshots
-                  </span>
-                </div>
-
-                <div className='flex items-center'>
-                  <div className='w-6 h-6 bg-green-100 mr-3'></div>
-                  <span className='text-gray-700'>
-                    Enabled / On / Authorized status
-                  </span>
-                </div>
-
-                <div className='flex items-center'>
-                  <div className='w-6 h-6 bg-red-100 mr-3'></div>
-                  <span className='text-gray-700'>
-                    Disabled / Off / Unauthorized status
-                  </span>
-                </div>
-
-                <div className='flex items-center'>
-                  <div className='w-6 h-6 bg-amber-100 mr-3'></div>
-                  <span className='text-gray-700'>
-                    Pending / In Queue status
-                  </span>
-                </div>
-
-                <div className='flex items-center'>
-                  <div className='w-6 h-6 border border-gray-300 mr-3'></div>
-                  <span className='text-gray-700'>
-                    Default / No special status
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Vehicle Cards with Progressive Loading */}
-
-          <div className='mb-6'>
-            <div className='bg-white shadow-lg rounded-lg p-6 border border-gray-200'>
-              <h2 className='text-xl font-bold text-gray-800 mb-4'>
-                Vehicle Status Summary
-              </h2>
-              <div className='grid grid-cols-5 gap-4'>
-                {/* Total vehicles */}
-                <div className='bg-blue-50 p-4 rounded-lg border border-blue-200'>
-                  <p className='text-4xl font-bold text-blue-600'>
-                    {vehicles.length}
-                  </p>
-                  <p className='text-sm text-gray-600 mt-1'>
-                    Total Vehicles
-                  </p>
-                </div>
-
-                {/* Online vehicles - Shows loading state */}
-                <div className='bg-green-50 p-4 rounded-lg border border-green-200'>
-                  {loadingStates.vehicleStatus ? (
-                    <div className='flex items-center'>
-                      <div className='animate-pulse flex space-x-1'>
-                        <div className='h-8 w-8 bg-green-200 rounded-full'></div>
-                        <div className='h-8 w-8 bg-green-200 rounded-full'></div>
-                      </div>
-                      <p className='text-sm text-gray-500 ml-2'>
-                        Loading...
-                      </p>
-                    </div>
-                  ) : (
-                    <p className='text-4xl font-bold text-green-600'>
-                      {
-                        vehicles.filter(
-                          (v) => v.vehicle_info.status === 'online'
-                        ).length
-                      }
-                    </p>
-                  )}
-                  <p className='text-sm text-gray-600 mt-1'>
-                    Online Vehicles
-                  </p>
-                </div>
-
-                {/* Currently offline vehicles - Shows loading state */}
-                <div className='bg-gray-50 p-4 rounded-lg border border-gray-200'>
-                  {loadingStates.vehicleStatus ? (
-                    <div className='flex items-center'>
-                      <div className='animate-pulse flex space-x-1'>
-                        <div className='h-8 w-8 bg-gray-200 rounded-full'></div>
-                        <div className='h-8 w-8 bg-gray-200 rounded-full'></div>
-                      </div>
-                      <p className='text-sm text-gray-500 ml-2'>
-                        Loading...
-                      </p>
-                    </div>
-                  ) : (
-                    <p className='text-4xl font-bold text-gray-600'>
-                      {
-                        vehicles.filter(
-                          (v) => v.vehicle_info.status === 'offline'
-                        ).length
-                      }
-                    </p>
-                  )}
-                  <p className='text-sm text-gray-600 mt-1'>
-                    Currently Offline
-                  </p>
-                </div>
-
-                {/* Offline more than 3 days - Based on last connection */}
-                <div className='bg-orange-50 p-4 rounded-lg border border-orange-200'>
-                  <p className='text-4xl font-bold text-orange-600'>
-                    {
-                      vehicles.filter((v) => {
-                        if (!v.vehicle_info.last_connection) return false;
-
-                        // Parse date with proper handling of DD/MM/YYYY format
-                        let connectionDate;
-                        if (
-                          typeof v.vehicle_info.last_connection ===
-                            'string' &&
-                          v.vehicle_info.last_connection.includes('/')
-                        ) {
-                          const [datePart, timePart] =
-                            v.vehicle_info.last_connection.split(' ');
-                          const [day, month, year] = datePart
-                            .split('/')
-                            .map(Number);
-                          const [hours, minutes] = timePart
-                            ? timePart.split(':').map(Number)
-                            : [0, 0];
-                          connectionDate = new Date(
-                            year,
-                            month - 1,
-                            day,
-                            hours,
-                            minutes
-                          );
-                        } else {
-                          connectionDate = new Date(
-                            v.vehicle_info.last_connection
-                          );
-                        }
-
-                        // Check if date is valid
-                        if (isNaN(connectionDate.getTime())) return false;
-
-                        const threeDaysAgo = new Date();
-                        threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-
-                        return connectionDate < threeDaysAgo;
-                      }).length
-                    }
-                  </p>
-                  <p className='text-sm text-gray-600 mt-1'>
-                    Offline {'>'} 3 Days
-                  </p>
-                </div>
-
-                {/* Offline more than 2 weeks - Based on last connection */}
-                <div className='bg-red-50 p-4 rounded-lg border border-red-200'>
-                  <p className='text-4xl font-bold text-red-600'>
-                    {
-                      vehicles.filter((v) => {
-                        if (!v.vehicle_info.last_connection) return false;
-
-                        // Parse date with proper handling of DD/MM/YYYY format
-                        let connectionDate;
-                        if (
-                          typeof v.vehicle_info.last_connection ===
-                            'string' &&
-                          v.vehicle_info.last_connection.includes('/')
-                        ) {
-                          const [datePart, timePart] =
-                            v.vehicle_info.last_connection.split(' ');
-                          const [day, month, year] = datePart
-                            .split('/')
-                            .map(Number);
-                          const [hours, minutes] = timePart
-                            ? timePart.split(':').map(Number)
-                            : [0, 0];
-                          connectionDate = new Date(
-                            year,
-                            month - 1,
-                            day,
-                            hours,
-                            minutes
-                          );
-                        } else {
-                          connectionDate = new Date(
-                            v.vehicle_info.last_connection
-                          );
-                        }
-
-                        // Check if date is valid
-                        if (isNaN(connectionDate.getTime())) return false;
-
-                        const twoWeeksAgo = new Date();
-                        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-
-                        return connectionDate < twoWeeksAgo;
-                      }).length
-                    }
-                  </p>
-                  <p className='text-sm text-gray-600 mt-1'>
-                    Offline {'>'} 2 Weeks
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {Object.keys(snapshotData).length === 0 && (
-            <div className='grid grid-cols-3 gap-6'>
-              {/* Data Loading Status Panel */}
-              {vehicles.length > 0 && isLoading && (
-                <div className='fixed bottom-4 right-4 bg-white shadow-lg rounded-lg p-4 z-50 border border-gray-200'>
-                  <h4 className='font-semibold mb-2 text-gray-700'>
-                    Loading Status
-                  </h4>
-                  <ul className='text-sm space-y-2'>
-                    <li className='flex items-center'>
-                      <span
-                        className={
-                          loadingStates.vehicles
-                            ? 'text-blue-500'
-                            : 'text-green-500'
-                        }
-                      >
-                        {loadingStates.vehicles ? 'Loading' : 'Loaded'}{' '}
-                        Vehicles
-                      </span>
-                      {loadingStates.vehicles && (
-                        <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
-                      )}
-                    </li>
-                    <li className='flex items-center'>
-                      <span
-                        className={
-                          loadingStates.vehicleStatus
-                            ? 'text-blue-500'
-                            : 'text-green-500'
-                        }
-                      >
-                        {loadingStates.vehicleStatus
-                          ? 'Loading'
-                          : 'Loaded'}{' '}
-                        Real-time Status
-                      </span>
-                      {loadingStates.vehicleStatus && (
-                        <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
-                      )}
-                    </li>
-                    <li className='flex items-center'>
-                      <span
-                        className={
-                          loadingStates.masterCodes
-                            ? 'text-blue-500'
-                            : 'text-green-500'
-                        }
-                      >
-                        {loadingStates.masterCodes ? 'Loading' : 'Loaded'}{' '}
-                        Master Codes
-                      </span>
-                      {loadingStates.masterCodes && (
-                        <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
-                      )}
-                    </li>
-                    <li className='flex items-center'>
-                      <span
-                        className={
-                          loadingStates.blacklistedDrivers
-                            ? 'text-blue-500'
-                            : 'text-green-500'
-                        }
-                      >
-                        {loadingStates.blacklistedDrivers
-                          ? 'Loading'
-                          : 'Loaded'}{' '}
-                        Blacklisted Drivers
-                      </span>
-                      {loadingStates.blacklistedDrivers && (
-                        <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
-                      )}
-                    </li>
-                    <li className='flex items-center'>
-                      <span
-                        className={
-                          loadingStates.vehicleLogins
-                            ? 'text-blue-500'
-                            : 'text-green-500'
-                        }
-                      >
-                        {loadingStates.vehicleLogins
-                          ? 'Loading'
-                          : 'Loaded'}{' '}
-                        Vehicle Logins
-                      </span>
-                      {loadingStates.vehicleLogins && (
-                        <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
-                      )}
-                    </li>
-                    <li className='flex items-center'>
-                      <span
-                        className={
-                          loadingStates.lastDriverLogins
-                            ? 'text-blue-500'
-                            : 'text-green-500'
-                        }
-                      >
-                        {loadingStates.lastDriverLogins
-                          ? 'Loading'
-                          : 'Loaded'}{' '}
-                        Last Driver Logins
-                      </span>
-                      {loadingStates.lastDriverLogins && (
-                        <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
-                      )}
-                    </li>
-                  </ul>
-                </div>
-              )}
-
-              {vehicles.map((vehicle, index) => (
-                <div
-                  key={index}
-                  className='bg-white shadow-lg rounded-lg p-6 border border-gray-300'
+            <div className='grid grid-cols-3 gap-4 items-center'>
+              {/* First Date & Time */}
+              <div>
+                <label className='block text-base font-medium text-gray-700 mb-1'>
+                  First Date
+                </label>
+                <DatePicker
+                  selected={selectedFirstDate}
+                  onChange={(date: Date) => setSelectedFirstDate(date)}
+                  includeDates={dates}
+                  dateFormat='dd/MM/yyyy'
+                  className='border border-gray-300 rounded-md px-2 py-1 text-black w-full'
+                />
+                <label className='block text-base font-medium text-gray-700 mt-2 mb-1'>
+                  First Time
+                </label>
+                <select
+                  onChange={handleFirstTimeSelect}
+                  value={selectedFirstTime as string}
+                  className='border border-gray-300 rounded-md px-2 py-1 text-black w-full'
                 >
-                  {/* Adjusted grid layout for top section */}
-                  <div className='grid grid-cols-3 gap-4 items-start'>
-                    {/* Adjusted Image Size & Positioning */}
-                    <div className='w-20 h-20 flex items-start justify-start'>
-                      <img
-                        src='/forklift.png'
-                        alt='Forklift'
-                        className='w-full h-full object-contain'
-                      />
+                  <option value=''>Select a time</option>
+                  {availableTimes1.map(({ time, ID }) => (
+                    <option key={ID} value={time}>
+                      {time}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Second Date & Time */}
+              <div>
+                <label className='block text-base font-medium text-gray-700 mb-1'>
+                  Second Date
+                </label>
+                <DatePicker
+                  selected={selectedSecondDate}
+                  onChange={(date: Date) => setSelectedSecondDate(date)}
+                  includeDates={
+                    selectedFirstDate
+                      ? dates.filter(
+                          (d) =>
+                            d.getTime() > selectedFirstDate.getTime()
+                        )
+                      : dates
+                  }
+                  dateFormat='dd/MM/yyyy'
+                  className='border border-gray-300 rounded-md px-2 py-1 text-black w-full'
+                />
+                <label className='block text-base font-medium text-gray-700 mt-2 mb-1'>
+                  Second Time
+                </label>
+                <select
+                  onChange={handleSecondTimeSelect}
+                  value={selectedSecondTime as string}
+                  className='border border-gray-300 rounded-md px-2 py-1 text-black w-full'
+                >
+                  <option value=''>Select a time</option>
+                  {availableTimes2.map(({ time, ID }) => (
+                    <option key={ID} value={time}>
+                      {time}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className='flex flex-col items-center justify-center gap-2'>
+                <button
+                  className='bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition w-full'
+                  onClick={fetchSnapshots}
+                  disabled={!selectedFirstTime || !selectedSecondTime}
+                >
+                  Fetch Vehicle Snapshots
+                </button>
+
+                <button
+                  className='text-blue-600 hover:text-blue-800 px-4 py-2 border border-blue-300 rounded-md hover:bg-blue-50 transition w-full'
+                  onClick={clearDateFilters}
+                  disabled={!selectedFirstDate && !selectedSecondDate}
+                >
+                  Clear Dates
+                </button>
+              </div>
+            </div>
+          </div>
+          {/* Color Legend Container */}
+          <div className='shadow-lg rounded-lg p-6 border border-gray-300 bg-white w-1/3'>
+            <h3 className='text-2xl font-bold text-gray-800 mb-3 text-center'>
+              Color Legend
+            </h3>
+
+            <hr className='border-gray-300 mb-4' />
+
+            <div className='space-y-3'>
+              <div className='flex items-center'>
+                <div className='w-6 h-6 bg-yellow-300 mr-3'></div>
+                <span className='text-gray-700'>
+                  Changed values between snapshots
+                </span>
+              </div>
+
+              <div className='flex items-center'>
+                <div className='w-6 h-6 bg-green-100 mr-3'></div>
+                <span className='text-gray-700'>
+                  Enabled / On / Authorized status
+                </span>
+              </div>
+
+              <div className='flex items-center'>
+                <div className='w-6 h-6 bg-red-100 mr-3'></div>
+                <span className='text-gray-700'>
+                  Disabled / Off / Unauthorized status
+                </span>
+              </div>
+
+              <div className='flex items-center'>
+                <div className='w-6 h-6 bg-amber-100 mr-3'></div>
+                <span className='text-gray-700'>
+                  Pending / In Queue status
+                </span>
+              </div>
+
+              <div className='flex items-center'>
+                <div className='w-6 h-6 border border-gray-300 mr-3'></div>
+                <span className='text-gray-700'>
+                  Default / No special status
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Vehicle Cards with Progressive Loading */}
+
+        <div className='mb-6'>
+          <div className='bg-white shadow-lg rounded-lg p-6 border border-gray-200'>
+            <h2 className='text-xl font-bold text-gray-800 mb-4'>
+              Vehicle Status Summary
+            </h2>
+            <div className='grid grid-cols-5 gap-4'>
+              {/* Total vehicles */}
+              <div className='bg-blue-50 p-4 rounded-lg border border-blue-200'>
+                <p className='text-4xl font-bold text-blue-600'>
+                  {vehicles.length}
+                </p>
+                <p className='text-sm text-gray-600 mt-1'>
+                  Total Vehicles
+                </p>
+              </div>
+
+              {/* Online vehicles - Shows loading state */}
+              <div className='bg-green-50 p-4 rounded-lg border border-green-200'>
+                {loadingStates.vehicleStatus ? (
+                  <div className='flex items-center'>
+                    <div className='animate-pulse flex space-x-1'>
+                      <div className='h-8 w-8 bg-green-200 rounded-full'></div>
+                      <div className='h-8 w-8 bg-green-200 rounded-full'></div>
                     </div>
-                    {/* Vehicle Identification Details */}
-                    <div className='col-span-2 text-center'>
-                      <h2 className='text-2xl font-bold text-gray-800'>
-                        {vehicle.vehicle_info.vehicle_name}
-                      </h2>
-                      <p className='text-base text-gray-600'>
-                        <strong>Serial:</strong>{' '}
-                        {vehicle.vehicle_info.serial_number}
-                      </p>
-                      <p className='text-base text-gray-600'>
-                        <strong>GMPT:</strong>{' '}
-                        {vehicle.vehicle_info.gmpt_code}
-                      </p>
-                    </div>
+                    <p className='text-sm text-gray-500 ml-2'>
+                      Loading...
+                    </p>
                   </div>
+                ) : (
+                  <p className='text-4xl font-bold text-green-600'>
+                    {
+                      vehicles.filter(
+                        (v) => v.vehicle_info.status === 'online'
+                      ).length
+                    }
+                  </p>
+                )}
+                <p className='text-sm text-gray-600 mt-1'>
+                  Online Vehicles
+                </p>
+              </div>
 
-                  {/* Vehicle Specs and Status */}
-                  <div className='grid grid-cols-2 gap-4 mt-4'>
-                    <div>
-                      <p className='text-base text-gray-600'>
-                        <strong>Customer:</strong>{' '}
-                        {vehicle.vehicle_info.customer_name}
-                      </p>
-                      <p className='text-base text-gray-600'>
-                        <strong>Site:</strong>{' '}
-                        {vehicle.vehicle_info.site_name}
-                      </p>
-                      <p className='text-base text-gray-600'>
-                        <strong>Department:</strong>{' '}
-                        {vehicle.vehicle_info.department}
-                      </p>
-                      <p className='text-base text-gray-600'>
-                        <strong>Screen Version:</strong>{' '}
-                        {vehicle.vehicle_info.screen_version}
-                      </p>
-                      <p className='text-base text-gray-600'>
-                        <strong>ExpModu Version:</strong>{' '}
-                        {vehicle.vehicle_info.expansion_version}
-                      </p>
-                      <p
-                        className={`text-base ${
-                          isOlderThanTwoWeeks(
-                            vehicle.vehicle_info.last_dlist_timestamp
-                          )
-                            ? 'text-amber-500 font-semibold'
-                            : 'text-gray-600'
-                        }`}
-                      >
-                        <strong>Last Driver List sync:</strong>{' '}
-                        {vehicle.vehicle_info.last_dlist_timestamp}
-                      </p>
-                      <p
-                        className={`text-base ${
-                          isOlderThanTwoWeeks(
-                            vehicle.vehicle_info.last_preop_timestamp
-                          )
-                            ? 'text-amber-500 font-semibold'
-                            : 'text-gray-600'
-                        }`}
-                      >
-                        <strong>Last Checklist sync:</strong>{' '}
-                        {vehicle.vehicle_info.last_preop_timestamp}
-                      </p>
+              {/* Currently offline vehicles - Shows loading state */}
+              <div className='bg-gray-50 p-4 rounded-lg border border-gray-200'>
+                {loadingStates.vehicleStatus ? (
+                  <div className='flex items-center'>
+                    <div className='animate-pulse flex space-x-1'>
+                      <div className='h-8 w-8 bg-gray-200 rounded-full'></div>
+                      <div className='h-8 w-8 bg-gray-200 rounded-full'></div>
                     </div>
-                    <div>
-                      <p className='text-base text-gray-600'>
-                        <strong>Firmware Version:</strong>{' '}
-                        {vehicle.vehicle_info.firmware_version}
-                      </p>
-                      <p className='text-base text-gray-600'>
-                        <strong>Vehicle Model:</strong>{' '}
-                        {vehicle.vehicle_info.vehicle_model}
-                      </p>
-
-                      <p className='text-base text-gray-600'>
-                        <strong>Sim Number:</strong>{' '}
-                        {vehicle.vehicle_info.sim_number}
-                      </p>
-                      <p className='text-gray-600 text-base'>
-                        <strong>Can-Rules Loaded:</strong>{' '}
-                        {vehicle.vehicle_info.can_rules_loaded
-                          ? 'Yes'
-                          : 'No'}
-                      </p>
-                      <p
-                        className={`text-base ${getLastConectionColor(
-                          vehicle.vehicle_info.last_connection
-                        )}`}
-                      >
-                        <strong>Last Connection:</strong>{' '}
-                        {vehicle.vehicle_info.last_connection}
-                      </p>
-                    </div>
+                    <p className='text-sm text-gray-500 ml-2'>
+                      Loading...
+                    </p>
                   </div>
+                ) : (
+                  <p className='text-4xl font-bold text-gray-600'>
+                    {
+                      vehicles.filter(
+                        (v) => v.vehicle_info.status === 'offline'
+                      ).length
+                    }
+                  </p>
+                )}
+                <p className='text-sm text-gray-600 mt-1'>
+                  Currently Offline
+                </p>
+              </div>
 
-                  {/* Status */}
-                  <div className='text-center mt-4'>
-                    <p
-                      className={`text-lg font-bold ${
+              {/* Offline more than 3 days - Based on last connection */}
+              <div className='bg-orange-50 p-4 rounded-lg border border-orange-200'>
+                <p className='text-4xl font-bold text-orange-600'>
+                  {
+                    vehicles.filter((v) => {
+                      if (!v.vehicle_info.last_connection) return false;
+
+                      // Parse date with proper handling of DD/MM/YYYY format
+                      let connectionDate;
+                      if (
+                        typeof v.vehicle_info.last_connection ===
+                          'string' &&
+                        v.vehicle_info.last_connection.includes('/')
+                      ) {
+                        const [datePart, timePart] =
+                          v.vehicle_info.last_connection.split(' ');
+                        const [day, month, year] = datePart
+                          .split('/')
+                          .map(Number);
+                        const [hours, minutes] = timePart
+                          ? timePart.split(':').map(Number)
+                          : [0, 0];
+                        connectionDate = new Date(
+                          year,
+                          month - 1,
+                          day,
+                          hours,
+                          minutes
+                        );
+                      } else {
+                        connectionDate = new Date(
+                          v.vehicle_info.last_connection
+                        );
+                      }
+
+                      // Check if date is valid
+                      if (isNaN(connectionDate.getTime())) return false;
+
+                      const threeDaysAgo = new Date();
+                      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+                      return connectionDate < threeDaysAgo;
+                    }).length
+                  }
+                </p>
+                <p className='text-sm text-gray-600 mt-1'>
+                  Offline {'>'} 3 Days
+                </p>
+              </div>
+
+              {/* Offline more than 2 weeks - Based on last connection */}
+              <div className='bg-red-50 p-4 rounded-lg border border-red-200'>
+                <p className='text-4xl font-bold text-red-600'>
+                  {
+                    vehicles.filter((v) => {
+                      if (!v.vehicle_info.last_connection) return false;
+
+                      // Parse date with proper handling of DD/MM/YYYY format
+                      let connectionDate;
+                      if (
+                        typeof v.vehicle_info.last_connection ===
+                          'string' &&
+                        v.vehicle_info.last_connection.includes('/')
+                      ) {
+                        const [datePart, timePart] =
+                          v.vehicle_info.last_connection.split(' ');
+                        const [day, month, year] = datePart
+                          .split('/')
+                          .map(Number);
+                        const [hours, minutes] = timePart
+                          ? timePart.split(':').map(Number)
+                          : [0, 0];
+                        connectionDate = new Date(
+                          year,
+                          month - 1,
+                          day,
+                          hours,
+                          minutes
+                        );
+                      } else {
+                        connectionDate = new Date(
+                          v.vehicle_info.last_connection
+                        );
+                      }
+
+                      // Check if date is valid
+                      if (isNaN(connectionDate.getTime())) return false;
+
+                      const twoWeeksAgo = new Date();
+                      twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+
+                      return connectionDate < twoWeeksAgo;
+                    }).length
+                  }
+                </p>
+                <p className='text-sm text-gray-600 mt-1'>
+                  Offline {'>'} 2 Weeks
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {Object.keys(snapshotData).length === 0 && (
+          <div className='grid grid-cols-3 gap-6'>
+            {/* Data Loading Status Panel */}
+            {vehicles.length > 0 && isLoading && (
+              <div className='fixed bottom-4 right-4 bg-white shadow-lg rounded-lg p-4 z-50 border border-gray-200'>
+                <h4 className='font-semibold mb-2 text-gray-700'>
+                  Loading Status
+                </h4>
+                <ul className='text-sm space-y-2'>
+                  <li className='flex items-center'>
+                    <span
+                      className={
+                        loadingStates.vehicles
+                          ? 'text-blue-500'
+                          : 'text-green-500'
+                      }
+                    >
+                      {loadingStates.vehicles ? 'Loading' : 'Loaded'}{' '}
+                      Vehicles
+                    </span>
+                    {loadingStates.vehicles && (
+                      <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                    )}
+                  </li>
+                  <li className='flex items-center'>
+                    <span
+                      className={
                         loadingStates.vehicleStatus
-                          ? 'text-blue-600'
-                          : vehicleStatusByVehicle[vehicle.VEHICLE_CD]
-                              ?.status === 'online'
-                          ? 'text-green-600'
-                          : 'text-red-600'
-                      }`}
+                          ? 'text-blue-500'
+                          : 'text-green-500'
+                      }
                     >
-                      <strong>
-                        Status:{' '}
-                        {loadingStates.vehicleStatus
-                          ? 'Loading...'
-                          : vehicleStatusByVehicle[vehicle.VEHICLE_CD]
-                              ?.status || vehicle.vehicle_info.status}
-                      </strong>
-                      {loadingStates.vehicleStatus && (
-                        <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
-                      )}
-                    </p>
-                  </div>
+                      {loadingStates.vehicleStatus
+                        ? 'Loading'
+                        : 'Loaded'}{' '}
+                      Real-time Status
+                    </span>
+                    {loadingStates.vehicleStatus && (
+                      <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                    )}
+                  </li>
+                  <li className='flex items-center'>
+                    <span
+                      className={
+                        loadingStates.masterCodes
+                          ? 'text-blue-500'
+                          : 'text-green-500'
+                      }
+                    >
+                      {loadingStates.masterCodes ? 'Loading' : 'Loaded'}{' '}
+                      Master Codes
+                    </span>
+                    {loadingStates.masterCodes && (
+                      <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                    )}
+                  </li>
+                  <li className='flex items-center'>
+                    <span
+                      className={
+                        loadingStates.blacklistedDrivers
+                          ? 'text-blue-500'
+                          : 'text-green-500'
+                      }
+                    >
+                      {loadingStates.blacklistedDrivers
+                        ? 'Loading'
+                        : 'Loaded'}{' '}
+                      Blacklisted Drivers
+                    </span>
+                    {loadingStates.blacklistedDrivers && (
+                      <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                    )}
+                  </li>
+                  <li className='flex items-center'>
+                    <span
+                      className={
+                        loadingStates.vehicleLogins
+                          ? 'text-blue-500'
+                          : 'text-green-500'
+                      }
+                    >
+                      {loadingStates.vehicleLogins
+                        ? 'Loading'
+                        : 'Loaded'}{' '}
+                      Vehicle Logins
+                    </span>
+                    {loadingStates.vehicleLogins && (
+                      <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                    )}
+                  </li>
+                  <li className='flex items-center'>
+                    <span
+                      className={
+                        loadingStates.lastDriverLogins
+                          ? 'text-blue-500'
+                          : 'text-green-500'
+                      }
+                    >
+                      {loadingStates.lastDriverLogins
+                        ? 'Loading'
+                        : 'Loaded'}{' '}
+                      Last Driver Logins
+                    </span>
+                    {loadingStates.lastDriverLogins && (
+                      <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                    )}
+                  </li>
+                </ul>
+              </div>
+            )}
 
-                  <hr className='border-gray-300 mb-4' />
-                  <div className='grid grid-cols-2 gap-4 text-base text-gray-600'>
-                    <p>
-                      <span
-                        className={
-                          vehicle.vehicle_info.lockout_code
-                            ?.toString()
-                            .trim() === '0'
-                            ? 'text-green-500' // If "0", Unlocked (Green)
-                            : 'text-red-500' // If not "0", Locked (Red)
-                        }
-                      >
-                        <strong>Lockout Status:</strong>{' '}
-                        {vehicle.vehicle_info.lockout_code
-                          ?.toString()
-                          .trim() === '0'
-                          ? 'Unlocked'
-                          : 'Locked'}
-                      </span>
-                    </p>
-                    <p>
-                      <span
-                        className={
-                          vehicle.vehicle_info.impact_lockout
-                            ? 'text-green-500'
-                            : 'text-red-500'
-                        }
-                      >
-                        <strong>Impact Lockouts:</strong>{' '}
-                        {vehicle.vehicle_info.impact_lockout
-                          ? 'On'
-                          : 'Off'}
-                      </span>
-                    </p>
-                    <p>
-                      <strong>Recalibration Date:</strong>{' '}
-                      {vehicle.vehicle_info.impact_recalibration_date}
-                    </p>
-                    <p
-                      className={` ${
-                        vehicle.vehicle_info.red_impact_threshold !==
-                          null &&
-                        vehicle.vehicle_info.red_impact_threshold > 0.0
-                          ? 'text-green-500'
-                          : 'text-red-500'
-                      }`}
-                    >
-                      <strong>Red Impact Threshold: </strong>{' '}
-                      {vehicle.vehicle_info.red_impact_threshold}g
-                    </p>
-                    <p>
-                      <span
-                        className={
-                          vehicle.vehicle_info.full_lockout_enabled
-                            ? 'text-green-500'
-                            : 'text-red-500'
-                        }
-                      >
-                        <strong>Full Lockout:</strong>{' '}
-                        {vehicle.vehicle_info.full_lockout_enabled
-                          ? 'On'
-                          : 'Off'}
-                      </span>
-                    </p>
-                    <p className='text-gray-600 text-base'>
-                      <strong>Full Lockout Timeout:</strong>{' '}
-                      {vehicle.vehicle_info.full_lockout_timeout}s
-                    </p>
-                    <p className='text-gray-600 text-base'>
-                      <strong>Idle Timeout:</strong>{' '}
-                      {vehicle.vehicle_info.seat_idle !== null
-                        ? vehicle.vehicle_info.seat_idle
-                        : 'Off'}
-                      s
+            {vehicles.map((vehicle, index) => (
+              <div
+                key={index}
+                className='bg-white shadow-lg rounded-lg p-6 border border-gray-300'
+              >
+                {/* Adjusted grid layout for top section */}
+                <div className='grid grid-cols-3 gap-4 items-start'>
+                  {/* Adjusted Image Size & Positioning */}
+                  <div className='w-20 h-20 flex items-start justify-start'>
+                    <img
+                      src='/forklift.png'
+                      alt='Forklift'
+                      className='w-full h-full object-contain'
+                    />
+                  </div>
+                  {/* Vehicle Identification Details */}
+                  <div className='col-span-2 text-center'>
+                    <h2 className='text-2xl font-bold text-gray-800'>
+                      {vehicle.vehicle_info.vehicle_name}
+                    </h2>
+                    <p className='text-base text-gray-600'>
+                      <strong>Serial:</strong>{' '}
+                      {vehicle.vehicle_info.serial_number}
                     </p>
                     <p className='text-base text-gray-600'>
-                      <strong>Idle Polarity:</strong>{' '}
-                      {vehicle.vehicle_info.idle_polarity}
+                      <strong>GMPT:</strong>{' '}
+                      {vehicle.vehicle_info.gmpt_code}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Vehicle Specs and Status */}
+                <div className='grid grid-cols-2 gap-4 mt-4'>
+                  <div>
+                    <p className='text-base text-gray-600'>
+                      <strong>Customer:</strong>{' '}
+                      {vehicle.vehicle_info.customer_name}
+                    </p>
+                    <p className='text-base text-gray-600'>
+                      {vehicle.vehicle_info.site_name}
+                    </p>
+                    <p className='text-base text-gray-600'>
+                      <strong>Department:</strong>{' '}
+                      {vehicle.vehicle_info.department}
+                    </p>
+                    <p className='text-base text-gray-600'>
+                      <strong>Screen Version:</strong>{' '}
+                      {vehicle.vehicle_info.screen_version}
+                    </p>
+                    <p className='text-base text-gray-600'>
+                      <strong>ExpModu Version:</strong>{' '}
+                      {vehicle.vehicle_info.expansion_version}
+                    </p>
+                    <p
+                      className={`text-base ${
+                        isOlderThanTwoWeeks(
+                          vehicle.vehicle_info.last_dlist_timestamp
+                        )
+                          ? 'text-amber-500 font-semibold'
+                          : 'text-gray-600'
+                      }`}
+                    >
+                      <strong>Last Driver List sync:</strong>{' '}
+                      {vehicle.vehicle_info.last_dlist_timestamp}
+                    </p>
+                    <p
+                      className={`text-base ${
+                        isOlderThanTwoWeeks(
+                          vehicle.vehicle_info.last_preop_timestamp
+                        )
+                          ? 'text-amber-500 font-semibold'
+                          : 'text-gray-600'
+                      }`}
+                    >
+                      <strong>Last Checklist sync:</strong>{' '}
+                      {vehicle.vehicle_info.last_preop_timestamp}
+                    </p>
+                  </div>
+                  <div>
+                    <p className='text-base text-gray-600'>
+                      <strong>Firmware Version:</strong>{' '}
+                      {vehicle.vehicle_info.firmware_version}
+                    </p>
+                    <p className='text-base text-gray-600'>
+                      <strong>Vehicle Model:</strong>{' '}
+                      {vehicle.vehicle_info.vehicle_model}
                     </p>
 
-                    <p>
-                      <strong>Checklist Schedule:</strong>{' '}
-                      {vehicle.vehicle_info.preop_schedule}
+                    <p className='text-base text-gray-600'>
+                      <strong>Sim Number:</strong>{' '}
+                      {vehicle.vehicle_info.sim_number}
                     </p>
                     <p className='text-gray-600 text-base'>
-                      <strong>Checklist Timeout:</strong>{' '}
-                      {vehicle.vehicle_info.survey_timeout}s
+                      <strong>Can-Rules Loaded:</strong>{' '}
+                      {vehicle.vehicle_info.can_rules_loaded
+                        ? 'Yes'
+                        : 'No'}
                     </p>
-
-                    <p>
-                      <span
-                        className={
-                          vehicle.vehicle_info.vor_setting == false
-                            ? 'text-green-500'
-                            : 'text-red-500'
-                        }
-                      >
-                        <strong>VOR: </strong>{' '}
-                        {vehicle.vehicle_info.vor_setting == false
-                          ? 'Off'
-                          : 'On'}
-                      </span>
+                    <p
+                      className={`text-base ${getLastConectionColor(
+                        vehicle.vehicle_info.last_connection
+                      )}`}
+                    >
+                      <strong>Last Connection:</strong>{' '}
+                      {vehicle.vehicle_info.last_connection}
                     </p>
+                  </div>
+                </div>
 
-                    {/* Master Codes Popup - Updated with search filter */}
-                    <button
-                      className='text-blue-500 hover:underline mt-2 flex items-center'
-                      onClick={() =>
-                        togglePopup('masterCodes', vehicle.VEHICLE_CD)
+                {/* Status */}
+                <div className='text-center mt-4'>
+                  <p
+                    className={`text-lg font-bold ${
+                      loadingStates.vehicleStatus
+                        ? 'text-blue-600'
+                        : vehicleStatusByVehicle[vehicle.VEHICLE_CD]
+                            ?.status === 'online'
+                        ? 'text-green-600'
+                        : 'text-red-600'
+                    }`}
+                  >
+                    <strong>
+                      Status:{' '}
+                      {loadingStates.vehicleStatus
+                        ? 'Loading...'
+                        : vehicleStatusByVehicle[vehicle.VEHICLE_CD]
+                            ?.status || vehicle.vehicle_info.status}
+                    </strong>
+                    {loadingStates.vehicleStatus && (
+                      <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                    )}
+                  </p>
+                </div>
+
+                <hr className='border-gray-300 mb-4' />
+                <div className='grid grid-cols-2 gap-4 text-base text-gray-600'>
+                  <p>
+                    <span
+                      className={
+                        vehicle.vehicle_info.lockout_code
+                          ?.toString()
+                          .trim() === '0'
+                          ? 'text-green-500' // If "0", Unlocked (Green)
+                          : 'text-red-500' // If not "0", Locked (Red)
                       }
                     >
-                      <span>Master Codes</span>
-                      {loadingStates.masterCodes &&
-                        activeVehicleId === vehicle.VEHICLE_CD && (
-                          <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
-                        )}
-                    </button>
-                    {showPopup.masterCodes &&
+                      <strong>Lockout Status:</strong>{' '}
+                      {vehicle.vehicle_info.lockout_code
+                        ?.toString()
+                        .trim() === '0'
+                        ? 'Unlocked'
+                        : 'Locked'}
+                    </span>
+                  </p>
+                  <p>
+                    <span
+                      className={
+                        vehicle.vehicle_info.impact_lockout
+                          ? 'text-green-500'
+                          : 'text-red-500'
+                      }
+                    >
+                      <strong>Impact Lockouts:</strong>{' '}
+                      {vehicle.vehicle_info.impact_lockout
+                        ? 'On'
+                        : 'Off'}
+                    </span>
+                  </p>
+                  <p>
+                    <strong>Recalibration Date:</strong>{' '}
+                    {vehicle.vehicle_info.impact_recalibration_date}
+                  </p>
+                  <p
+                    className={` ${
+                      vehicle.vehicle_info.red_impact_threshold !==
+                        null &&
+                      vehicle.vehicle_info.red_impact_threshold > 0.0
+                        ? 'text-green-500'
+                        : 'text-red-500'
+                    }`}
+                  >
+                    <strong>Red Impact Threshold: </strong>{' '}
+                    {vehicle.vehicle_info.red_impact_threshold}g
+                  </p>
+                  <p>
+                    <span
+                      className={
+                        vehicle.vehicle_info.full_lockout_enabled
+                          ? 'text-green-500'
+                          : 'text-red-500'
+                      }
+                    >
+                      <strong>Full Lockout:</strong>{' '}
+                      {vehicle.vehicle_info.full_lockout_enabled
+                        ? 'On'
+                        : 'Off'}
+                    </span>
+                  </p>
+                  <p className='text-gray-600 text-base'>
+                    <strong>Full Lockout Timeout:</strong>{' '}
+                    {vehicle.vehicle_info.full_lockout_timeout}s
+                  </p>
+                  <p className='text-gray-600 text-base'>
+                    <strong>Idle Timeout:</strong>{' '}
+                    {vehicle.vehicle_info.seat_idle !== null
+                      ? vehicle.vehicle_info.seat_idle
+                      : 'Off'}
+                    s
+                  </p>
+                  <p className='text-base text-gray-600'>
+                    <strong>Idle Polarity:</strong>{' '}
+                    {vehicle.vehicle_info.idle_polarity}
+                  </p>
+
+                  <p>
+                    <strong>Checklist Schedule:</strong>{' '}
+                    {vehicle.vehicle_info.preop_schedule}
+                  </p>
+                  <p className='text-gray-600 text-base'>
+                    <strong>Checklist Timeout:</strong>{' '}
+                    {vehicle.vehicle_info.survey_timeout}s
+                  </p>
+
+                  <p>
+                    <span
+                      className={
+                        vehicle.vehicle_info.vor_setting == false
+                          ? 'text-green-500'
+                          : 'text-red-500'
+                      }
+                    >
+                      <strong>VOR: </strong>{' '}
+                      {vehicle.vehicle_info.vor_setting == false
+                        ? 'Off'
+                        : 'On'}
+                    </span>
+                  </p>
+
+                  {/* Master Codes Popup - Updated with search filter */}
+                  <button
+                    className='text-blue-500 hover:underline mt-2 flex items-center'
+                    onClick={() =>
+                      togglePopup('masterCodes', vehicle.VEHICLE_CD)
+                    }
+                  >
+                    <span>Master Codes</span>
+                    {loadingStates.masterCodes &&
                       activeVehicleId === vehicle.VEHICLE_CD && (
-                        <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
-                          <div
-                            ref={popupRef}
-                            className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'
-                          >
-                            <h3 className='text-lg font-semibold mb-4'>
-                              Master Codes for{' '}
-                              {vehicle.vehicle_info.vehicle_name} (
-                              {vehicle.vehicle_info.gmpt_code})
-                            </h3>
+                        <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                      )}
+                  </button>
+                  {showPopup.masterCodes &&
+                    activeVehicleId === vehicle.VEHICLE_CD && (
+                      <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
+                        <div
+                          ref={popupRef}
+                          className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'
+                        >
+                          <h3 className='text-lg font-semibold mb-4'>
+                            Master Codes for{' '}
+                            {vehicle.vehicle_info.vehicle_name} (
+                            {vehicle.vehicle_info.gmpt_code})
+                          </h3>
 
-                            {/* Search filter input */}
-                            <div className='mb-4'>
-                              <input
-                                type='text'
-                                placeholder='Search master codes...'
-                                className='w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                                onChange={(e) => {
-                                  // Store search value in a local variable
-                                  const searchValue =
-                                    e.target.value.toLowerCase();
+                          {/* Search filter input */}
+                          <div className='mb-4'>
+                            <input
+                              type='text'
+                              placeholder='Search master codes...'
+                              className='w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                              onChange={(e) => {
+                                // Store search value in a local variable
+                                const searchValue =
+                                  e.target.value.toLowerCase();
 
-                                  // Re-render will use this value to filter the table
-                                  e.target.setAttribute(
-                                    'data-search-mastercode',
-                                    searchValue
-                                  );
-                                  // Force re-render of the component
-                                  setShowPopup((prev) => ({ ...prev }));
-                                }}
-                              />
+                                // Re-render will use this value to filter the table
+                                e.target.setAttribute(
+                                  'data-search-mastercode',
+                                  searchValue
+                                );
+                                // Force re-render of the component
+                                setShowPopup((prev) => ({ ...prev }));
+                              }}
+                            />
+                          </div>
+
+                          {loadingStates.masterCodes ? (
+                            <div className='flex items-center text-blue-500'>
+                              <span className='mr-2 inline-block w-4 h-4 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                              Loading master codes...
                             </div>
-
-                            {loadingStates.masterCodes ? (
-                              <div className='flex items-center text-blue-500'>
-                                <span className='mr-2 inline-block w-4 h-4 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
-                                Loading master codes...
-                              </div>
-                            ) : masterCodesByVehicle[vehicle.VEHICLE_CD]
-                                ?.length > 0 ? (
-                              <div className='overflow-x-auto'>
-                                <table className='min-w-full bg-white'>
-                                  <thead>
-                                    <tr className='w-full h-16 border-b border-gray-200 bg-gray-50'>
-                                      <th className='text-left pl-4'>
-                                        Master Code User
-                                      </th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {masterCodesByVehicle[
-                                      vehicle.VEHICLE_CD
-                                    ]
-                                      .filter((user) => {
-                                        // Get the current search value from the input element
-                                        const searchInput =
-                                          document.querySelector(
-                                            '[data-search-mastercode]'
-                                          );
-                                        const searchValue = searchInput
-                                          ? searchInput.getAttribute(
-                                              'data-search-mastercode'
-                                            ) || ''
-                                          : '';
-
-                                        if (!searchValue) return true; // If no search, show all
-
-                                        // Search in master code user
-                                        return (
-                                          user.master_code_user &&
-                                          user.master_code_user
-                                            .toLowerCase()
-                                            .includes(searchValue)
+                          ) : masterCodesByVehicle[vehicle.VEHICLE_CD]
+                              ?.length > 0 ? (
+                            <div className='overflow-x-auto'>
+                              <table className='min-w-full bg-white'>
+                                <thead>
+                                  <tr className='w-full h-16 border-b border-gray-200 bg-gray-50'>
+                                    <th className='text-left pl-4'>
+                                      Master Code User
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {masterCodesByVehicle[
+                                    vehicle.VEHICLE_CD
+                                  ]
+                                    .filter((user) => {
+                                      // Get the current search value from the input element
+                                      const searchInput =
+                                        document.querySelector(
+                                          '[data-search-mastercode]'
                                         );
-                                      })
-                                      .map((user, idx) => (
-                                        <tr
-                                          key={idx}
-                                          className='h-12 border-b border-gray-200'
-                                        >
-                                          <td className='text-left pl-4'>
-                                            {user.master_code_user}
-                                          </td>
-                                        </tr>
-                                      ))}
-                                  </tbody>
-                                </table>
+                                      const searchValue = searchInput
+                                        ? searchInput.getAttribute(
+                                            'data-search-mastercode'
+                                          ) || ''
+                                        : '';
 
-                                {/* No results message */}
-                                {(() => {
-                                  const searchInput =
-                                    document.querySelector(
+                                      if (!searchValue) return true; // If no search, show all
+
+                                      // Search in master code user
+                                      return (
+                                        user.master_code_user &&
+                                        user.master_code_user
+                                          .toLowerCase()
+                                          .includes(searchValue)
+                                      );
+                                    })
+                                    .map((user, idx) => (
+                                      <tr
+                                        key={idx}
+                                        className='h-12 border-b border-gray-200'
+                                      >
+                                        <td className='text-left pl-4'>
+                                          {user.master_code_user}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                </tbody>
+                              </table>
+
+                              {/* No results message */}
+                              {(() => {
+                                const searchInput =
+                                  document.querySelector(
+                                    '[data-search-mastercode]'
+                                  );
                                       '[data-search-mastercode]'
                                     );
                                   const searchValue = searchInput
