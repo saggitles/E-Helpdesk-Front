@@ -162,9 +162,9 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
           const companies = Object.values(companyGroups);
 
           if (companies.length === 1) {
-            // Single company - auto-populate and trigger search
+            // Single company - auto-populate but DON'T trigger search
             const company = companies[0];
-            console.log('Single company found, auto-populating...');
+            console.log('Single company found, auto-populating filters only...');
             localStorage.setItem('selectedCustomer', company.customer);
             localStorage.setItem('selectedSite', company.site);
 
@@ -174,13 +174,13 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
               site: company.site,
             }));
 
-            // Auto-trigger search after state is updated
-            setTimeout(() => {
-              if (typeof onFilterChange === 'function') {
-                console.log('Auto-triggering search for single company');
-                onFilterChange();
-              }
-            }, 100);
+            // REMOVED: Auto-trigger search - user must click Search manually
+            // setTimeout(() => {
+            //   if (typeof onFilterChange === 'function') {
+            //     console.log('Auto-triggering search for single company');
+            //     onFilterChange();
+            //   }
+            // }, 100);
           } else {
             // Multiple companies - show selection
             console.log(`Multiple companies found: ${companies.length}`);
@@ -199,13 +199,13 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
             site: data.site,
           }));
 
-          // Auto-trigger search after state is updated
-          setTimeout(() => {
-            if (typeof onFilterChange === 'function') {
-              console.log('Auto-triggering search for single vehicle');
-              onFilterChange();
-            }
-          }, 100);
+          // REMOVED: Auto-trigger search - user must click Search manually
+          // setTimeout(() => {
+          //   if (typeof onFilterChange === 'function') {
+          //     console.log('Auto-triggering search for single vehicle');
+          //     onFilterChange();
+          //   }
+          // }, 100);
         }
       } catch (error) {
         console.error('Error fetching vehicle by GMPT:', error);
@@ -213,7 +213,7 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
     };
 
     fetchVehicleByGmpt();
-  }, [filters.gmptCode, onFilterChange]);
+  }, [filters.gmptCode]);
 
   // Handle company selection from modal
   const handleCompanySelection = (selectedCompany: {
