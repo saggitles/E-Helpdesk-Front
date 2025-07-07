@@ -714,43 +714,11 @@ const VehicleDashboard: React.FC = () => {
 
   // Fetch vehicles when the component loads or when localStorage changes
   useEffect(() => {
-    fetchDatesAndVehicles();
+    // Only fetch dates on initial load, no automatic vehicle fetching
+    fetchDates();
 
-    // Listen for localStorage changes (when Navsearch updates the filters)
-    const handleStorageChange = (event: StorageEvent) => {
-      console.log('Storage changed:', event.key, event.newValue);
-      if (
-        event.key === 'selectedCustomer' ||
-        event.key === 'selectedSite' ||
-        event.key === 'selectedGmpt'
-      ) {
-        // Debounce the fetch to avoid multiple calls
-        setTimeout(() => {
-          const updatedCustomer = localStorage.getItem('selectedCustomer');
-          if (updatedCustomer) {
-            console.log('Auto-fetching vehicles due to filter change');
-            fetchVehicles();
-          }
-        }, 300);
-      }
-    };
-
-    // Listen for custom events from the search component
-    const handleFilterUpdate = () => {
-      console.log('Filter update event received');
-      const customer = localStorage.getItem('selectedCustomer');
-      if (customer) {
-        fetchVehicles();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('filtersUpdated', handleFilterUpdate);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('filtersUpdated', handleFilterUpdate);
-    };
+    // Remove all automatic localStorage listening and auto-fetching
+    // Data will only be fetched when user clicks Search or Refresh buttons
   }, []);
 
   return (
