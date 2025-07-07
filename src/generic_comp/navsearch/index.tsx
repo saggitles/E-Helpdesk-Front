@@ -126,94 +126,15 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
     fetchSites();
   }, [filters.customer]);
 
-  // Fetch Customer & Site Info When GMPT Code is Entered
-  useEffect(() => {
-    const fetchVehicleByGmpt = async () => {
-      if (!filters.gmptCode) return;
-      console.log('Fetching vehicle by GMPT code:', filters.gmptCode);
-      try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/vehicles?gmptCode=${filters.gmptCode}`
-        );
-        if (!response.ok)
-          throw new Error(`HTTP error! Status: ${response.status}`);
-
-        const data = await response.json();
-        console.log('Vehicle Data:', data);
-
-        // Handle multiple vehicles from different companies
-        if (Array.isArray(data) && data.length > 0) {
-          // Group by customer and site
-          const companyGroups = data.reduce((groups, vehicle) => {
-            const key = `${vehicle.customer}|${vehicle.site}`;
-            if (!groups[key]) {
-              groups[key] = {
-                customer: vehicle.customer,
-                site: vehicle.site,
-                count: 0,
-                vehicles: [],
-              };
-            }
-            groups[key].count++;
-            groups[key].vehicles.push(vehicle);
-            return groups;
-          }, {});
-
-          const companies = Object.values(companyGroups);
-
-          if (companies.length === 1) {
-            // Single company - auto-populate but DON'T trigger search
-            const company = companies[0];
-            console.log('Single company found, auto-populating filters only...');
-            localStorage.setItem('selectedCustomer', company.customer);
-            localStorage.setItem('selectedSite', company.site);
-
-            setFilters((prevFilters) => ({
-              ...prevFilters,
-              customer: company.customer,
-              site: company.site,
-            }));
-
-            // REMOVED: Auto-trigger search - user must click Search manually
-            // setTimeout(() => {
-            //   if (typeof onFilterChange === 'function') {
-            //     console.log('Auto-triggering search for single company');
-            //     onFilterChange();
-            //   }
-            // }, 100);
-          } else {
-            // Multiple companies - show selection
-            console.log(`Multiple companies found: ${companies.length}`);
-            setAvailableCompanies(companies);
-            setMultipleCompaniesFound(true);
-          }
-        } else if (data.customer && data.site) {
-          // Fallback for single vehicle object response
-          console.log('Updating filters based on GMPT vehicle...');
-          localStorage.setItem('selectedCustomer', data.customer);
-          localStorage.setItem('selectedSite', data.site);
-
-          setFilters((prevFilters) => ({
-            ...prevFilters,
-            customer: data.customer,
-            site: data.site,
-          }));
-
-          // REMOVED: Auto-trigger search - user must click Search manually
-          // setTimeout(() => {
-          //   if (typeof onFilterChange === 'function') {
-          //     console.log('Auto-triggering search for single vehicle');
-          //     onFilterChange();
-          //   }
-          // }, 100);
-        }
-      } catch (error) {
-        console.error('Error fetching vehicle by GMPT:', error);
-      }
-    };
-
-    fetchVehicleByGmpt();
-  }, [filters.gmptCode]);
+  // Fetch Customer & Site Info When GMPT Code is Entered - DISABLED
+  // useEffect(() => {
+  //   const fetchVehicleByGmpt = async () => {
+  //     if (!filters.gmptCode) return;
+  //     console.log('Fetching vehicle by GMPT code:', filters.gmptCode);
+  //     // ... rest of auto-population logic removed
+  //   };
+  //   fetchVehicleByGmpt();
+  // }, [filters.gmptCode]);
 
   // Handle company selection from modal
   const handleCompanySelection = (selectedCompany: {
@@ -278,18 +199,19 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
 
   // Handle Search Button Click - mantener esta funcionalidad del compañero
   const handleSearch = () => {
-    if (!filters.customer) {
-      console.error('Customer is required for search.');
+    // Allow search if either customer is selected OR GMPT code is provided
+    if (!filters.customer && !filters.gmptCode) {
+      console.error('Either Customer or GMPT Code is required for search.');
       return;
     }
 
     console.log('Saving to local storage:');
-    console.log('Customer:', filters.customer);
+    console.log('Customer:', filters.customer || 'None selected');
     console.log('Site:', filters.site || 'None selected');
     console.log('GMPT:', filters.gmptCode || 'None input');
 
     // Store customer and site in local storage - Make sure we store the raw values
-    localStorage.setItem('selectedCustomer', filters.customer);
+    localStorage.setItem('selectedCustomer', filters.customer || '');
     localStorage.setItem('selectedSite', filters.site || '');
     localStorage.setItem('selectedGmpt', filters.gmptCode || '');
 
@@ -441,7 +363,7 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
               Clear Filters
             </button>
             <button
-              className='bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition flex items-center'
+              className='bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition flex items-center font-semibold'
               onClick={handleSearch}
               title='Refresh data and clear cache'
             >

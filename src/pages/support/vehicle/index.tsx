@@ -224,8 +224,9 @@ const VehicleDashboard: React.FC = () => {
     const site = localStorage.getItem('selectedSite');
     const gmptCode = localStorage.getItem('selectedGmpt');
 
-    if (!customer) {
-      console.warn('No customer selected.');
+    // Allow search if either customer is provided OR GMPT code is provided
+    if (!customer && !gmptCode) {
+      console.warn('Either Customer or GMPT Code is required for search.');
       setLoadingVehicles(false);
       setLoadingStates((prev) => ({ ...prev, vehicles: false }));
       return;
