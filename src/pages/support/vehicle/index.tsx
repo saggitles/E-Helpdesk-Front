@@ -924,14 +924,61 @@ const VehicleDashboard: React.FC = () => {
                 <h4 className='font-semibold mb-2 text-gray-700'>Loading Status</h4>
                 <ul className='text-sm space-y-2'>
                   <li className='flex items-center'>
-                    <span className={loadingStates.vehicles ? 'text-blue-500' : 'text-green-500'}>
+                    <span className={loadingStates.vehicles ? 'text-red-500' : 'text-green-500'}>
                       {loadingStates.vehicles ? 'Loading' : 'Loaded'} Vehicles
                     </span>
                     {loadingStates.vehicles && (
-                      <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                      <span className='ml-2 inline-block w-3 h-3 border-2 border-t-red-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
                     )}
                   </li>
-                  {/* ...existing loading status items... */}
+                  <li className='flex items-center'>
+                    <span className={loadingStates.vehicleStatus ? 'text-red-500' : 'text-green-500'}>
+                      {loadingStates.vehicleStatus ? 'Loading' : 'Loaded'} Vehicle Status
+                    </span>
+                    {loadingStates.vehicleStatus && (
+                      <span className='ml-2 inline-block w-3 h-3 border-2 border-t-red-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                    )}
+                  </li>
+                  <li className='flex items-center'>
+                    <span className={loadingStates.masterCodes ? 'text-red-500' : 'text-green-500'}>
+                      {loadingStates.masterCodes ? 'Loading' : 'Loaded'} Master Codes
+                    </span>
+                    {loadingStates.masterCodes && (
+                      <span className='ml-2 inline-block w-3 h-3 border-2 border-t-red-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                    )}
+                  </li>
+                  <li className='flex items-center'>
+                    <span className={loadingStates.blacklistedDrivers ? 'text-red-500' : 'text-green-500'}>
+                      {loadingStates.blacklistedDrivers ? 'Loading' : 'Loaded'} Blacklisted Drivers
+                    </span>
+                    {loadingStates.blacklistedDrivers && (
+                      <span className='ml-2 inline-block w-3 h-3 border-2 border-t-red-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                    )}
+                  </li>
+                  <li className='flex items-center'>
+                    <span className={loadingStates.vehicleLogins ? 'text-red-500' : 'text-green-500'}>
+                      {loadingStates.vehicleLogins ? 'Loading' : 'Loaded'} Vehicle Logins
+                    </span>
+                    {loadingStates.vehicleLogins && (
+                      <span className='ml-2 inline-block w-3 h-3 border-2 border-t-red-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                    )}
+                  </li>
+                  <li className='flex items-center'>
+                    <span className={loadingStates.lastDriverLogins ? 'text-red-500' : 'text-green-500'}>
+                      {loadingStates.lastDriverLogins ? 'Loading' : 'Loaded'} Last Driver Logins
+                    </span>
+                    {loadingStates.lastDriverLogins && (
+                      <span className='ml-2 inline-block w-3 h-3 border-2 border-t-red-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                    )}
+                  </li>
+                  <li className='flex items-center'>
+                    <span className={loadingStates.MessageSent ? 'text-red-500' : 'text-green-500'}>
+                      {loadingStates.MessageSent ? 'Loading' : 'Loaded'} Messages Sent
+                    </span>
+                    {loadingStates.MessageSent && (
+                      <span className='ml-2 inline-block w-3 h-3 border-2 border-t-red-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                    )}
+                  </li>
                 </ul>
               </div>
             )}
