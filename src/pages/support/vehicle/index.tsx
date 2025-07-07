@@ -1155,7 +1155,7 @@ const VehicleDashboard: React.FC = () => {
                   >
                     <span>Messages Sent (7 days)</span>
                     {loadingStates.MessageSent && activeVehicleId === vehicle.VEHICLE_CD && (
-                      <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                      <span className='ml-2 inline-block w-3 h-3 border-2 border-t-red-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
                     )}
                   </button>
                 </div>
@@ -1209,7 +1209,6 @@ const VehicleDashboard: React.FC = () => {
                     <div className='grid grid-cols-2 gap-0'>
                       {/* Before Snapshot */}
                       <div className='p-5 border-r border-gray-200'>
-                        {/* Vehicle Header */}
                         <div className='flex items-center mb-4'>
                           <div className='w-14 h-14 mr-3'>
                             <Image
@@ -1233,7 +1232,6 @@ const VehicleDashboard: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Customer/Site/Department Info */}
                         <div className='grid grid-cols-2 gap-x-4 gap-y-1 text-sm mb-4'>
                           <div>
                             <p><strong>Customer:</strong> <span className={getChangeStyle(snaps.before.cust_id, snaps.after.cust_id)}>{snaps.before.cust_id || 'N/A'}</span></p>
@@ -1248,7 +1246,6 @@ const VehicleDashboard: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Basic Vehicle Information */}
                         <div className='grid grid-cols-2 gap-x-4 gap-y-1 text-sm mb-4'>
                           <div>
                             <p><strong>Screen Version:</strong> <span className={getChangeStyle(snaps.before.screenVersion, snaps.after.screenVersion)}>{snaps.before.screenVersion || 'N/A'}</span></p>
@@ -1264,66 +1261,37 @@ const VehicleDashboard: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Horizontal Divider */}
                         <hr className='border-gray-300 my-4' />
 
-                        {/* Configuration Grid */}
                         <div className='grid grid-cols-2 gap-x-4 gap-y-1 text-sm'>
                           <div>
-                            {(() => {
-                              const vorStatus = getBooleanStatusText(snaps.before.vorSetting === 'false' || snaps.before.vorSetting === false, 'Off', 'On', true);
-                              return (
-                                <p>
-                                  <span className={`${vorStatus.colorClass} ${getChangeStyle(snaps.before.vorSetting, snaps.after.vorSetting)}`}>
-                                    <strong>VOR:</strong> {vorStatus.text}
-                                  </span>
-                                </p>
-                              );
-                            })()}
+                            <p>
+                              <span className={`${getBooleanStatusText((typeof snaps.before.vorSetting === 'string' && snaps.before.vorSetting === 'false') || (typeof snaps.before.vorSetting === 'boolean' && snaps.before.vorSetting === false), 'Off', 'On', true).colorClass} ${getChangeStyle(snaps.before.vorSetting, snaps.after.vorSetting)}`}>
+                                <strong>VOR:</strong> {getBooleanStatusText((typeof snaps.before.vorSetting === 'string' && snaps.before.vorSetting === 'false') || (typeof snaps.before.vorSetting === 'boolean' && snaps.before.vorSetting === false), 'Off', 'On', true).text}
+                              </span>
+                            </p>
                             <p><strong>LO Reason:</strong> <span className={getChangeStyle(snaps.before.loReason, snaps.after.loReason)}>{snaps.before.loReason || 'N/A'}</span></p>
                             <p><strong>Recalibration Date:</strong> <span className={getChangeStyle(snaps.before.impactRecalibrationDate, snaps.after.impactRecalibrationDate)}>{snaps.before.impactRecalibrationDate || 'N/A'}</span></p>
-                            <div>
-                              {(() => {
-                                const impactStatus = getBooleanStatusText(snaps.before.impactLockout, 'On', 'Off', true);
-                                return (
-                                  <p>
-                                    <span className={`${impactStatus.colorClass} ${getChangeStyle(snaps.before.impactLockout, snaps.after.impactLockout)}`}>
-                                      <strong>Impact Lockouts:</strong> {impactStatus.text}
-                                    </span>
-                                  </p>
-                                );
-                              })()}
-                            </div>
-                            <div>
-                              {(() => {
-                                const fullLockoutStatus = getBooleanStatusText(snaps.before.fullLockoutEnabled, 'On', 'Off', true);
-                                return (
-                                  <p>
-                                    <span className={`${fullLockoutStatus.colorClass} ${getChangeStyle(snaps.before.fullLockoutEnabled, snaps.after.fullLockoutEnabled)}`}>
-                                      <strong>Full Lockout:</strong> {fullLockoutStatus.text}
-                                    </span>
-                                  </p>
-                                );
-                              })()}
-                            </div>
+                            <p>
+                              <span className={`${getBooleanStatusText(snaps.before.impactLockout, 'On', 'Off', true).colorClass} ${getChangeStyle(snaps.before.impactLockout, snaps.after.impactLockout)}`}>
+                                <strong>Impact Lockouts:</strong> {getBooleanStatusText(snaps.before.impactLockout, 'On', 'Off', true).text}
+                              </span>
+                            </p>
+                            <p>
+                              <span className={`${getBooleanStatusText(snaps.before.fullLockoutEnabled, 'On', 'Off', true).colorClass} ${getChangeStyle(snaps.before.fullLockoutEnabled, snaps.after.fullLockoutEnabled)}`}>
+                                <strong>Full Lockout:</strong> {getBooleanStatusText(snaps.before.fullLockoutEnabled, 'On', 'Off', true).text}
+                              </span>
+                            </p>
                             <p><strong>Full Lockout Timeout:</strong> <span className={getChangeStyle(snaps.before.fullLockoutTimeout, snaps.after.fullLockoutTimeout)}>{snaps.before.fullLockoutTimeout || 0}s</span></p>
                             <p><strong>Checklist Timeout:</strong> <span className={getChangeStyle(snaps.before.surveyTimeout, snaps.after.surveyTimeout)}>{snaps.before.surveyTimeout || 0}s</span></p>
                             <p><strong>Idle Timeout:</strong> <span className={getChangeStyle(snaps.before.seatIdle, snaps.after.seatIdle)}>{snaps.before.seatIdle !== null ? snaps.before.seatIdle + 's' : 'N/As'}</span></p>
-                            <p><strong>Can Rules Loaded:</strong> <span className={getChangeStyle(snaps.before.canRulesLoaded, snaps.after.canRulesLoaded)}>{snaps.before.canRulesLoaded ? 'Yes' : 'N/A'}</span></p>
                           </div>
                           <div>
-                            <div>
-                              {(() => {
-                                const lockoutStatus = getBooleanStatusText(snaps.before.lockoutCode === '0', 'Unlocked', 'Locked', true);
-                                return (
-                                  <p>
-                                    <span className={`${lockoutStatus.colorClass} ${getChangeStyle(snaps.before.lockoutCode, snaps.after.lockoutCode)}`}>
-                                      <strong>Lockout Status:</strong> {lockoutStatus.text}
-                                    </span>
-                                  </p>
-                                );
-                              })()}
-                            </div>
+                            <p>
+                              <span className={snaps.before.lockoutCode === '0' ? 'text-green-500' : 'text-red-500'}>
+                                <strong>Lockout Status:</strong> {snaps.before.lockoutCode === '0' ? 'Unlocked' : 'Locked'}
+                              </span>
+                            </p>
                             <p><strong>Checklist Schedule:</strong> <span className={getChangeStyle(snaps.before.preopSchedule, snaps.after.preopSchedule)}>{snaps.before.preopSchedule || 'N/A'}</span></p>
                             <p className={`${snaps.before.redImpactThreshold && snaps.before.redImpactThreshold > 0 ? 'text-green-500' : 'text-red-500'}`}>
                               <strong>Red Impact Threshold:</strong> <span className={getChangeStyle(snaps.before.redImpactThreshold, snaps.after.redImpactThreshold)}>{snaps.before.redImpactThreshold || 0}g</span>
@@ -1334,7 +1302,6 @@ const VehicleDashboard: React.FC = () => {
 
                       {/* After Snapshot */}
                       <div className='p-5'>
-                        {/* Vehicle Header */}
                         <div className='flex items-center mb-4'>
                           <div className='w-14 h-14 mr-3'>
                             <Image
@@ -1358,7 +1325,6 @@ const VehicleDashboard: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Customer/Site/Department Info */}
                         <div className='grid grid-cols-2 gap-x-4 gap-y-1 text-sm mb-4'>
                           <div>
                             <p><strong>Customer:</strong> <span className={getChangeStyle(snaps.before.cust_id, snaps.after.cust_id)}>{snaps.after.cust_id || 'N/A'}</span></p>
@@ -1373,7 +1339,6 @@ const VehicleDashboard: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Basic Vehicle Information */}
                         <div className='grid grid-cols-2 gap-x-4 gap-y-1 text-sm mb-4'>
                           <div>
                             <p><strong>Screen Version:</strong> <span className={getChangeStyle(snaps.before.screenVersion, snaps.after.screenVersion)}>{snaps.after.screenVersion || 'N/A'}</span></p>
@@ -1389,66 +1354,37 @@ const VehicleDashboard: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Horizontal Divider */}
                         <hr className='border-gray-300 my-4' />
 
-                        {/* Configuration Grid */}
                         <div className='grid grid-cols-2 gap-x-4 gap-y-1 text-sm'>
                           <div>
-                            {(() => {
-                              const vorStatus = getBooleanStatusText(snaps.after.vorSetting === 'false' || snaps.after.vorSetting === false, 'Off', 'On', true);
-                              return (
-                                <p>
-                                  <span className={`${vorStatus.colorClass} ${getChangeStyle(snaps.before.vorSetting, snaps.after.vorSetting)}`}>
-                                    <strong>VOR:</strong> {vorStatus.text}
-                                  </span>
-                                </p>
-                              );
-                            })()}
+                            <p>
+                              <span className={`${getBooleanStatusText((typeof snaps.after.vorSetting === 'string' && snaps.after.vorSetting === 'false') || (typeof snaps.after.vorSetting === 'boolean' && snaps.after.vorSetting === false), 'Off', 'On', true).colorClass} ${getChangeStyle(snaps.before.vorSetting, snaps.after.vorSetting)}`}>
+                                <strong>VOR:</strong> {getBooleanStatusText((typeof snaps.after.vorSetting === 'string' && snaps.after.vorSetting === 'false') || (typeof snaps.after.vorSetting === 'boolean' && snaps.after.vorSetting === false), 'Off', 'On', true).text}
+                              </span>
+                            </p>
                             <p><strong>LO Reason:</strong> <span className={getChangeStyle(snaps.before.loReason, snaps.after.loReason)}>{snaps.after.loReason || 'N/A'}</span></p>
                             <p><strong>Recalibration Date:</strong> <span className={getChangeStyle(snaps.before.impactRecalibrationDate, snaps.after.impactRecalibrationDate)}>{snaps.after.impactRecalibrationDate || 'N/A'}</span></p>
-                            <div>
-                              {(() => {
-                                const impactStatus = getBooleanStatusText(snaps.after.impactLockout, 'On', 'Off', true);
-                                return (
-                                  <p>
-                                    <span className={`${impactStatus.colorClass} ${getChangeStyle(snaps.before.impactLockout, snaps.after.impactLockout)}`}>
-                                      <strong>Impact Lockouts:</strong> {impactStatus.text}
-                                    </span>
-                                  </p>
-                                );
-                              })()}
-                            </div>
-                            <div>
-                              {(() => {
-                                const fullLockoutStatus = getBooleanStatusText(snaps.after.fullLockoutEnabled, 'On', 'Off', true);
-                                return (
-                                  <p>
-                                    <span className={`${fullLockoutStatus.colorClass} ${getChangeStyle(snaps.before.fullLockoutEnabled, snaps.after.fullLockoutEnabled)}`}>
-                                      <strong>Full Lockout:</strong> {fullLockoutStatus.text}
-                                    </span>
-                                  </p>
-                                );
-                              })()}
-                            </div>
+                            <p>
+                              <span className={`${getBooleanStatusText(snaps.after.impactLockout, 'On', 'Off', true).colorClass} ${getChangeStyle(snaps.before.impactLockout, snaps.after.impactLockout)}`}>
+                                <strong>Impact Lockouts:</strong> {getBooleanStatusText(snaps.after.impactLockout, 'On', 'Off', true).text}
+                              </span>
+                            </p>
+                            <p>
+                              <span className={`${getBooleanStatusText(snaps.after.fullLockoutEnabled, 'On', 'Off', true).colorClass} ${getChangeStyle(snaps.before.fullLockoutEnabled, snaps.after.fullLockoutEnabled)}`}>
+                                <strong>Full Lockout:</strong> {getBooleanStatusText(snaps.after.fullLockoutEnabled, 'On', 'Off', true).text}
+                              </span>
+                            </p>
                             <p><strong>Full Lockout Timeout:</strong> <span className={getChangeStyle(snaps.before.fullLockoutTimeout, snaps.after.fullLockoutTimeout)}>{snaps.after.fullLockoutTimeout || 0}s</span></p>
                             <p><strong>Checklist Timeout:</strong> <span className={getChangeStyle(snaps.before.surveyTimeout, snaps.after.surveyTimeout)}>{snaps.after.surveyTimeout || 0}s</span></p>
                             <p><strong>Idle Timeout:</strong> <span className={getChangeStyle(snaps.before.seatIdle, snaps.after.seatIdle)}>{snaps.after.seatIdle !== null ? snaps.after.seatIdle + 's' : 'N/As'}</span></p>
-                            <p><strong>Can Rules Loaded:</strong> <span className={getChangeStyle(snaps.before.canRulesLoaded, snaps.after.canRulesLoaded)}>{snaps.after.canRulesLoaded ? 'Yes' : 'N/A'}</span></p>
                           </div>
                           <div>
-                            <div>
-                              {(() => {
-                                const lockoutStatus = getBooleanStatusText(snaps.after.lockoutCode === '0', 'Unlocked', 'Locked', true);
-                                return (
-                                  <p>
-                                    <span className={`${lockoutStatus.colorClass} ${getChangeStyle(snaps.before.lockoutCode, snaps.after.lockoutCode)}`}>
-                                      <strong>Lockout Status:</strong> {lockoutStatus.text}
-                                    </span>
-                                  </p>
-                                );
-                              })()}
-                            </div>
+                            <p>
+                              <span className={`${getBooleanStatusText(snaps.after.lockoutCode === '0', 'Unlocked', 'Locked', true).colorClass} ${getChangeStyle(snaps.before.lockoutCode, snaps.after.lockoutCode)}`}>
+                                <strong>Lockout Status:</strong> {getBooleanStatusText(snaps.after.lockoutCode === '0', 'Unlocked', 'Locked', true).text}
+                              </span>
+                            </p>
                             <p><strong>Checklist Schedule:</strong> <span className={getChangeStyle(snaps.before.preopSchedule, snaps.after.preopSchedule)}>{snaps.after.preopSchedule || 'N/A'}</span></p>
                             <p className={`${snaps.after.redImpactThreshold && snaps.after.redImpactThreshold > 0 ? 'text-green-500' : 'text-red-500'}`}>
                               <strong>Red Impact Threshold:</strong> <span className={getChangeStyle(snaps.before.redImpactThreshold, snaps.after.redImpactThreshold)}>{snaps.after.redImpactThreshold || 0}g</span>
@@ -1457,6 +1393,7 @@ const VehicleDashboard: React.FC = () => {
                         </div>
                       </div>
                     </div>
+                  </div>
                 );
               })}
             </div>
