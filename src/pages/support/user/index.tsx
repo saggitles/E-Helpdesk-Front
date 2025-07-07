@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Navsearch from '@/generic_comp/navsearch';
+import Image from 'next/image';
 
 interface User {
   name: string;
@@ -80,10 +81,12 @@ const UserDashboard: React.FC = () => {
             >
               <div className='grid grid-cols-2 items-center mb-4'>
                 <div className='w-24 h-24 flex items-center justify-center'>
-                  <img
+                  <Image
                     src='/user.png'
                     alt='User'
                     className='w-full h-full object-contain'
+                    width={96}
+                    height={96}
                   />
                 </div>
                 <div>
