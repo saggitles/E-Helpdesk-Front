@@ -702,8 +702,55 @@ const VehicleDashboard: React.FC = () => {
     }
   }, [selectedSecondDate]);
 
+  const fetchDatesAndVehicles = async () => {
+    await fetchDates();
+
+    // Initial fetch when component mounts
+    const customer = localStorage.getItem('selectedCustomer');
+    if (customer) {
+      fetchVehicles();
+    }
+  };
+
+  // Fetch vehicles when the component loads or when localStorage changes
   useEffect(() => {
-    fetchDates();
+    fetchDatesAndVehicles();
+
+    // Listen for localStorage changes (when Navsearch updates the filters)
+    const handleStorageChange = (event: StorageEvent) => {
+      console.log('Storage changed:', event.key, event.newValue);
+      if (
+        event.key === 'selectedCustomer' ||
+        event.key === 'selectedSite' ||
+        event.key === 'selectedGmpt'
+      ) {
+        // Debounce the fetch to avoid multiple calls
+        setTimeout(() => {
+          const updatedCustomer = localStorage.getItem('selectedCustomer');
+          if (updatedCustomer) {
+            console.log('Auto-fetching vehicles due to filter change');
+            fetchVehicles();
+          }
+        }, 300);
+      }
+    };
+
+    // Listen for custom events from the search component
+    const handleFilterUpdate = () => {
+      console.log('Filter update event received');
+      const customer = localStorage.getItem('selectedCustomer');
+      if (customer) {
+        fetchVehicles();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('filtersUpdated', handleFilterUpdate);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('filtersUpdated', handleFilterUpdate);
+    };
   }, []);
 
   return (
@@ -1179,8 +1226,276 @@ const VehicleDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Similar popups for other data types would go here */}
-        
+        {/* Blacklisted Drivers Popup */}
+        {showPopup.blacklistDrivers && activeVehicleId && (
+          <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
+            <div ref={popupRef} className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'>
+              <h3 className='text-lg font-semibold mb-4'>
+                Blacklisted Drivers for Vehicle {activeVehicleId}
+              </h3>
+              {loadingStates.blacklistedDrivers ? (
+                <div className='flex items-center text-blue-500'>
+                  <span className='mr-2 inline-block w-4 h-4 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                  Loading blacklisted drivers...
+                </div>
+              ) : blacklistedDriversByVehicle[activeVehicleId]?.length > 0 ? (
+                <div className='overflow-x-auto'>
+                  <table className='min-w-full bg-white'>
+                    <thead>
+                      <tr className='w-full h-16 border-b border-gray-200 bg-gray-50'>
+                        <th className='text-left pl-4'>Driver Name</th>
+                        <th className='text-left pl-4'>Driver ID</th>
+                        <th className='text-left pl-4'>Card ID</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {blacklistedDriversByVehicle[activeVehicleId].map((driver, idx) => (
+                        <tr key={idx} className='h-12 border-b border-gray-200 bg-red-100/50'>
+                          <td className='text-left pl-4'>{driver.driver_name || 'Unknown'}</td>
+                          <td className='text-left pl-4'>{driver.driver_id || 'N/A'}</td>
+                          <td className='text-left pl-4'>{driver.card_id || 'N/A'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className='text-gray-600'>No blacklisted drivers found.</p>
+              )}
+              <button
+                className='mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700'
+                onClick={() => togglePopup('blacklistDrivers')}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Vehicle Logins Popup */}
+        {showPopup.vehicleLogins && activeVehicleId && (
+          <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
+            <div ref={popupRef} className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'>
+              <h3 className='text-lg font-semibold mb-4'>
+                Recent Vehicle Logins for Vehicle {activeVehicleId}
+              </h3>
+              {loadingStates.vehicleLogins ? (
+                <div className='flex items-center text-blue-500'>
+                  <span className='mr-2 inline-block w-4 h-4 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                  Loading vehicle logins...
+                </div>
+              ) : vehicleLoginsByVehicle[activeVehicleId]?.length > 0 ? (
+                <div className='overflow-x-auto'>
+                  <table className='min-w-full bg-white'>
+                    <thead>
+                      <tr className='w-full h-16 border-b border-gray-200 bg-gray-50'>
+                        <th className='text-left pl-4'>Driver Name</th>
+                        <th className='text-left pl-4'>Driver ID</th>
+                        <th className='text-left pl-4'>Facility Code</th>
+                        <th className='text-left pl-4'>Login Time</th>
+                        <th className='text-left pl-4'>Accepted</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {vehicleLoginsByVehicle[activeVehicleId].map((login, idx) => (
+                        <tr
+                          key={idx}
+                          className={`h-12 border-b border-gray-200 ${
+                            login.accepted !== undefined
+                              ? login.accepted
+                                ? 'bg-green-100/50'
+                                : 'bg-red-100/50'
+                              : ''
+                          }`}
+                        >
+                          <td className='text-left pl-4'>{login.driver_name || 'Unknown'}</td>
+                          <td className='text-left pl-4'>{login.driver_id || 'N/A'}</td>
+                          <td className='text-left pl-4'>{login.facility_code || 'N/A'}</td>
+                          <td className='text-left pl-4'>
+                            {login.login_time
+                              ? typeof login.login_time === 'string'
+                                ? login.login_time
+                                : new Date(login.login_time).toLocaleString()
+                              : 'N/A'}
+                          </td>
+                          <td
+                            className={`text-left pl-4 ${
+                              login.accepted !== undefined
+                                ? login.accepted
+                                  ? 'text-green-600'
+                                  : 'text-red-600'
+                                : 'text-gray-500'
+                            }`}
+                          >
+                            {login.accepted !== undefined
+                              ? login.accepted
+                                ? 'Yes'
+                                : 'No'
+                              : 'Unknown'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className='text-gray-600'>No vehicle logins found in the last 7 days.</p>
+              )}
+              <button
+                className='mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700'
+                onClick={() => togglePopup('vehicleLogins')}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Last Driver Logins Popup */}
+        {showPopup.lastDriverLogins && activeVehicleId && (
+          <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
+            <div ref={popupRef} className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'>
+              <h3 className='text-lg font-semibold mb-4'>
+                Last 10 Driver Logins for Vehicle {activeVehicleId}
+              </h3>
+              {loadingStates.lastDriverLogins ? (
+                <div className='flex items-center text-blue-500'>
+                  <span className='mr-2 inline-block w-4 h-4 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                  Loading last driver logins...
+                </div>
+              ) : lastDriverLoginsByVehicle[activeVehicleId]?.length > 0 ? (
+                <div className='overflow-x-auto'>
+                  <table className='min-w-full bg-white'>
+                    <thead>
+                      <tr className='w-full h-16 border-b border-gray-200 bg-gray-50'>
+                        <th className='text-left pl-4'>Driver Name</th>
+                        <th className='text-left pl-4'>Driver ID</th>
+                        <th className='text-left pl-4'>Login Time</th>
+                        <th className='text-left pl-4'>Accepted</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {lastDriverLoginsByVehicle[activeVehicleId].map((login, idx) => (
+                        <tr
+                          key={idx}
+                          className={`h-12 border-b border-gray-200 ${
+                            login?.accepted !== undefined
+                              ? login.accepted
+                                ? 'bg-green-100/50'
+                                : 'bg-red-100/50'
+                              : ''
+                          }`}
+                        >
+                          <td className='text-left pl-4'>{login?.driver_name || 'Unknown'}</td>
+                          <td className='text-left pl-4'>{login?.driver_id || 'N/A'}</td>
+                          <td className='text-left pl-4'>
+                            {login?.login_time
+                              ? typeof login.login_time === 'string'
+                                ? login.login_time
+                                : new Date(login.login_time).toLocaleString()
+                              : 'N/A'}
+                          </td>
+                          <td
+                            className={`text-left pl-4 ${
+                              login?.accepted !== undefined
+                                ? login.accepted
+                                  ? 'text-green-600'
+                                  : 'text-red-600'
+                                : 'text-gray-500'
+                            }`}
+                          >
+                            {login?.accepted !== undefined
+                              ? login.accepted
+                                ? 'Yes'
+                                : 'No'
+                              : 'Unknown'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className='text-gray-600'>No login information available.</p>
+              )}
+              <button
+                className='mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700'
+                onClick={() => togglePopup('lastDriverLogins')}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Messages Sent Popup */}
+        {showPopup.messagesSent && activeVehicleId && (
+          <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
+            <div ref={popupRef} className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'>
+              <h3 className='text-lg font-semibold mb-4'>
+                Messages Sent to Vehicle {activeVehicleId}
+              </h3>
+              {loadingStates.MessageSent ? (
+                <div className='flex items-center text-blue-500'>
+                  <span className='mr-2 inline-block w-4 h-4 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                  Loading messages...
+                </div>
+              ) : messagesSentByVehicle[activeVehicleId]?.length > 0 ? (
+                <div className='overflow-x-auto'>
+                  <table className='min-w-full bg-white'>
+                    <thead>
+                      <tr className='w-full h-16 border-b border-gray-200 bg-gray-50'>
+                        <th className='text-left pl-4'>Message Type</th>
+                        <th className='text-left pl-4'>Message</th>
+                        <th className='text-left pl-4'>Sent Time</th>
+                        <th className='text-left pl-4'>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {messagesSentByVehicle[activeVehicleId].map((msg, idx) => (
+                        <tr
+                          key={idx}
+                          className={`h-12 border-b border-gray-200 ${
+                            msg.status === 'done'
+                              ? 'bg-green-100/50'
+                              : msg.status === 'in_queue'
+                              ? 'bg-amber-100/50'
+                              : ''
+                          }`}
+                        >
+                          <td className='text-left pl-4'>{msg.message_type || 'Unknown'}</td>
+                          <td className='text-left pl-4 max-w-xs truncate'>
+                            {msg.message_text || 'N/A'}
+                          </td>
+                          <td className='text-left pl-4'>{msg.message_timestamp || 'N/A'}</td>
+                          <td
+                            className={`text-left pl-4 ${
+                              msg.status === 'done'
+                                ? 'text-green-600 font-semibold'
+                                : msg.status === 'in_queue'
+                                ? 'text-amber-600 font-semibold'
+                                : 'text-gray-500'
+                            }`}
+                          >
+                            {msg.status || 'N/A'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className='text-gray-600'>No messages found in the last 7 days.</p>
+              )}
+              <button
+                className='mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700'
+                onClick={() => togglePopup('messagesSent')}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
