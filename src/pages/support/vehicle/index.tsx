@@ -1166,7 +1166,7 @@ const VehicleDashboard: React.FC = () => {
           /* Snapshot Comparison View */
           <div className='mt-8'>
             <h2 className='text-2xl font-bold text-gray-800 mb-4'>Vehicle Snapshot Comparison</h2>
-            <div className='grid grid-cols-1 gap-6'>
+            <div className='grid grid-cols-2 gap-6'>
               {Object.entries(snapshotData).map(([vehicleCd, snaps]) => {
                 // Helper function to check if values changed
                 const hasChanged = (beforeVal: any, afterVal: any) => {
@@ -1194,13 +1194,13 @@ const VehicleDashboard: React.FC = () => {
                 };
 
                 return (
-                  <div key={vehicleCd} className='bg-white shadow-lg rounded-lg border border-gray-300 overflow-hidden max-w-4xl mx-auto'>
+                  <div key={vehicleCd} className='bg-white shadow-lg rounded-lg border border-gray-300 overflow-hidden'>
                     {/* Header */}
-                    <div className='bg-gray-100 p-3 border-b'>
-                      <h3 className='text-lg font-bold text-gray-800 text-center'>
+                    <div className='bg-gray-100 p-4 border-b'>
+                      <h3 className='text-xl font-bold text-gray-800 text-center'>
                         GMPT: {snaps.before.gmptCode || snaps.after.gmptCode}
                       </h3>
-                      <div className='flex justify-between text-xs text-gray-600 mt-1'>
+                      <div className='flex justify-between text-sm text-gray-600 mt-2'>
                         <span>Before: {snaps.before.query_execution_date ? format(new Date(snaps.before.query_execution_date), 'dd/MM/yyyy HH:mm') : 'N/A'}</span>
                         <span>After: {snaps.after.query_execution_date ? format(new Date(snaps.after.query_execution_date), 'dd/MM/yyyy HH:mm') : 'N/A'}</span>
                       </div>
@@ -1208,30 +1208,30 @@ const VehicleDashboard: React.FC = () => {
 
                     <div className='grid grid-cols-2 gap-0'>
                       {/* Before Snapshot */}
-                      <div className='p-4 border-r border-gray-200'>
+                      <div className='p-5 border-r border-gray-200'>
                         {/* Vehicle Header */}
-                        <div className='flex items-center mb-3'>
-                          <div className='w-12 h-12 mr-3'>
+                        <div className='flex items-center mb-4'>
+                          <div className='w-14 h-14 mr-3'>
                             <Image
                               src='/forklift.png'
                               alt='Forklift'
-                              width={48}
-                              height={48}
+                              width={56}
+                              height={56}
                               className='w-full h-full object-contain'
                             />
                           </div>
                           <div>
-                            <h4 className='text-sm font-bold text-gray-800'>
+                            <h4 className='text-base font-bold text-gray-800'>
                               {snaps.before.vehicleName || snaps.after.vehicleName}
                             </h4>
-                            <p className='text-xs text-gray-600'>
+                            <p className='text-sm text-gray-600'>
                               <strong>Serial:</strong> {snaps.before.serialNumber || snaps.after.serialNumber}
                             </p>
                           </div>
                         </div>
 
                         {/* Basic Vehicle Information */}
-                        <div className='space-y-1 text-xs mb-3'>
+                        <div className='space-y-2 text-sm mb-4'>
                           <p><strong>Firmware:</strong> <span className={getChangeStyle(snaps.before.firmwareVersion, snaps.after.firmwareVersion)}>{snaps.before.firmwareVersion || 'N/A'}</span></p>
                           <p><strong>Vehicle Model:</strong> <span className={getChangeStyle(snaps.before.vehicleModel, snaps.after.vehicleModel)}>{snaps.before.vehicleModel || 'N/A'}</span></p>
                           <p><strong>Screen Version:</strong> <span className={getChangeStyle(snaps.before.screenVersion, snaps.after.screenVersion)}>{snaps.before.screenVersion || 'N/A'}</span></p>
@@ -1241,7 +1241,7 @@ const VehicleDashboard: React.FC = () => {
                         </div>
 
                         {/* Configuration */}
-                        <div className='space-y-1 text-xs'>
+                        <div className='space-y-2 text-sm'>
                           <div>
                             {(() => {
                               const lockoutStatus = getBooleanStatusText(snaps.before.lockoutCode === '0', 'Unlocked', 'Locked', true);
@@ -1303,30 +1303,30 @@ const VehicleDashboard: React.FC = () => {
                       </div>
 
                       {/* After Snapshot */}
-                      <div className='p-4'>
+                      <div className='p-5'>
                         {/* Vehicle Header */}
-                        <div className='flex items-center mb-3'>
-                          <div className='w-12 h-12 mr-3'>
+                        <div className='flex items-center mb-4'>
+                          <div className='w-14 h-14 mr-3'>
                             <Image
                               src='/forklift.png'
                               alt='Forklift'
-                              width={48}
-                              height={48}
+                              width={56}
+                              height={56}
                               className='w-full h-full object-contain'
                             />
                           </div>
                           <div>
-                            <h4 className='text-sm font-bold text-gray-800'>
+                            <h4 className='text-base font-bold text-gray-800'>
                               {snaps.after.vehicleName || snaps.before.vehicleName}
                             </h4>
-                            <p className='text-xs text-gray-600'>
+                            <p className='text-sm text-gray-600'>
                               <strong>Serial:</strong> {snaps.after.serialNumber || snaps.before.serialNumber}
                             </p>
                           </div>
                         </div>
 
                         {/* Basic Vehicle Information */}
-                        <div className='space-y-1 text-xs mb-3'>
+                        <div className='space-y-2 text-sm mb-4'>
                           <p><strong>Firmware:</strong> <span className={getChangeStyle(snaps.before.firmwareVersion, snaps.after.firmwareVersion)}>{snaps.after.firmwareVersion || 'N/A'}</span></p>
                           <p><strong>Vehicle Model:</strong> <span className={getChangeStyle(snaps.before.vehicleModel, snaps.after.vehicleModel)}>{snaps.after.vehicleModel || 'N/A'}</span></p>
                           <p><strong>Screen Version:</strong> <span className={getChangeStyle(snaps.before.screenVersion, snaps.after.screenVersion)}>{snaps.after.screenVersion || 'N/A'}</span></p>
@@ -1336,7 +1336,7 @@ const VehicleDashboard: React.FC = () => {
                         </div>
 
                         {/* Configuration */}
-                        <div className='space-y-1 text-xs'>
+                        <div className='space-y-2 text-sm'>
                           <div>
                             {(() => {
                               const lockoutStatus = getBooleanStatusText(snaps.after.lockoutCode === '0', 'Unlocked', 'Locked', true);
