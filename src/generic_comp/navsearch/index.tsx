@@ -162,7 +162,7 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
           const companies = Object.values(companyGroups);
 
           if (companies.length === 1) {
-            // Single company - auto-populate as before
+            // Single company - auto-populate and trigger search
             const company = companies[0];
             console.log('Single company found, auto-populating...');
             localStorage.setItem('selectedCustomer', company.customer);
@@ -173,6 +173,14 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
               customer: company.customer,
               site: company.site,
             }));
+
+            // Auto-trigger search after state is updated
+            setTimeout(() => {
+              if (typeof onFilterChange === 'function') {
+                console.log('Auto-triggering search for single company');
+                onFilterChange();
+              }
+            }, 100);
           } else {
             // Multiple companies - show selection
             console.log(`Multiple companies found: ${companies.length}`);
@@ -190,6 +198,14 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
             customer: data.customer,
             site: data.site,
           }));
+
+          // Auto-trigger search after state is updated
+          setTimeout(() => {
+            if (typeof onFilterChange === 'function') {
+              console.log('Auto-triggering search for single vehicle');
+              onFilterChange();
+            }
+          }, 100);
         }
       } catch (error) {
         console.error('Error fetching vehicle by GMPT:', error);
@@ -197,7 +213,7 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
     };
 
     fetchVehicleByGmpt();
-  }, [filters.gmptCode]);
+  }, [filters.gmptCode, onFilterChange]);
 
   // Handle company selection from modal
   const handleCompanySelection = (selectedCompany: {
@@ -241,8 +257,10 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
         ...prev,
         customer: value,
         site: '',
+        gmptCode: '', // Clear GMPT code when customer changes
       }));
       localStorage.removeItem('selectedSite');
+      localStorage.removeItem('selectedGmpt'); // Clear GMPT from localStorage too
       localStorage.setItem('selectedCustomer', value);
     } else if (name === 'site') {
       setFilters((prev) => ({
@@ -421,6 +439,16 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
               onClick={clearFilters}
             >
               Clear Filters
+            </button>
+            <button
+              className='bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition flex items-center'
+              onClick={handleSearch}
+              title='Refresh data and clear cache'
+            >
+              <svg className='w-4 h-4 mr-2' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15' />
+              </svg>
+              Refresh Data
             </button>
             <button
               className='bg-teal-600 text-white px-4 py-2 rounded-md hover:bg-teal-700 transition'
