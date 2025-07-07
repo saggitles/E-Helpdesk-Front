@@ -29,6 +29,11 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
   const [loadingCustomers, setLoadingCustomers] = useState<boolean>(true);
   const [loadingSites, setLoadingSites] = useState<boolean>(false);
   const [loadingData, setLoadingData] = useState<boolean>(true);
+  const [multipleCompaniesFound, setMultipleCompaniesFound] =
+    useState<boolean>(false);
+  const [availableCompanies, setAvailableCompanies] = useState<
+    Array<{ customer: string; site: string; count: number }>
+  >([]);
 
   // Load Local Storage Data After Component Mounts
   useEffect(() => {
@@ -133,10 +138,49 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
         if (!response.ok)
           throw new Error(`HTTP error! Status: ${response.status}`);
 
-        const data: VehicleData = await response.json();
+        const data = await response.json();
         console.log('Vehicle Data:', data);
 
-        if (data.customer && data.site) {
+        // Handle multiple vehicles from different companies
+        if (Array.isArray(data) && data.length > 0) {
+          // Group by customer and site
+          const companyGroups = data.reduce((groups, vehicle) => {
+            const key = `${vehicle.customer}|${vehicle.site}`;
+            if (!groups[key]) {
+              groups[key] = {
+                customer: vehicle.customer,
+                site: vehicle.site,
+                count: 0,
+                vehicles: [],
+              };
+            }
+            groups[key].count++;
+            groups[key].vehicles.push(vehicle);
+            return groups;
+          }, {});
+
+          const companies = Object.values(companyGroups);
+
+          if (companies.length === 1) {
+            // Single company - auto-populate as before
+            const company = companies[0];
+            console.log('Single company found, auto-populating...');
+            localStorage.setItem('selectedCustomer', company.customer);
+            localStorage.setItem('selectedSite', company.site);
+
+            setFilters((prevFilters) => ({
+              ...prevFilters,
+              customer: company.customer,
+              site: company.site,
+            }));
+          } else {
+            // Multiple companies - show selection
+            console.log(`Multiple companies found: ${companies.length}`);
+            setAvailableCompanies(companies);
+            setMultipleCompaniesFound(true);
+          }
+        } else if (data.customer && data.site) {
+          // Fallback for single vehicle object response
           console.log('Updating filters based on GMPT vehicle...');
           localStorage.setItem('selectedCustomer', data.customer);
           localStorage.setItem('selectedSite', data.site);
@@ -154,6 +198,25 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
 
     fetchVehicleByGmpt();
   }, [filters.gmptCode]);
+
+  // Handle company selection from modal
+  const handleCompanySelection = (selectedCompany: {
+    customer: string;
+    site: string;
+  }) => {
+    console.log('User selected company:', selectedCompany);
+    localStorage.setItem('selectedCustomer', selectedCompany.customer);
+    localStorage.setItem('selectedSite', selectedCompany.site);
+
+    setFilters((prevFilters) => ({
+      ...prevFilters,
+      customer: selectedCompany.customer,
+      site: selectedCompany.site,
+    }));
+
+    setMultipleCompaniesFound(false);
+    setAvailableCompanies([]);
+  };
 
   // Handle Input Changes and save to localStorage immediately
   const handleFilterChange = (
@@ -367,6 +430,35 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
             </button>
           </div>
         </div>
+        {multipleCompaniesFound && (
+          <div className='mt-4 p-4 bg-white rounded-lg shadow-md'>
+            <h3 className='text-md font-semibold text-gray-800 mb-2'>
+              Multiple Companies Found
+            </h3>
+            <div className='space-y-2'>
+              {availableCompanies.map((company) => (
+                <div
+                  key={`${company.customer}-${company.site}`}
+                  className='p-3 bg-gray-100 rounded-lg shadow cursor-pointer hover:bg-gray-200 transition'
+                  onClick={() =>
+                    handleCompanySelection({
+                      customer: company.customer,
+                      site: company.site,
+                    })
+                  }
+                >
+                  <p className='text-sm text-gray-700'>
+                    {company.customer} - {company.site}
+                  </p>
+                  <p className='text-xs text-gray-500'>
+                    {company.count} vehicle
+                    {company.count !== 1 && 's'} found
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </nav>
   );
