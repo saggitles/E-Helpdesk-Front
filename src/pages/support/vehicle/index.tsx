@@ -125,6 +125,8 @@ interface SnapshotRow {
   dept_id: number;
   site_id: number;
   cust_id: number;
+  customer_name?: string;  // Add customer name field
+  site_name?: string;      // Add site name field
   snapshot_id: number;
   vehicle_cd: number;
   snapshot_time: string | null;
@@ -608,6 +610,17 @@ const VehicleDashboard: React.FC = () => {
     }
   };
 
+  // Helper function to get vehicle name and GMPT code for popup titles
+  const getVehicleDisplayName = (vehicleId: string | number | null): string => {
+    if (!vehicleId) return 'Unknown Vehicle';
+    
+    const vehicle = vehicles.find(v => v.VEHICLE_CD === vehicleId);
+    if (vehicle) {
+      return `${vehicle.vehicle_info.vehicle_name} (${vehicle.vehicle_info.gmpt_code})`;
+    }
+    return `Vehicle ${vehicleId}`;
+  };
+
   const isOlderThanTwoWeeks = (dateString: string | null | undefined): boolean => {
     if (!dateString) return false;
 
@@ -751,7 +764,7 @@ const VehicleDashboard: React.FC = () => {
                   selected={selectedFirstDate}
                   onChange={(date: Date) => setSelectedFirstDate(date)}
                   includeDates={dates}
-                  dateFormat='dd/MM/yyyy'
+                  dateFormat='MM/dd/yyyy'
                   className='border border-gray-300 rounded-md px-2 py-1 text-black w-full'
                 />
                 <label className='block text-base font-medium text-gray-700 mt-2 mb-1'>
@@ -784,7 +797,7 @@ const VehicleDashboard: React.FC = () => {
                       ? dates.filter((d) => d.getTime() > selectedFirstDate.getTime())
                       : dates
                   }
-                  dateFormat='dd/MM/yyyy'
+                  dateFormat='MM/dd/yyyy'
                   className='border border-gray-300 rounded-md px-2 py-1 text-black w-full'
                 />
                 <label className='block text-base font-medium text-gray-700 mt-2 mb-1'>
@@ -1201,8 +1214,8 @@ const VehicleDashboard: React.FC = () => {
                         GMPT: {snaps.before.gmptCode || snaps.after.gmptCode}
                       </h3>
                       <div className='flex justify-between text-sm text-gray-600 mt-2'>
-                        <span>Before: {snaps.before.query_execution_date ? format(new Date(snaps.before.query_execution_date), 'dd/MM/yyyy HH:mm') : 'N/A'}</span>
-                        <span>After: {snaps.after.query_execution_date ? format(new Date(snaps.after.query_execution_date), 'dd/MM/yyyy HH:mm') : 'N/A'}</span>
+                        <span>Before: {snaps.before.query_execution_date ? format(new Date(snaps.before.query_execution_date), 'MM/dd/yyyy HH:mm') : 'N/A'}</span>
+                        <span>After: {snaps.after.query_execution_date ? format(new Date(snaps.after.query_execution_date), 'MM/dd/yyyy HH:mm') : 'N/A'}</span>
                       </div>
                     </div>
 
@@ -1234,8 +1247,8 @@ const VehicleDashboard: React.FC = () => {
 
                         <div className='grid grid-cols-2 gap-x-4 gap-y-1 text-sm mb-4'>
                           <div>
-                            <p><strong>Customer:</strong> <span className={getChangeStyle(snaps.before.cust_id, snaps.after.cust_id)}>{snaps.before.cust_id || 'N/A'}</span></p>
-                            <p><strong>Site:</strong> <span className={getChangeStyle(snaps.before.site_id, snaps.after.site_id)}>{snaps.before.site_id || 'N/A'}</span></p>
+                            <p><strong>Customer:</strong> <span className={getChangeStyle(snaps.before.customer_name, snaps.after.customer_name)}>{snaps.before.customer_name || 'N/A'}</span></p>
+                            <p><strong>Site:</strong> <span className={getChangeStyle(snaps.before.site_name, snaps.after.site_name)}>{snaps.before.site_name || 'N/A'}</span></p>
                             <p><strong>Department:</strong> <span className={getChangeStyle(snaps.before.dept_id, snaps.after.dept_id)}>{snaps.before.dept_id || 'N/A'}</span></p>
                           </div>
                           <div>
@@ -1327,8 +1340,8 @@ const VehicleDashboard: React.FC = () => {
 
                         <div className='grid grid-cols-2 gap-x-4 gap-y-1 text-sm mb-4'>
                           <div>
-                            <p><strong>Customer:</strong> <span className={getChangeStyle(snaps.before.cust_id, snaps.after.cust_id)}>{snaps.after.cust_id || 'N/A'}</span></p>
-                            <p><strong>Site:</strong> <span className={getChangeStyle(snaps.before.site_id, snaps.after.site_id)}>{snaps.after.site_id || 'N/A'}</span></p>
+                            <p><strong>Customer:</strong> <span className={getChangeStyle(snaps.before.customer_name, snaps.after.customer_name)}>{snaps.after.customer_name || 'N/A'}</span></p>
+                            <p><strong>Site:</strong> <span className={getChangeStyle(snaps.before.site_name, snaps.after.site_name)}>{snaps.after.site_name || 'N/A'}</span></p>
                             <p><strong>Department:</strong> <span className={getChangeStyle(snaps.before.dept_id, snaps.after.dept_id)}>{snaps.after.dept_id || 'N/A'}</span></p>
                           </div>
                           <div>
@@ -1405,7 +1418,7 @@ const VehicleDashboard: React.FC = () => {
           <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
             <div ref={popupRef} className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'>
               <h3 className='text-lg font-semibold mb-4'>
-                Master Codes for Vehicle {activeVehicleId}
+                Master Codes for {getVehicleDisplayName(activeVehicleId)}
               </h3>
               {loadingStates.masterCodes ? (
                 <div className='flex items-center text-blue-500'>
@@ -1447,7 +1460,7 @@ const VehicleDashboard: React.FC = () => {
           <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
             <div ref={popupRef} className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'>
               <h3 className='text-lg font-semibold mb-4'>
-                Blacklisted Drivers for Vehicle {activeVehicleId}
+                Blacklisted Drivers for {getVehicleDisplayName(activeVehicleId)}
               </h3>
               {loadingStates.blacklistedDrivers ? (
                 <div className='flex items-center text-blue-500'>
@@ -1493,7 +1506,7 @@ const VehicleDashboard: React.FC = () => {
           <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
             <div ref={popupRef} className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'>
               <h3 className='text-lg font-semibold mb-4'>
-                Recent Vehicle Logins for Vehicle {activeVehicleId}
+                Recent Vehicle Logins for {getVehicleDisplayName(activeVehicleId)}
               </h3>
               {loadingStates.vehicleLogins ? (
                 <div className='flex items-center text-blue-500'>
@@ -1572,7 +1585,7 @@ const VehicleDashboard: React.FC = () => {
           <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
             <div ref={popupRef} className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'>
               <h3 className='text-lg font-semibold mb-4'>
-                Last 10 Driver Logins for Vehicle {activeVehicleId}
+                Last 10 Driver Logins for {getVehicleDisplayName(activeVehicleId)}
               </h3>
               {loadingStates.lastDriverLogins ? (
                 <div className='flex items-center text-blue-500'>
@@ -1649,7 +1662,7 @@ const VehicleDashboard: React.FC = () => {
           <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
             <div ref={popupRef} className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'>
               <h3 className='text-lg font-semibold mb-4'>
-                Messages Sent to Vehicle {activeVehicleId}
+                Messages Sent to {getVehicleDisplayName(activeVehicleId)}
               </h3>
               {loadingStates.MessageSent ? (
                 <div className='flex items-center text-blue-500'>
