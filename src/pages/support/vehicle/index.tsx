@@ -119,14 +119,16 @@ interface SnapshotRow {
   fullLockoutEnabled?: boolean;
   fullLockoutTimeout?: number;
   query_execution_date?: string;
+  snapshot_date?: string;          // Add snapshot_date field
   impactRecalibrationDate: string | null;
   preopSchedule: string | null;
   vehicleType: string | null;
   dept_id: number;
   site_id: number;
   cust_id: number;
-  customer_name?: string;  // Add customer name field
-  site_name?: string;      // Add site name field
+  customer_name?: string;
+  site_name?: string;
+  dept_name?: string;              // Add department name field
   snapshot_id: number;
   vehicle_cd: number;
   snapshot_time: string | null;
@@ -1214,8 +1216,8 @@ const VehicleDashboard: React.FC = () => {
                         GMPT: {snaps.before.gmptCode || snaps.after.gmptCode}
                       </h3>
                       <div className='flex justify-between text-sm text-gray-600 mt-2'>
-                        <span>Before: {snaps.before.query_execution_date ? format(new Date(snaps.before.query_execution_date), 'MM/dd/yyyy HH:mm') : 'N/A'}</span>
-                        <span>After: {snaps.after.query_execution_date ? format(new Date(snaps.after.query_execution_date), 'MM/dd/yyyy HH:mm') : 'N/A'}</span>
+                        <span>Before: {snaps.before.snapshot_date || snaps.before.query_execution_date ? format(new Date(snaps.before.snapshot_date || snaps.before.query_execution_date), 'MM/dd/yyyy HH:mm') : 'N/A'}</span>
+                        <span>After: {snaps.after.snapshot_date || snaps.after.query_execution_date ? format(new Date(snaps.after.snapshot_date || snaps.after.query_execution_date), 'MM/dd/yyyy HH:mm') : 'N/A'}</span>
                       </div>
                     </div>
 
@@ -1249,7 +1251,7 @@ const VehicleDashboard: React.FC = () => {
                           <div>
                             <p><strong>Customer:</strong> <span className={getChangeStyle(snaps.before.customer_name, snaps.after.customer_name)}>{snaps.before.customer_name || 'N/A'}</span></p>
                             <p><strong>Site:</strong> <span className={getChangeStyle(snaps.before.site_name, snaps.after.site_name)}>{snaps.before.site_name || 'N/A'}</span></p>
-                            <p><strong>Department:</strong> <span className={getChangeStyle(snaps.before.dept_id, snaps.after.dept_id)}>{snaps.before.dept_id || 'N/A'}</span></p>
+                            <p><strong>Department:</strong> <span className={getChangeStyle(snaps.before.dept_name, snaps.after.dept_name)}>{snaps.before.dept_name || 'N/A'}</span></p>
                           </div>
                           <div>
                             <p><strong>Firmware Version:</strong></p>
@@ -1342,7 +1344,7 @@ const VehicleDashboard: React.FC = () => {
                           <div>
                             <p><strong>Customer:</strong> <span className={getChangeStyle(snaps.before.customer_name, snaps.after.customer_name)}>{snaps.after.customer_name || 'N/A'}</span></p>
                             <p><strong>Site:</strong> <span className={getChangeStyle(snaps.before.site_name, snaps.after.site_name)}>{snaps.after.site_name || 'N/A'}</span></p>
-                            <p><strong>Department:</strong> <span className={getChangeStyle(snaps.before.dept_id, snaps.after.dept_id)}>{snaps.after.dept_id || 'N/A'}</span></p>
+                            <p><strong>Department:</strong> <span className={getChangeStyle(snaps.before.dept_name, snaps.after.dept_name)}>{snaps.after.dept_name || 'N/A'}</span></p>
                           </div>
                           <div>
                             <p><strong>Firmware Version:</strong></p>
