@@ -119,7 +119,7 @@ interface SnapshotRow {
   fullLockoutEnabled?: boolean;
   fullLockoutTimeout?: number;
   query_execution_date?: string;
-  snapshot_date?: string;          // Add snapshot_date field
+  snapshot_date?: string; // Add snapshot_date field
   impactRecalibrationDate: string | null;
   preopSchedule: string | null;
   vehicleType: string | null;
@@ -128,7 +128,7 @@ interface SnapshotRow {
   cust_id: number;
   customer_name?: string;
   site_name?: string;
-  dept_name?: string;              // Add department name field
+  dept_name?: string; // Add department name field
   snapshot_id: number;
   vehicle_cd: number;
   snapshot_time: string | null;
@@ -192,19 +192,30 @@ const VehicleDashboard: React.FC = () => {
     MessageSent: false,
     vehicleStatus: false,
   });
-  
+
   const popupRef = useRef<HTMLDivElement>(null);
   const [dates, setDates] = useState<Date[]>([]);
-  const [selectedFirstDate, setSelectedFirstDate] = useState<Date | null>(null);
-  const [selectedFirstTime, setSelectedFirstTime] = useState<string | null>(null);
-  const [availableTimes1, setAvailableTimes1] = useState<{ time: string; ID: number }[]>([]);
-  const [availableTimes2, setAvailableTimes2] = useState<{ time: string; ID: number }[]>([]);
-  const [selectedSecondDate, setSelectedSecondDate] = useState<Date | null>(null);
-  const [selectedSecondTime, setSelectedSecondTime] = useState<string | null>(null);
+  const [selectedFirstDate, setSelectedFirstDate] = useState<Date | null>(
+    null
+  );
+  const [selectedFirstTime, setSelectedFirstTime] = useState<
+    string | null
+  >(null);
+  const [availableTimes1, setAvailableTimes1] = useState<
+    { time: string; ID: number }[]
+  >([]);
+  const [availableTimes2, setAvailableTimes2] = useState<
+    { time: string; ID: number }[]
+  >([]);
+  const [selectedSecondDate, setSelectedSecondDate] =
+    useState<Date | null>(null);
+  const [selectedSecondTime, setSelectedSecondTime] = useState<
+    string | null
+  >(null);
   const [snapshotData, setSnapshotData] = useState<GroupedSnapshots>({});
   const [loadingVehicles, setLoadingVehicles] = useState<boolean>(false);
   const [loadingSnapshots, setLoadingSnapshots] = useState<boolean>(false);
-  
+
   const [showPopup, setShowPopup] = useState<PopupState>({
     masterCodes: false,
     driverList: false,
@@ -214,7 +225,9 @@ const VehicleDashboard: React.FC = () => {
     lastDriverLogins: false,
     messagesSent: false,
   });
-  const [activeVehicleId, setActiveVehicleId] = useState<string | number | null>(null);
+  const [activeVehicleId, setActiveVehicleId] = useState<
+    string | number | null
+  >(null);
 
   const fetchVehicles = async () => {
     setVehicles([]);
@@ -239,7 +252,8 @@ const VehicleDashboard: React.FC = () => {
     const queryParams = new URLSearchParams();
     if (customer) queryParams.append('customer', customer.toString());
     if (site && site !== '') queryParams.append('site', site.toString());
-    if (gmptCode && gmptCode !== '') queryParams.append('gmptCode', gmptCode.toString());
+    if (gmptCode && gmptCode !== '')
+      queryParams.append('gmptCode', gmptCode.toString());
 
     try {
       const response = await fetch(
@@ -249,7 +263,7 @@ const VehicleDashboard: React.FC = () => {
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-      
+
       const vehicleData = await response.json();
       if (Array.isArray(vehicleData)) {
         setVehicles(vehicleData);
@@ -299,7 +313,8 @@ const VehicleDashboard: React.FC = () => {
               vehicle_info: {
                 ...vehicle.vehicle_info,
                 status: statusData[vehicleId].status,
-                latest_status_time: statusData[vehicleId].latest_status_time,
+                latest_status_time:
+                  statusData[vehicleId].latest_status_time,
               },
             };
           }
@@ -345,7 +360,9 @@ const VehicleDashboard: React.FC = () => {
     }
   };
 
-  const fetchBlacklistedDrivers = async (vehicleIds: (string | number)[]) => {
+  const fetchBlacklistedDrivers = async (
+    vehicleIds: (string | number)[]
+  ) => {
     if (!vehicleIds.length) return;
     setLoadingStates((prev) => ({ ...prev, blacklistedDrivers: true }));
 
@@ -413,7 +430,9 @@ const VehicleDashboard: React.FC = () => {
     }
   };
 
-  const fetchLastDriverLogins = async (vehicleIds: (string | number)[]) => {
+  const fetchLastDriverLogins = async (
+    vehicleIds: (string | number)[]
+  ) => {
     if (!vehicleIds.length) return;
     setLoadingStates((prev) => ({ ...prev, lastDriverLogins: true }));
 
@@ -493,7 +512,9 @@ const VehicleDashboard: React.FC = () => {
         setDates(formattedDates);
       } else if (data && typeof data === 'object') {
         if (Array.isArray(data.dates)) {
-          const formattedDates = data.dates.map((d: string) => new Date(d));
+          const formattedDates = data.dates.map(
+            (d: string) => new Date(d)
+          );
           setDates(formattedDates);
         } else if (Array.isArray(data.data)) {
           const formattedDates = data.data.map((d: string) => new Date(d));
@@ -544,16 +565,22 @@ const VehicleDashboard: React.FC = () => {
     const site = localStorage.getItem('selectedSite');
     const gmptCode = localStorage.getItem('selectedGmpt');
 
-    const url = new URL(`${process.env.NEXT_PUBLIC_API_URL}/api/snapshots`);
+    const url = new URL(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/snapshots`
+    );
     url.searchParams.append('time1', selectedFirstTime);
     url.searchParams.append('time2', selectedSecondTime);
     url.searchParams.append(
       'date1',
-      selectedFirstDate ? selectedFirstDate.toISOString().split('T')[0] : ''
+      selectedFirstDate
+        ? selectedFirstDate.toISOString().split('T')[0]
+        : ''
     );
     url.searchParams.append(
       'date2',
-      selectedSecondDate ? selectedSecondDate.toISOString().split('T')[0] : ''
+      selectedSecondDate
+        ? selectedSecondDate.toISOString().split('T')[0]
+        : ''
     );
     url.searchParams.append('customer', customer ?? '');
     if (site) url.searchParams.append('site', site);
@@ -583,17 +610,28 @@ const VehicleDashboard: React.FC = () => {
     setSnapshotData({});
   };
 
-  const handleFirstTimeSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selected = availableTimes1.find((t) => t.time === e.target.value);
+  const handleFirstTimeSelect = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    const selected = availableTimes1.find(
+      (t) => t.time === e.target.value
+    );
     setSelectedFirstTime(selected?.time || '');
   };
 
-  const handleSecondTimeSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selected = availableTimes2.find((t) => t.time === e.target.value);
+  const handleSecondTimeSelect = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    const selected = availableTimes2.find(
+      (t) => t.time === e.target.value
+    );
     setSelectedSecondTime(selected?.time || '');
   };
 
-  const togglePopup = (key: keyof PopupState, vehicleId: string | number | null = null) => {
+  const togglePopup = (
+    key: keyof PopupState,
+    vehicleId: string | number | null = null
+  ) => {
     const newPopupState = {
       masterCodes: false,
       driverList: false,
@@ -613,24 +651,30 @@ const VehicleDashboard: React.FC = () => {
   };
 
   // Helper function to get vehicle name and GMPT code for popup titles
-  const getVehicleDisplayName = (vehicleId: string | number | null): string => {
+  const getVehicleDisplayName = (
+    vehicleId: string | number | null
+  ): string => {
     if (!vehicleId) return 'Unknown Vehicle';
-    
-    const vehicle = vehicles.find(v => v.VEHICLE_CD === vehicleId);
+
+    const vehicle = vehicles.find((v) => v.VEHICLE_CD === vehicleId);
     if (vehicle) {
       return `${vehicle.vehicle_info.vehicle_name} (${vehicle.vehicle_info.gmpt_code})`;
     }
     return `Vehicle ${vehicleId}`;
   };
 
-  const isOlderThanTwoWeeks = (dateString: string | null | undefined): boolean => {
+  const isOlderThanTwoWeeks = (
+    dateString: string | null | undefined
+  ): boolean => {
     if (!dateString) return false;
 
     let date: Date;
     if (dateString.includes('/')) {
       const [datePart, timePart] = dateString.split(' ');
       const [day, month, year] = datePart.split('/').map(Number);
-      const [hours, minutes] = timePart ? timePart.split(':').map(Number) : [0, 0];
+      const [hours, minutes] = timePart
+        ? timePart.split(':').map(Number)
+        : [0, 0];
       date = new Date(year, month - 1, day, hours, minutes);
     } else {
       date = new Date(dateString);
@@ -643,14 +687,18 @@ const VehicleDashboard: React.FC = () => {
     return date < twoWeeksAgo;
   };
 
-  const getLastConnectionColor = (dateString: string | null | undefined): string => {
+  const getLastConnectionColor = (
+    dateString: string | null | undefined
+  ): string => {
     if (!dateString) return 'text-gray-600';
 
     let date: Date;
     if (dateString.includes('/')) {
       const [datePart, timePart] = dateString.split(' ');
       const [day, month, year] = datePart.split('/').map(Number);
-      const [hours, minutes] = timePart ? timePart.split(':').map(Number) : [0, 0];
+      const [hours, minutes] = timePart
+        ? timePart.split(':').map(Number)
+        : [0, 0];
       date = new Date(year, month - 1, day, hours, minutes);
     } else {
       date = new Date(dateString);
@@ -668,7 +716,9 @@ const VehicleDashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    const anyLoading = Object.values(loadingStates).some((state) => state === true);
+    const anyLoading = Object.values(loadingStates).some(
+      (state) => state === true
+    );
 
     if (!anyLoading) {
       const timer = setTimeout(() => {
@@ -682,7 +732,10 @@ const VehicleDashboard: React.FC = () => {
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (popupRef.current && !popupRef.current.contains(event.target as Node)) {
+      if (
+        popupRef.current &&
+        !popupRef.current.contains(event.target as Node)
+      ) {
         setShowPopup({
           masterCodes: false,
           driverList: false,
@@ -695,7 +748,7 @@ const VehicleDashboard: React.FC = () => {
       }
     }
 
-    if (Object.values(showPopup).some(isOpen => isOpen)) {
+    if (Object.values(showPopup).some((isOpen) => isOpen)) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
@@ -741,13 +794,15 @@ const VehicleDashboard: React.FC = () => {
     <div>
       <Navsearch onFilterChange={fetchVehicles} />
       {loadingVehicles && <LoadingOverlay message='Loading vehicles...' />}
-      {loadingSnapshots && <LoadingOverlay message='Loading snapshots...' />}
-      
+      {loadingSnapshots && (
+        <LoadingOverlay message='Loading snapshots...' />
+      )}
+
       <div className='bg-gray-100 min-h-screen p-8'>
         <h1 className='text-4xl font-bold text-gray-800 text-center py-5'>
           Vehicle Diagnostics Dashboard
         </h1>
-        
+
         {/* Date & Time Filters */}
         <div className='flex justify-between items-center mb-6'>
           <div className='shadow-lg rounded-lg p-6 border border-gray-300 bg-white'>
@@ -755,7 +810,7 @@ const VehicleDashboard: React.FC = () => {
               Compare vehicles at 2 points in time
             </h3>
             <hr className='border-gray-300 mb-4' />
-            
+
             <div className='grid grid-cols-3 gap-4 items-center'>
               {/* First Date & Time */}
               <div>
@@ -796,7 +851,9 @@ const VehicleDashboard: React.FC = () => {
                   onChange={(date: Date) => setSelectedSecondDate(date)}
                   includeDates={
                     selectedFirstDate
-                      ? dates.filter((d) => d.getTime() > selectedFirstDate.getTime())
+                      ? dates.filter(
+                          (d) => d.getTime() > selectedFirstDate.getTime()
+                        )
                       : dates
                   }
                   dateFormat='MM/dd/yyyy'
@@ -837,7 +894,7 @@ const VehicleDashboard: React.FC = () => {
               </div>
             </div>
           </div>
-          
+
           {/* Color Legend */}
           <div className='shadow-lg rounded-lg p-6 border border-gray-300 bg-white w-1/3'>
             <h3 className='text-2xl font-bold text-gray-800 mb-3 text-center'>
@@ -847,88 +904,130 @@ const VehicleDashboard: React.FC = () => {
             <div className='space-y-3'>
               <div className='flex items-center'>
                 <div className='w-6 h-6 bg-yellow-300 mr-3'></div>
-                <span className='text-gray-700'>Changed values between snapshots</span>
+                <span className='text-gray-700'>
+                  Changed values between snapshots
+                </span>
               </div>
               <div className='flex items-center'>
                 <div className='w-6 h-6 bg-green-100 mr-3'></div>
-                <span className='text-gray-700'>Enabled / On / Authorized status</span>
+                <span className='text-gray-700'>
+                  Enabled / On / Authorized status
+                </span>
               </div>
               <div className='flex items-center'>
                 <div className='w-6 h-6 bg-red-100 mr-3'></div>
-                <span className='text-gray-700'>Disabled / Off / Unauthorized status</span>
+                <span className='text-gray-700'>
+                  Disabled / Off / Unauthorized status
+                </span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Vehicle Status Summary */}
-        <div className='mb-6'>
-          <div className='bg-white shadow-lg rounded-lg p-6 border border-gray-200'>
-            <h2 className='text-xl font-bold text-gray-800 mb-4'>
-              Vehicle Status Summary
-            </h2>
-            <div className='grid grid-cols-5 gap-4'>
-              <div className='bg-blue-50 p-4 rounded-lg border border-blue-200'>
-                <p className='text-4xl font-bold text-blue-600'>{vehicles.length}</p>
-                <p className='text-sm text-gray-600 mt-1'>Total Vehicles</p>
-              </div>
-              <div className='bg-green-50 p-4 rounded-lg border border-green-200'>
-                {loadingStates.vehicleStatus ? (
-                  <div className='flex items-center'>
-                    <div className='animate-pulse flex space-x-1'>
-                      <div className='h-8 w-8 bg-green-200 rounded-full'></div>
-                      <div className='h-8 w-8 bg-green-200 rounded-full'></div>
-                    </div>
-                    <p className='text-sm text-gray-500 ml-2'>Loading...</p>
-                  </div>
-                ) : (
-                  <p className='text-4xl font-bold text-green-600'>
-                    {vehicles.filter((v) => v.vehicle_info.status === 'online').length}
+        {Object.keys(snapshotData).length === 0 && (
+          <div className='mb-6'>
+            <div className='bg-white shadow-lg rounded-lg p-6 border border-gray-200'>
+              <h2 className='text-xl font-bold text-gray-800 mb-4'>
+                Vehicle Status Summary
+              </h2>
+              <div className='grid grid-cols-5 gap-4'>
+                <div className='bg-blue-50 p-4 rounded-lg border border-blue-200'>
+                  <p className='text-4xl font-bold text-blue-600'>
+                    {vehicles.length}
                   </p>
-                )}
-                <p className='text-sm text-gray-600 mt-1'>Online Vehicles</p>
-              </div>
-              <div className='bg-gray-50 p-4 rounded-lg border border-gray-200'>
-                {loadingStates.vehicleStatus ? (
-                  <div className='flex items-center'>
-                    <div className='animate-pulse flex space-x-1'>
-                      <div className='h-8 w-8 bg-gray-200 rounded-full'></div>
-                      <div className='h-8 w-8 bg-gray-200 rounded-full'></div>
-                    </div>
-                    <p className='text-sm text-gray-500 ml-2'>Loading...</p>
-                  </div>
-                ) : (
-                  <p className='text-4xl font-bold text-gray-600'>
-                    {vehicles.filter((v) => v.vehicle_info.status === 'offline').length}
+                  <p className='text-sm text-gray-600 mt-1'>
+                    Total Vehicles
                   </p>
-                )}
-                <p className='text-sm text-gray-600 mt-1'>Currently Offline</p>
-              </div>
-              <div className='bg-orange-50 p-4 rounded-lg border border-orange-200'>
-                <p className='text-4xl font-bold text-orange-600'>
-                  {vehicles.filter((v) => {
-                    if (!v.vehicle_info.last_connection) return false;
-                    const threeDaysAgo = new Date();
-                    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-                    return new Date(v.vehicle_info.last_connection) < threeDaysAgo;
-                  }).length}
-                </p>
-                <p className='text-sm text-gray-600 mt-1'>Offline &gt; 3 Days</p>
-              </div>
-              <div className='bg-red-50 p-4 rounded-lg border border-red-200'>
-                <p className='text-4xl font-bold text-red-600'>
-                  {vehicles.filter((v) => {
-                    if (!v.vehicle_info.last_connection) return false;
-                    const twoWeeksAgo = new Date();
-                    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-                    return new Date(v.vehicle_info.last_connection) < twoWeeksAgo;
-                  }).length}
-                </p>
-                <p className='text-sm text-gray-600 mt-1'>Offline &gt; 2 Weeks</p>
+                </div>
+                <div className='bg-green-50 p-4 rounded-lg border border-green-200'>
+                  {loadingStates.vehicleStatus ? (
+                    <div className='flex items-center'>
+                      <div className='animate-pulse flex space-x-1'>
+                        <div className='h-8 w-8 bg-green-200 rounded-full'></div>
+                        <div className='h-8 w-8 bg-green-200 rounded-full'></div>
+                      </div>
+                      <p className='text-sm text-gray-500 ml-2'>
+                        Loading...
+                      </p>
+                    </div>
+                  ) : (
+                    <p className='text-4xl font-bold text-green-600'>
+                      {
+                        vehicles.filter(
+                          (v) => v.vehicle_info.status === 'online'
+                        ).length
+                      }
+                    </p>
+                  )}
+                  <p className='text-sm text-gray-600 mt-1'>
+                    Online Vehicles
+                  </p>
+                </div>
+                <div className='bg-gray-50 p-4 rounded-lg border border-gray-200'>
+                  {loadingStates.vehicleStatus ? (
+                    <div className='flex items-center'>
+                      <div className='animate-pulse flex space-x-1'>
+                        <div className='h-8 w-8 bg-gray-200 rounded-full'></div>
+                        <div className='h-8 w-8 bg-gray-200 rounded-full'></div>
+                      </div>
+                      <p className='text-sm text-gray-500 ml-2'>
+                        Loading...
+                      </p>
+                    </div>
+                  ) : (
+                    <p className='text-4xl font-bold text-gray-600'>
+                      {
+                        vehicles.filter(
+                          (v) => v.vehicle_info.status === 'offline'
+                        ).length
+                      }
+                    </p>
+                  )}
+                  <p className='text-sm text-gray-600 mt-1'>
+                    Currently Offline
+                  </p>
+                </div>
+                <div className='bg-orange-50 p-4 rounded-lg border border-orange-200'>
+                  <p className='text-4xl font-bold text-orange-600'>
+                    {
+                      vehicles.filter((v) => {
+                        if (!v.vehicle_info.last_connection) return false;
+                        const threeDaysAgo = new Date();
+                        threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+                        return (
+                          new Date(v.vehicle_info.last_connection) <
+                          threeDaysAgo
+                        );
+                      }).length
+                    }
+                  </p>
+                  <p className='text-sm text-gray-600 mt-1'>
+                    Offline &gt; 3 Days
+                  </p>
+                </div>
+                <div className='bg-red-50 p-4 rounded-lg border border-red-200'>
+                  <p className='text-4xl font-bold text-red-600'>
+                    {
+                      vehicles.filter((v) => {
+                        if (!v.vehicle_info.last_connection) return false;
+                        const twoWeeksAgo = new Date();
+                        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+                        return (
+                          new Date(v.vehicle_info.last_connection) <
+                          twoWeeksAgo
+                        );
+                      }).length
+                    }
+                  </p>
+                  <p className='text-sm text-gray-600 mt-1'>
+                    Offline &gt; 2 Weeks
+                  </p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Vehicle Cards or Snapshot Comparison */}
         {Object.keys(snapshotData).length === 0 ? (
@@ -936,59 +1035,114 @@ const VehicleDashboard: React.FC = () => {
             {/* Loading Status Panel */}
             {vehicles.length > 0 && isLoading && (
               <div className='fixed bottom-4 right-4 bg-white shadow-lg rounded-lg p-4 z-50 border border-gray-200'>
-                <h4 className='font-semibold mb-2 text-gray-700'>Loading Status</h4>
+                <h4 className='font-semibold mb-2 text-gray-700'>
+                  Loading Status
+                </h4>
                 <ul className='text-sm space-y-2'>
                   <li className='flex items-center'>
-                    <span className={loadingStates.vehicles ? 'text-red-500' : 'text-green-500'}>
-                      {loadingStates.vehicles ? 'Loading' : 'Loaded'} Vehicles
+                    <span
+                      className={
+                        loadingStates.vehicles
+                          ? 'text-red-500'
+                          : 'text-green-500'
+                      }
+                    >
+                      {loadingStates.vehicles ? 'Loading' : 'Loaded'}{' '}
+                      Vehicles
                     </span>
                     {loadingStates.vehicles && (
                       <span className='ml-2 inline-block w-3 h-3 border-2 border-t-red-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
                     )}
                   </li>
                   <li className='flex items-center'>
-                    <span className={loadingStates.vehicleStatus ? 'text-red-500' : 'text-green-500'}>
-                      {loadingStates.vehicleStatus ? 'Loading' : 'Loaded'} Vehicle Status
+                    <span
+                      className={
+                        loadingStates.vehicleStatus
+                          ? 'text-red-500'
+                          : 'text-green-500'
+                      }
+                    >
+                      {loadingStates.vehicleStatus ? 'Loading' : 'Loaded'}{' '}
+                      Vehicle Status
                     </span>
                     {loadingStates.vehicleStatus && (
                       <span className='ml-2 inline-block w-3 h-3 border-2 border-t-red-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
                     )}
                   </li>
                   <li className='flex items-center'>
-                    <span className={loadingStates.masterCodes ? 'text-red-500' : 'text-green-500'}>
-                      {loadingStates.masterCodes ? 'Loading' : 'Loaded'} Master Codes
+                    <span
+                      className={
+                        loadingStates.masterCodes
+                          ? 'text-red-500'
+                          : 'text-green-500'
+                      }
+                    >
+                      {loadingStates.masterCodes ? 'Loading' : 'Loaded'}{' '}
+                      Master Codes
                     </span>
                     {loadingStates.masterCodes && (
                       <span className='ml-2 inline-block w-3 h-3 border-2 border-t-red-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
                     )}
                   </li>
                   <li className='flex items-center'>
-                    <span className={loadingStates.blacklistedDrivers ? 'text-red-500' : 'text-green-500'}>
-                      {loadingStates.blacklistedDrivers ? 'Loading' : 'Loaded'} Blacklisted Drivers
+                    <span
+                      className={
+                        loadingStates.blacklistedDrivers
+                          ? 'text-red-500'
+                          : 'text-green-500'
+                      }
+                    >
+                      {loadingStates.blacklistedDrivers
+                        ? 'Loading'
+                        : 'Loaded'}{' '}
+                      Blacklisted Drivers
                     </span>
                     {loadingStates.blacklistedDrivers && (
                       <span className='ml-2 inline-block w-3 h-3 border-2 border-t-red-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
                     )}
                   </li>
                   <li className='flex items-center'>
-                    <span className={loadingStates.vehicleLogins ? 'text-red-500' : 'text-green-500'}>
-                      {loadingStates.vehicleLogins ? 'Loading' : 'Loaded'} Vehicle Logins
+                    <span
+                      className={
+                        loadingStates.vehicleLogins
+                          ? 'text-red-500'
+                          : 'text-green-500'
+                      }
+                    >
+                      {loadingStates.vehicleLogins ? 'Loading' : 'Loaded'}{' '}
+                      Vehicle Logins
                     </span>
                     {loadingStates.vehicleLogins && (
                       <span className='ml-2 inline-block w-3 h-3 border-2 border-t-red-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
                     )}
                   </li>
                   <li className='flex items-center'>
-                    <span className={loadingStates.lastDriverLogins ? 'text-red-500' : 'text-green-500'}>
-                      {loadingStates.lastDriverLogins ? 'Loading' : 'Loaded'} Last Driver Logins
+                    <span
+                      className={
+                        loadingStates.lastDriverLogins
+                          ? 'text-red-500'
+                          : 'text-green-500'
+                      }
+                    >
+                      {loadingStates.lastDriverLogins
+                        ? 'Loading'
+                        : 'Loaded'}{' '}
+                      Last Driver Logins
                     </span>
                     {loadingStates.lastDriverLogins && (
                       <span className='ml-2 inline-block w-3 h-3 border-2 border-t-red-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
                     )}
                   </li>
                   <li className='flex items-center'>
-                    <span className={loadingStates.MessageSent ? 'text-red-500' : 'text-green-500'}>
-                      {loadingStates.MessageSent ? 'Loading' : 'Loaded'} Messages Sent
+                    <span
+                      className={
+                        loadingStates.MessageSent
+                          ? 'text-red-500'
+                          : 'text-green-500'
+                      }
+                    >
+                      {loadingStates.MessageSent ? 'Loading' : 'Loaded'}{' '}
+                      Messages Sent
                     </span>
                     {loadingStates.MessageSent && (
                       <span className='ml-2 inline-block w-3 h-3 border-2 border-t-red-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
@@ -1018,10 +1172,12 @@ const VehicleDashboard: React.FC = () => {
                       {vehicle.vehicle_info.vehicle_name}
                     </h2>
                     <p className='text-base text-gray-600'>
-                      <strong>Serial:</strong> {vehicle.vehicle_info.serial_number}
+                      <strong>Serial:</strong>{' '}
+                      {vehicle.vehicle_info.serial_number}
                     </p>
                     <p className='text-base text-gray-600'>
-                      <strong>GMPT:</strong> {vehicle.vehicle_info.gmpt_code}
+                      <strong>GMPT:</strong>{' '}
+                      {vehicle.vehicle_info.gmpt_code}
                     </p>
                   </div>
                 </div>
@@ -1030,46 +1186,92 @@ const VehicleDashboard: React.FC = () => {
                 <div className='grid grid-cols-2 gap-4 mt-4'>
                   <div>
                     <p className='text-base text-gray-600'>
-                      <strong>Customer:</strong> {vehicle.vehicle_info.customer_name}
-                    </p>
-                    <p className='text-base text-gray-600'>{vehicle.vehicle_info.site_name}</p>
-                    <p className='text-base text-gray-600'>
-                      <strong>Department:</strong> {vehicle.vehicle_info.department}
+                      <strong>Customer:</strong>{' '}
+                      {vehicle.vehicle_info.customer_name}
                     </p>
                     <p className='text-base text-gray-600'>
-                      <strong>Screen Version:</strong> {vehicle.vehicle_info.screen_version}
+                      <strong>Site:</strong>{' '}
+                      {vehicle.vehicle_info.site_name}
                     </p>
                     <p className='text-base text-gray-600'>
-                      <strong>ExpModu Version:</strong> {vehicle.vehicle_info.expansion_version}
+                      <strong>Department:</strong>{' '}
+                      {vehicle.vehicle_info.department}
                     </p>
-                    <p className={`text-base ${isOlderThanTwoWeeks(vehicle.vehicle_info.last_dlist_timestamp) ? 'text-amber-500 font-semibold' : 'text-gray-600'}`}>
-                      <strong>Last Driver List sync:</strong> {vehicle.vehicle_info.last_dlist_timestamp}
+                    <p className='text-base text-gray-600'>
+                      <strong>Screen Version:</strong>{' '}
+                      {vehicle.vehicle_info.screen_version}
                     </p>
-                    <p className={`text-base ${isOlderThanTwoWeeks(vehicle.vehicle_info.last_preop_timestamp) ? 'text-amber-500 font-semibold' : 'text-gray-600'}`}>
-                      <strong>Last Checklist sync:</strong> {vehicle.vehicle_info.last_preop_timestamp}
+                    <p className='text-base text-gray-600'>
+                      <strong>ExpModu Version:</strong>{' '}
+                      {vehicle.vehicle_info.expansion_version}
+                    </p>
+                    <p
+                      className={`text-base ${
+                        isOlderThanTwoWeeks(
+                          vehicle.vehicle_info.last_dlist_timestamp
+                        )
+                          ? 'text-amber-500 font-semibold'
+                          : 'text-gray-600'
+                      }`}
+                    >
+                      <strong>Last Driver List sync:</strong>{' '}
+                      {vehicle.vehicle_info.last_dlist_timestamp}
+                    </p>
+                    <p
+                      className={`text-base ${
+                        isOlderThanTwoWeeks(
+                          vehicle.vehicle_info.last_preop_timestamp
+                        )
+                          ? 'text-amber-500 font-semibold'
+                          : 'text-gray-600'
+                      }`}
+                    >
+                      <strong>Last Checklist sync:</strong>{' '}
+                      {vehicle.vehicle_info.last_preop_timestamp}
                     </p>
                   </div>
                   <div>
                     <p className='text-base text-gray-600'>
-                      <strong>Firmware Version:</strong> {vehicle.vehicle_info.firmware_version}
+                      <strong>Firmware Version:</strong>{' '}
+                      {vehicle.vehicle_info.firmware_version}
                     </p>
                     <p className='text-base text-gray-600'>
-                      <strong>Vehicle Model:</strong> {vehicle.vehicle_info.vehicle_model}
+                      <strong>Vehicle Model:</strong>{' '}
+                      {vehicle.vehicle_info.vehicle_model}
                     </p>
                     <p className='text-base text-gray-600'>
-                      <strong>Sim Number:</strong> {vehicle.vehicle_info.sim_number}
+                      <strong>Sim Number:</strong>{' '}
+                      {vehicle.vehicle_info.sim_number}
                     </p>
-                    <p className={`text-base ${getLastConnectionColor(vehicle.vehicle_info.last_connection)}`}>
-                      <strong>Last Connection:</strong> {vehicle.vehicle_info.last_connection}
+                    <p
+                      className={`text-base ${getLastConnectionColor(
+                        vehicle.vehicle_info.last_connection
+                      )}`}
+                    >
+                      <strong>Last Connection:</strong>{' '}
+                      {vehicle.vehicle_info.last_connection}
                     </p>
                   </div>
                 </div>
 
                 {/* Status */}
                 <div className='text-center mt-4'>
-                  <p className={`text-lg font-bold ${loadingStates.vehicleStatus ? 'text-blue-600' : vehicleStatusByVehicle[vehicle.VEHICLE_CD]?.status === 'online' ? 'text-green-600' : 'text-red-600'}`}>
+                  <p
+                    className={`text-lg font-bold ${
+                      loadingStates.vehicleStatus
+                        ? 'text-blue-600'
+                        : vehicleStatusByVehicle[vehicle.VEHICLE_CD]
+                            ?.status === 'online'
+                        ? 'text-green-600'
+                        : 'text-red-600'
+                    }`}
+                  >
                     <strong>
-                      Status: {loadingStates.vehicleStatus ? 'Loading...' : vehicleStatusByVehicle[vehicle.VEHICLE_CD]?.status || vehicle.vehicle_info.status}
+                      Status:{' '}
+                      {loadingStates.vehicleStatus
+                        ? 'Loading...'
+                        : vehicleStatusByVehicle[vehicle.VEHICLE_CD]
+                            ?.status || vehicle.vehicle_info.status}
                     </strong>
                     {loadingStates.vehicleStatus && (
                       <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
@@ -1078,100 +1280,170 @@ const VehicleDashboard: React.FC = () => {
                 </div>
 
                 <hr className='border-gray-300 mb-4' />
-                
+
                 {/* Vehicle Configuration Details */}
                 <div className='grid grid-cols-2 gap-4 text-base text-gray-600'>
                   <p>
-                    <span className={vehicle.vehicle_info.lockout_code?.toString().trim() === '0' ? 'text-green-500' : 'text-red-500'}>
-                      <strong>Lockout Status:</strong> {vehicle.vehicle_info.lockout_code?.toString().trim() === '0' ? 'Unlocked' : 'Locked'}
+                    <span
+                      className={
+                        vehicle.vehicle_info.lockout_code
+                          ?.toString()
+                          .trim() === '0'
+                          ? 'text-green-500'
+                          : 'text-red-500'
+                      }
+                    >
+                      <strong>Lockout Status:</strong>{' '}
+                      {vehicle.vehicle_info.lockout_code
+                        ?.toString()
+                        .trim() === '0'
+                        ? 'Unlocked'
+                        : 'Locked'}
                     </span>
                   </p>
                   <p>
-                    <span className={vehicle.vehicle_info.impact_lockout ? 'text-green-500' : 'text-red-500'}>
-                      <strong>Impact Lockouts:</strong> {vehicle.vehicle_info.impact_lockout ? 'On' : 'Off'}
+                    <span
+                      className={
+                        vehicle.vehicle_info.impact_lockout
+                          ? 'text-green-500'
+                          : 'text-red-500'
+                      }
+                    >
+                      <strong>Impact Lockouts:</strong>{' '}
+                      {vehicle.vehicle_info.impact_lockout ? 'On' : 'Off'}
                     </span>
                   </p>
                   <p>
-                    <strong>Recalibration Date:</strong> {vehicle.vehicle_info.impact_recalibration_date}
+                    <strong>Recalibration Date:</strong>{' '}
+                    {vehicle.vehicle_info.impact_recalibration_date}
                   </p>
-                  <p className={`${vehicle.vehicle_info.red_impact_threshold !== null && vehicle.vehicle_info.red_impact_threshold > 0.0 ? 'text-green-500' : 'text-red-500'}`}>
-                    <strong>Red Impact Threshold:</strong> {vehicle.vehicle_info.red_impact_threshold}g
+                  <p
+                    className={`${
+                      vehicle.vehicle_info.red_impact_threshold !== null &&
+                      vehicle.vehicle_info.red_impact_threshold > 0.0
+                        ? 'text-green-500'
+                        : 'text-red-500'
+                    }`}
+                  >
+                    <strong>Red Impact Threshold:</strong>{' '}
+                    {vehicle.vehicle_info.red_impact_threshold}g
                   </p>
                   <p>
-                    <span className={vehicle.vehicle_info.full_lockout_enabled ? 'text-green-500' : 'text-red-500'}>
-                      <strong>Full Lockout:</strong> {vehicle.vehicle_info.full_lockout_enabled ? 'On' : 'Off'}
+                    <span
+                      className={
+                        vehicle.vehicle_info.full_lockout_enabled
+                          ? 'text-green-500'
+                          : 'text-red-500'
+                      }
+                    >
+                      <strong>Full Lockout:</strong>{' '}
+                      {vehicle.vehicle_info.full_lockout_enabled
+                        ? 'On'
+                        : 'Off'}
                     </span>
                   </p>
                   <p className='text-gray-600 text-base'>
-                    <strong>Full Lockout Timeout:</strong> {vehicle.vehicle_info.full_lockout_timeout}s
+                    <strong>Full Lockout Timeout:</strong>{' '}
+                    {vehicle.vehicle_info.full_lockout_timeout}s
                   </p>
                   <p className='text-gray-600 text-base'>
-                    <strong>Idle Timeout:</strong> {vehicle.vehicle_info.seat_idle !== null ? vehicle.vehicle_info.seat_idle : 'Off'}s
+                    <strong>Idle Timeout:</strong>{' '}
+                    {vehicle.vehicle_info.seat_idle !== null
+                      ? vehicle.vehicle_info.seat_idle
+                      : 'Off'}
+                    s
                   </p>
                   <p className='text-base text-gray-600'>
-                    <strong>Idle Polarity:</strong> {vehicle.vehicle_info.idle_polarity}
+                    <strong>Idle Polarity:</strong>{' '}
+                    {vehicle.vehicle_info.idle_polarity}
                   </p>
                   <p>
-                    <strong>Checklist Schedule:</strong> {vehicle.vehicle_info.preop_schedule}
+                    <strong>Checklist Schedule:</strong>{' '}
+                    {vehicle.vehicle_info.preop_schedule}
                   </p>
                   <p className='text-gray-600 text-base'>
-                    <strong>Checklist Timeout:</strong> {vehicle.vehicle_info.survey_timeout}s
+                    <strong>Checklist Timeout:</strong>{' '}
+                    {vehicle.vehicle_info.survey_timeout}s
                   </p>
                   <p>
-                    <span className={vehicle.vehicle_info.vor_setting == false ? 'text-green-500' : 'text-red-500'}>
-                      <strong>VOR:</strong> {vehicle.vehicle_info.vor_setting == false ? 'Off' : 'On'}
+                    <span
+                      className={
+                        vehicle.vehicle_info.vor_setting == false
+                          ? 'text-green-500'
+                          : 'text-red-500'
+                      }
+                    >
+                      <strong>VOR:</strong>{' '}
+                      {vehicle.vehicle_info.vor_setting == false
+                        ? 'Off'
+                        : 'On'}
                     </span>
                   </p>
 
                   {/* Popup Buttons */}
                   <button
                     className='text-blue-500 hover:underline mt-2 flex items-center'
-                    onClick={() => togglePopup('masterCodes', vehicle.VEHICLE_CD)}
+                    onClick={() =>
+                      togglePopup('masterCodes', vehicle.VEHICLE_CD)
+                    }
                   >
                     <span>Master Codes</span>
-                    {loadingStates.masterCodes && activeVehicleId === vehicle.VEHICLE_CD && (
-                      <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
-                    )}
+                    {loadingStates.masterCodes &&
+                      activeVehicleId === vehicle.VEHICLE_CD && (
+                        <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                      )}
                   </button>
 
                   <button
                     className='text-blue-500 hover:underline mt-2 flex items-center'
-                    onClick={() => togglePopup('blacklistDrivers', vehicle.VEHICLE_CD)}
+                    onClick={() =>
+                      togglePopup('blacklistDrivers', vehicle.VEHICLE_CD)
+                    }
                   >
                     <span>Drivers on Blacklist</span>
-                    {loadingStates.blacklistedDrivers && activeVehicleId === vehicle.VEHICLE_CD && (
-                      <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
-                    )}
+                    {loadingStates.blacklistedDrivers &&
+                      activeVehicleId === vehicle.VEHICLE_CD && (
+                        <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                      )}
                   </button>
 
                   <button
                     className='text-blue-500 hover:underline mt-2 flex items-center'
-                    onClick={() => togglePopup('vehicleLogins', vehicle.VEHICLE_CD)}
+                    onClick={() =>
+                      togglePopup('vehicleLogins', vehicle.VEHICLE_CD)
+                    }
                   >
                     <span>Recent Vehicle Logins (7 days)</span>
-                    {loadingStates.vehicleLogins && activeVehicleId === vehicle.VEHICLE_CD && (
-                      <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
-                    )}
+                    {loadingStates.vehicleLogins &&
+                      activeVehicleId === vehicle.VEHICLE_CD && (
+                        <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                      )}
                   </button>
 
                   <button
                     className='text-blue-500 hover:underline mt-2 flex items-center'
-                    onClick={() => togglePopup('lastDriverLogins', vehicle.VEHICLE_CD)}
+                    onClick={() =>
+                      togglePopup('lastDriverLogins', vehicle.VEHICLE_CD)
+                    }
                   >
                     <span>Last 10 Drivers Logged in</span>
-                    {loadingStates.lastDriverLogins && activeVehicleId === vehicle.VEHICLE_CD && (
-                      <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
-                    )}
+                    {loadingStates.lastDriverLogins &&
+                      activeVehicleId === vehicle.VEHICLE_CD && (
+                        <span className='ml-2 inline-block w-3 h-3 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                      )}
                   </button>
 
                   <button
                     className='text-blue-500 hover:underline mt-2 flex items-center'
-                    onClick={() => togglePopup('messagesSent', vehicle.VEHICLE_CD)}
+                    onClick={() =>
+                      togglePopup('messagesSent', vehicle.VEHICLE_CD)
+                    }
                   >
                     <span>Messages Sent (7 days)</span>
-                    {loadingStates.MessageSent && activeVehicleId === vehicle.VEHICLE_CD && (
-                      <span className='ml-2 inline-block w-3 h-3 border-2 border-t-red-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
-                    )}
+                    {loadingStates.MessageSent &&
+                      activeVehicleId === vehicle.VEHICLE_CD && (
+                        <span className='ml-2 inline-block w-3 h-3 border-2 border-t-red-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
+                      )}
                   </button>
                 </div>
               </div>
@@ -1180,13 +1452,17 @@ const VehicleDashboard: React.FC = () => {
         ) : (
           /* Snapshot Comparison View */
           <div className='mt-8'>
-            <h2 className='text-2xl font-bold text-gray-800 mb-4'>Vehicle Snapshot Comparison</h2>
+            <h2 className='text-2xl font-bold text-gray-800 mb-4'>
+              Vehicle Snapshot Comparison
+            </h2>
             <div className='grid grid-cols-2 gap-6'>
               {Object.entries(snapshotData).map(([vehicleCd, snaps]) => {
                 // Helper function to check if values changed
                 const hasChanged = (beforeVal: any, afterVal: any) => {
-                  if (beforeVal === null && afterVal === null) return false;
-                  if (beforeVal === undefined && afterVal === undefined) return false;
+                  if (beforeVal === null && afterVal === null)
+                    return false;
+                  if (beforeVal === undefined && afterVal === undefined)
+                    return false;
                   return beforeVal !== afterVal;
                 };
 
@@ -1199,25 +1475,62 @@ const VehicleDashboard: React.FC = () => {
                 };
 
                 // Helper function to get boolean status color with text
-                const getBooleanStatusText = (value: any, trueText: string, falseText: string, isGoodWhenTrue: boolean = true) => {
+                const getBooleanStatusText = (
+                  value: any,
+                  trueText: string,
+                  falseText: string,
+                  isGoodWhenTrue: boolean = true
+                ) => {
                   const boolValue = Boolean(value);
                   const text = boolValue ? trueText : falseText;
-                  const colorClass = isGoodWhenTrue 
-                    ? (boolValue ? 'text-green-500' : 'text-red-500')
-                    : (boolValue ? 'text-red-500' : 'text-green-500');
+                  const colorClass = isGoodWhenTrue
+                    ? boolValue
+                      ? 'text-green-500'
+                      : 'text-red-500'
+                    : boolValue
+                    ? 'text-red-500'
+                    : 'text-green-500';
                   return { text, colorClass };
                 };
 
                 return (
-                  <div key={vehicleCd} className='bg-white shadow-lg rounded-lg border border-gray-300 overflow-hidden'>
+                  <div
+                    key={vehicleCd}
+                    className='bg-white shadow-lg rounded-lg border border-gray-300 overflow-hidden'
+                  >
                     {/* Header */}
                     <div className='bg-gray-100 p-4 border-b'>
                       <h3 className='text-xl font-bold text-gray-800 text-center'>
-                        GMPT: {snaps.before.gmptCode || snaps.after.gmptCode}
+                        GMPT:{' '}
+                        {snaps.before.gmptCode || snaps.after.gmptCode}
                       </h3>
                       <div className='flex justify-between text-sm text-gray-600 mt-2'>
-                        <span>Before: {snaps.before.snapshot_date || snaps.before.query_execution_date ? format(new Date(snaps.before.snapshot_date || snaps.before.query_execution_date), 'MM/dd/yyyy HH:mm') : 'N/A'}</span>
-                        <span>After: {snaps.after.snapshot_date || snaps.after.query_execution_date ? format(new Date(snaps.after.snapshot_date || snaps.after.query_execution_date), 'MM/dd/yyyy HH:mm') : 'N/A'}</span>
+                        <span>
+                          Before:{' '}
+                          {snaps.before.snapshot_date ||
+                          snaps.before.query_execution_date
+                            ? format(
+                                new Date(
+                                  snaps.before.snapshot_date ||
+                                    snaps.before.query_execution_date
+                                ),
+                                'MM/dd/yyyy HH:mm'
+                              )
+                            : 'N/A'}
+                        </span>
+                        <span>
+                          After:{' '}
+                          {snaps.after.snapshot_date ||
+                          snaps.after.query_execution_date
+                            ? format(
+                                new Date(
+                                  snaps.after.snapshot_date ||
+                                    snaps.after.query_execution_date
+                                ),
+                                'MM/dd/yyyy HH:mm'
+                              )
+                            : 'N/A'}
+                        </span>
                       </div>
                     </div>
 
@@ -1236,26 +1549,68 @@ const VehicleDashboard: React.FC = () => {
                           </div>
                           <div>
                             <h4 className='text-base font-bold text-gray-800'>
-                              {snaps.before.vehicleName || snaps.after.vehicleName}
+                              {snaps.before.vehicleName ||
+                                snaps.after.vehicleName}
                             </h4>
                             <p className='text-sm text-gray-600'>
-                              <strong>Serial:</strong> {snaps.before.serialNumber || snaps.after.serialNumber}
+                              <strong>Serial:</strong>{' '}
+                              {snaps.before.serialNumber ||
+                                snaps.after.serialNumber}
                             </p>
                             <p className='text-sm text-gray-600'>
-                              <strong>GMPT:</strong> {snaps.before.gmptCode || snaps.after.gmptCode}
+                              <strong>GMPT:</strong>{' '}
+                              {snaps.before.gmptCode ||
+                                snaps.after.gmptCode}
                             </p>
                           </div>
                         </div>
 
                         <div className='grid grid-cols-2 gap-x-4 gap-y-1 text-sm mb-4'>
                           <div>
-                            <p><strong>Customer:</strong> <span className={getChangeStyle(snaps.before.customer_name, snaps.after.customer_name)}>{snaps.before.customer_name || 'N/A'}</span></p>
-                            <p><strong>Site:</strong> <span className={getChangeStyle(snaps.before.site_name, snaps.after.site_name)}>{snaps.before.site_name || 'N/A'}</span></p>
-                            <p><strong>Department:</strong> <span className={getChangeStyle(snaps.before.dept_name, snaps.after.dept_name)}>{snaps.before.dept_name || 'N/A'}</span></p>
+                            <p>
+                              <strong>Customer:</strong>{' '}
+                              <span
+                                className={getChangeStyle(
+                                  snaps.before.customer_name,
+                                  snaps.after.customer_name
+                                )}
+                              >
+                                {snaps.before.customer_name || 'N/A'}
+                              </span>
+                            </p>
+                            <p>
+                              <strong>Site:</strong>{' '}
+                              <span
+                                className={getChangeStyle(
+                                  snaps.before.site_name,
+                                  snaps.after.site_name
+                                )}
+                              >
+                                {snaps.before.site_name || 'N/A'}
+                              </span>
+                            </p>
+                            <p>
+                              <strong>Department:</strong>{' '}
+                              <span
+                                className={getChangeStyle(
+                                  snaps.before.dept_name,
+                                  snaps.after.dept_name
+                                )}
+                              >
+                                {snaps.before.dept_name || 'N/A'}
+                              </span>
+                            </p>
                           </div>
                           <div>
-                            <p><strong>Firmware Version:</strong></p>
-                            <p className={getChangeStyle(snaps.before.firmwareVersion, snaps.after.firmwareVersion)}>
+                            <p>
+                              <strong>Firmware Version:</strong>
+                            </p>
+                            <p
+                              className={getChangeStyle(
+                                snaps.before.firmwareVersion,
+                                snaps.after.firmwareVersion
+                              )}
+                            >
                               {snaps.before.firmwareVersion || 'N/A'}
                             </p>
                           </div>
@@ -1263,14 +1618,61 @@ const VehicleDashboard: React.FC = () => {
 
                         <div className='grid grid-cols-2 gap-x-4 gap-y-1 text-sm mb-4'>
                           <div>
-                            <p><strong>Screen Version:</strong> <span className={getChangeStyle(snaps.before.screenVersion, snaps.after.screenVersion)}>{snaps.before.screenVersion || 'N/A'}</span></p>
-                            <p><strong>ExpModu Version:</strong> <span className={getChangeStyle(snaps.before.expansionVersion, snaps.after.expansionVersion)}>{snaps.before.expansionVersion || 'N/A'}</span></p>
+                            <p>
+                              <strong>Screen Version:</strong>{' '}
+                              <span
+                                className={getChangeStyle(
+                                  snaps.before.screenVersion,
+                                  snaps.after.screenVersion
+                                )}
+                              >
+                                {snaps.before.screenVersion || 'N/A'}
+                              </span>
+                            </p>
+                            <p>
+                              <strong>ExpModu Version:</strong>{' '}
+                              <span
+                                className={getChangeStyle(
+                                  snaps.before.expansionVersion,
+                                  snaps.after.expansionVersion
+                                )}
+                              >
+                                {snaps.before.expansionVersion || 'N/A'}
+                              </span>
+                            </p>
                           </div>
                           <div>
-                            <p><strong>Vehicle Model:</strong> <span className={getChangeStyle(snaps.before.vehicleModel, snaps.after.vehicleModel)}>{snaps.before.vehicleModel || 'N/A'}</span></p>
-                            <p><strong>Sim Number:</strong> <span className={getChangeStyle(snaps.before.simNumber, snaps.after.simNumber)}>{snaps.before.simNumber || 'N/A'}</span></p>
-                            <p><strong>Last Connection:</strong></p>
-                            <p className={getChangeStyle(snaps.before.lastConnection, snaps.after.lastConnection)}>
+                            <p>
+                              <strong>Vehicle Model:</strong>{' '}
+                              <span
+                                className={getChangeStyle(
+                                  snaps.before.vehicleModel,
+                                  snaps.after.vehicleModel
+                                )}
+                              >
+                                {snaps.before.vehicleModel || 'N/A'}
+                              </span>
+                            </p>
+                            <p>
+                              <strong>Sim Number:</strong>{' '}
+                              <span
+                                className={getChangeStyle(
+                                  snaps.before.simNumber,
+                                  snaps.after.simNumber
+                                )}
+                              >
+                                {snaps.before.simNumber || 'N/A'}
+                              </span>
+                            </p>
+                            <p>
+                              <strong>Last Connection:</strong>
+                            </p>
+                            <p
+                              className={getChangeStyle(
+                                snaps.before.lastConnection,
+                                snaps.after.lastConnection
+                              )}
+                            >
                               {snaps.before.lastConnection || 'N/A'}
                             </p>
                           </div>
@@ -1281,35 +1683,194 @@ const VehicleDashboard: React.FC = () => {
                         <div className='grid grid-cols-2 gap-x-4 gap-y-1 text-sm'>
                           <div>
                             <p>
-                              <span className={`${getBooleanStatusText((typeof snaps.before.vorSetting === 'string' && snaps.before.vorSetting === 'false') || (typeof snaps.before.vorSetting === 'boolean' && snaps.before.vorSetting === false), 'Off', 'On', true).colorClass} ${getChangeStyle(snaps.before.vorSetting, snaps.after.vorSetting)}`}>
-                                <strong>VOR:</strong> {getBooleanStatusText((typeof snaps.before.vorSetting === 'string' && snaps.before.vorSetting === 'false') || (typeof snaps.before.vorSetting === 'boolean' && snaps.before.vorSetting === false), 'Off', 'On', true).text}
+                              <span
+                                className={`${
+                                  getBooleanStatusText(
+                                    (typeof snaps.before.vorSetting ===
+                                      'string' &&
+                                      snaps.before.vorSetting ===
+                                        'false') ||
+                                      (typeof snaps.before.vorSetting ===
+                                        'boolean' &&
+                                        snaps.before.vorSetting === false),
+                                    'Off',
+                                    'On',
+                                    true
+                                  ).colorClass
+                                } ${getChangeStyle(
+                                  snaps.before.vorSetting,
+                                  snaps.after.vorSetting
+                                )}`}
+                              >
+                                <strong>VOR:</strong>{' '}
+                                {
+                                  getBooleanStatusText(
+                                    (typeof snaps.before.vorSetting ===
+                                      'string' &&
+                                      snaps.before.vorSetting ===
+                                        'false') ||
+                                      (typeof snaps.before.vorSetting ===
+                                        'boolean' &&
+                                        snaps.before.vorSetting === false),
+                                    'Off',
+                                    'On',
+                                    true
+                                  ).text
+                                }
                               </span>
                             </p>
-                            <p><strong>LO Reason:</strong> <span className={getChangeStyle(snaps.before.loReason, snaps.after.loReason)}>{snaps.before.loReason || 'N/A'}</span></p>
-                            <p><strong>Recalibration Date:</strong> <span className={getChangeStyle(snaps.before.impactRecalibrationDate, snaps.after.impactRecalibrationDate)}>{snaps.before.impactRecalibrationDate || 'N/A'}</span></p>
                             <p>
-                              <span className={`${getBooleanStatusText(snaps.before.impactLockout, 'On', 'Off', true).colorClass} ${getChangeStyle(snaps.before.impactLockout, snaps.after.impactLockout)}`}>
-                                <strong>Impact Lockouts:</strong> {getBooleanStatusText(snaps.before.impactLockout, 'On', 'Off', true).text}
+                              <strong>LO Reason:</strong>{' '}
+                              <span
+                                className={getChangeStyle(
+                                  snaps.before.loReason,
+                                  snaps.after.loReason
+                                )}
+                              >
+                                {snaps.before.loReason || 'N/A'}
                               </span>
                             </p>
                             <p>
-                              <span className={`${getBooleanStatusText(snaps.before.fullLockoutEnabled, 'On', 'Off', true).colorClass} ${getChangeStyle(snaps.before.fullLockoutEnabled, snaps.after.fullLockoutEnabled)}`}>
-                                <strong>Full Lockout:</strong> {getBooleanStatusText(snaps.before.fullLockoutEnabled, 'On', 'Off', true).text}
+                              <strong>Recalibration Date:</strong>{' '}
+                              <span
+                                className={getChangeStyle(
+                                  snaps.before.impactRecalibrationDate,
+                                  snaps.after.impactRecalibrationDate
+                                )}
+                              >
+                                {snaps.before.impactRecalibrationDate ||
+                                  'N/A'}
                               </span>
                             </p>
-                            <p><strong>Full Lockout Timeout:</strong> <span className={getChangeStyle(snaps.before.fullLockoutTimeout, snaps.after.fullLockoutTimeout)}>{snaps.before.fullLockoutTimeout || 0}s</span></p>
-                            <p><strong>Checklist Timeout:</strong> <span className={getChangeStyle(snaps.before.surveyTimeout, snaps.after.surveyTimeout)}>{snaps.before.surveyTimeout || 0}s</span></p>
-                            <p><strong>Idle Timeout:</strong> <span className={getChangeStyle(snaps.before.seatIdle, snaps.after.seatIdle)}>{snaps.before.seatIdle !== null ? snaps.before.seatIdle + 's' : 'N/As'}</span></p>
+                            <p>
+                              <span
+                                className={`${
+                                  getBooleanStatusText(
+                                    snaps.before.impactLockout,
+                                    'On',
+                                    'Off',
+                                    true
+                                  ).colorClass
+                                } ${getChangeStyle(
+                                  snaps.before.impactLockout,
+                                  snaps.after.impactLockout
+                                )}`}
+                              >
+                                <strong>Impact Lockouts:</strong>{' '}
+                                {
+                                  getBooleanStatusText(
+                                    snaps.before.impactLockout,
+                                    'On',
+                                    'Off',
+                                    true
+                                  ).text
+                                }
+                              </span>
+                            </p>
+                            <p>
+                              <span
+                                className={`${
+                                  getBooleanStatusText(
+                                    snaps.before.fullLockoutEnabled,
+                                    'On',
+                                    'Off',
+                                    true
+                                  ).colorClass
+                                } ${getChangeStyle(
+                                  snaps.before.fullLockoutEnabled,
+                                  snaps.after.fullLockoutEnabled
+                                )}`}
+                              >
+                                <strong>Full Lockout:</strong>{' '}
+                                {
+                                  getBooleanStatusText(
+                                    snaps.before.fullLockoutEnabled,
+                                    'On',
+                                    'Off',
+                                    true
+                                  ).text
+                                }
+                              </span>
+                            </p>
+                            <p>
+                              <strong>Full Lockout Timeout:</strong>{' '}
+                              <span
+                                className={getChangeStyle(
+                                  snaps.before.fullLockoutTimeout,
+                                  snaps.after.fullLockoutTimeout
+                                )}
+                              >
+                                {snaps.before.fullLockoutTimeout || 0}s
+                              </span>
+                            </p>
+                            <p>
+                              <strong>Checklist Timeout:</strong>{' '}
+                              <span
+                                className={getChangeStyle(
+                                  snaps.before.surveyTimeout,
+                                  snaps.after.surveyTimeout
+                                )}
+                              >
+                                {snaps.before.surveyTimeout || 0}s
+                              </span>
+                            </p>
+                            <p>
+                              <strong>Idle Timeout:</strong>{' '}
+                              <span
+                                className={getChangeStyle(
+                                  snaps.before.seatIdle,
+                                  snaps.after.seatIdle
+                                )}
+                              >
+                                {snaps.before.seatIdle !== null
+                                  ? snaps.before.seatIdle + 's'
+                                  : 'N/As'}
+                              </span>
+                            </p>
                           </div>
                           <div>
                             <p>
-                              <span className={snaps.before.lockoutCode === '0' ? 'text-green-500' : 'text-red-500'}>
-                                <strong>Lockout Status:</strong> {snaps.before.lockoutCode === '0' ? 'Unlocked' : 'Locked'}
+                              <span
+                                className={
+                                  snaps.before.lockoutCode === '0'
+                                    ? 'text-green-500'
+                                    : 'text-red-500'
+                                }
+                              >
+                                <strong>Lockout Status:</strong>{' '}
+                                {snaps.before.lockoutCode === '0'
+                                  ? 'Unlocked'
+                                  : 'Locked'}
                               </span>
                             </p>
-                            <p><strong>Checklist Schedule:</strong> <span className={getChangeStyle(snaps.before.preopSchedule, snaps.after.preopSchedule)}>{snaps.before.preopSchedule || 'N/A'}</span></p>
-                            <p className={`${snaps.before.redImpactThreshold && snaps.before.redImpactThreshold > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                              <strong>Red Impact Threshold:</strong> <span className={getChangeStyle(snaps.before.redImpactThreshold, snaps.after.redImpactThreshold)}>{snaps.before.redImpactThreshold || 0}g</span>
+                            <p>
+                              <strong>Checklist Schedule:</strong>{' '}
+                              <span
+                                className={getChangeStyle(
+                                  snaps.before.preopSchedule,
+                                  snaps.after.preopSchedule
+                                )}
+                              >
+                                {snaps.before.preopSchedule || 'N/A'}
+                              </span>
+                            </p>
+                            <p
+                              className={`${
+                                snaps.before.redImpactThreshold &&
+                                snaps.before.redImpactThreshold > 0
+                                  ? 'text-green-500'
+                                  : 'text-red-500'
+                              }`}
+                            >
+                              <strong>Red Impact Threshold:</strong>{' '}
+                              <span
+                                className={getChangeStyle(
+                                  snaps.before.redImpactThreshold,
+                                  snaps.after.redImpactThreshold
+                                )}
+                              >
+                                {snaps.before.redImpactThreshold || 0}g
+                              </span>
                             </p>
                           </div>
                         </div>
@@ -1329,26 +1890,68 @@ const VehicleDashboard: React.FC = () => {
                           </div>
                           <div>
                             <h4 className='text-base font-bold text-gray-800'>
-                              {snaps.after.vehicleName || snaps.before.vehicleName}
+                              {snaps.after.vehicleName ||
+                                snaps.before.vehicleName}
                             </h4>
                             <p className='text-sm text-gray-600'>
-                              <strong>Serial:</strong> {snaps.after.serialNumber || snaps.before.serialNumber}
+                              <strong>Serial:</strong>{' '}
+                              {snaps.after.serialNumber ||
+                                snaps.before.serialNumber}
                             </p>
                             <p className='text-sm text-gray-600'>
-                              <strong>GMPT:</strong> {snaps.after.gmptCode || snaps.before.gmptCode}
+                              <strong>GMPT:</strong>{' '}
+                              {snaps.after.gmptCode ||
+                                snaps.before.gmptCode}
                             </p>
                           </div>
                         </div>
 
                         <div className='grid grid-cols-2 gap-x-4 gap-y-1 text-sm mb-4'>
                           <div>
-                            <p><strong>Customer:</strong> <span className={getChangeStyle(snaps.before.customer_name, snaps.after.customer_name)}>{snaps.after.customer_name || 'N/A'}</span></p>
-                            <p><strong>Site:</strong> <span className={getChangeStyle(snaps.before.site_name, snaps.after.site_name)}>{snaps.after.site_name || 'N/A'}</span></p>
-                            <p><strong>Department:</strong> <span className={getChangeStyle(snaps.before.dept_name, snaps.after.dept_name)}>{snaps.after.dept_name || 'N/A'}</span></p>
+                            <p>
+                              <strong>Customer:</strong>{' '}
+                              <span
+                                className={getChangeStyle(
+                                  snaps.before.customer_name,
+                                  snaps.after.customer_name
+                                )}
+                              >
+                                {snaps.after.customer_name || 'N/A'}
+                              </span>
+                            </p>
+                            <p>
+                              <strong>Site:</strong>{' '}
+                              <span
+                                className={getChangeStyle(
+                                  snaps.before.site_name,
+                                  snaps.after.site_name
+                                )}
+                              >
+                                {snaps.after.site_name || 'N/A'}
+                              </span>
+                            </p>
+                            <p>
+                              <strong>Department:</strong>{' '}
+                              <span
+                                className={getChangeStyle(
+                                  snaps.before.dept_name,
+                                  snaps.after.dept_name
+                                )}
+                              >
+                                {snaps.after.dept_name || 'N/A'}
+                              </span>
+                            </p>
                           </div>
                           <div>
-                            <p><strong>Firmware Version:</strong></p>
-                            <p className={getChangeStyle(snaps.before.firmwareVersion, snaps.after.firmwareVersion)}>
+                            <p>
+                              <strong>Firmware Version:</strong>
+                            </p>
+                            <p
+                              className={getChangeStyle(
+                                snaps.before.firmwareVersion,
+                                snaps.after.firmwareVersion
+                              )}
+                            >
                               {snaps.after.firmwareVersion || 'N/A'}
                             </p>
                           </div>
@@ -1356,14 +1959,61 @@ const VehicleDashboard: React.FC = () => {
 
                         <div className='grid grid-cols-2 gap-x-4 gap-y-1 text-sm mb-4'>
                           <div>
-                            <p><strong>Screen Version:</strong> <span className={getChangeStyle(snaps.before.screenVersion, snaps.after.screenVersion)}>{snaps.after.screenVersion || 'N/A'}</span></p>
-                            <p><strong>ExpModu Version:</strong> <span className={getChangeStyle(snaps.before.expansionVersion, snaps.after.expansionVersion)}>{snaps.after.expansionVersion || 'N/A'}</span></p>
+                            <p>
+                              <strong>Screen Version:</strong>{' '}
+                              <span
+                                className={getChangeStyle(
+                                  snaps.before.screenVersion,
+                                  snaps.after.screenVersion
+                                )}
+                              >
+                                {snaps.after.screenVersion || 'N/A'}
+                              </span>
+                            </p>
+                            <p>
+                              <strong>ExpModu Version:</strong>{' '}
+                              <span
+                                className={getChangeStyle(
+                                  snaps.before.expansionVersion,
+                                  snaps.after.expansionVersion
+                                )}
+                              >
+                                {snaps.after.expansionVersion || 'N/A'}
+                              </span>
+                            </p>
                           </div>
                           <div>
-                            <p><strong>Vehicle Model:</strong> <span className={getChangeStyle(snaps.before.vehicleModel, snaps.after.vehicleModel)}>{snaps.after.vehicleModel || 'N/A'}</span></p>
-                            <p><strong>Sim Number:</strong> <span className={getChangeStyle(snaps.before.simNumber, snaps.after.simNumber)}>{snaps.after.simNumber || 'N/A'}</span></p>
-                            <p><strong>Last Connection:</strong></p>
-                            <p className={getChangeStyle(snaps.before.lastConnection, snaps.after.lastConnection)}>
+                            <p>
+                              <strong>Vehicle Model:</strong>{' '}
+                              <span
+                                className={getChangeStyle(
+                                  snaps.before.vehicleModel,
+                                  snaps.after.vehicleModel
+                                )}
+                              >
+                                {snaps.after.vehicleModel || 'N/A'}
+                              </span>
+                            </p>
+                            <p>
+                              <strong>Sim Number:</strong>{' '}
+                              <span
+                                className={getChangeStyle(
+                                  snaps.before.simNumber,
+                                  snaps.after.simNumber
+                                )}
+                              >
+                                {snaps.after.simNumber || 'N/A'}
+                              </span>
+                            </p>
+                            <p>
+                              <strong>Last Connection:</strong>
+                            </p>
+                            <p
+                              className={getChangeStyle(
+                                snaps.before.lastConnection,
+                                snaps.after.lastConnection
+                              )}
+                            >
                               {snaps.after.lastConnection || 'N/A'}
                             </p>
                           </div>
@@ -1374,35 +2024,205 @@ const VehicleDashboard: React.FC = () => {
                         <div className='grid grid-cols-2 gap-x-4 gap-y-1 text-sm'>
                           <div>
                             <p>
-                              <span className={`${getBooleanStatusText((typeof snaps.after.vorSetting === 'string' && snaps.after.vorSetting === 'false') || (typeof snaps.after.vorSetting === 'boolean' && snaps.after.vorSetting === false), 'Off', 'On', true).colorClass} ${getChangeStyle(snaps.before.vorSetting, snaps.after.vorSetting)}`}>
-                                <strong>VOR:</strong> {getBooleanStatusText((typeof snaps.after.vorSetting === 'string' && snaps.after.vorSetting === 'false') || (typeof snaps.after.vorSetting === 'boolean' && snaps.after.vorSetting === false), 'Off', 'On', true).text}
+                              <span
+                                className={`${
+                                  getBooleanStatusText(
+                                    (typeof snaps.after.vorSetting ===
+                                      'string' &&
+                                      snaps.after.vorSetting ===
+                                        'false') ||
+                                      (typeof snaps.after.vorSetting ===
+                                        'boolean' &&
+                                        snaps.after.vorSetting === false),
+                                    'Off',
+                                    'On',
+                                    true
+                                  ).colorClass
+                                } ${getChangeStyle(
+                                  snaps.before.vorSetting,
+                                  snaps.after.vorSetting
+                                )}`}
+                              >
+                                <strong>VOR:</strong>{' '}
+                                {
+                                  getBooleanStatusText(
+                                    (typeof snaps.after.vorSetting ===
+                                      'string' &&
+                                      snaps.after.vorSetting ===
+                                        'false') ||
+                                      (typeof snaps.after.vorSetting ===
+                                        'boolean' &&
+                                        snaps.after.vorSetting === false),
+                                    'Off',
+                                    'On',
+                                    true
+                                  ).text
+                                }
                               </span>
                             </p>
-                            <p><strong>LO Reason:</strong> <span className={getChangeStyle(snaps.before.loReason, snaps.after.loReason)}>{snaps.after.loReason || 'N/A'}</span></p>
-                            <p><strong>Recalibration Date:</strong> <span className={getChangeStyle(snaps.before.impactRecalibrationDate, snaps.after.impactRecalibrationDate)}>{snaps.after.impactRecalibrationDate || 'N/A'}</span></p>
                             <p>
-                              <span className={`${getBooleanStatusText(snaps.after.impactLockout, 'On', 'Off', true).colorClass} ${getChangeStyle(snaps.before.impactLockout, snaps.after.impactLockout)}`}>
-                                <strong>Impact Lockouts:</strong> {getBooleanStatusText(snaps.after.impactLockout, 'On', 'Off', true).text}
+                              <strong>LO Reason:</strong>{' '}
+                              <span
+                                className={getChangeStyle(
+                                  snaps.before.loReason,
+                                  snaps.after.loReason
+                                )}
+                              >
+                                {snaps.after.loReason || 'N/A'}
                               </span>
                             </p>
                             <p>
-                              <span className={`${getBooleanStatusText(snaps.after.fullLockoutEnabled, 'On', 'Off', true).colorClass} ${getChangeStyle(snaps.before.fullLockoutEnabled, snaps.after.fullLockoutEnabled)}`}>
-                                <strong>Full Lockout:</strong> {getBooleanStatusText(snaps.after.fullLockoutEnabled, 'On', 'Off', true).text}
+                              <strong>Recalibration Date:</strong>{' '}
+                              <span
+                                className={getChangeStyle(
+                                  snaps.before.impactRecalibrationDate,
+                                  snaps.after.impactRecalibrationDate
+                                )}
+                              >
+                                {snaps.after.impactRecalibrationDate ||
+                                  'N/A'}
                               </span>
                             </p>
-                            <p><strong>Full Lockout Timeout:</strong> <span className={getChangeStyle(snaps.before.fullLockoutTimeout, snaps.after.fullLockoutTimeout)}>{snaps.after.fullLockoutTimeout || 0}s</span></p>
-                            <p><strong>Checklist Timeout:</strong> <span className={getChangeStyle(snaps.before.surveyTimeout, snaps.after.surveyTimeout)}>{snaps.after.surveyTimeout || 0}s</span></p>
-                            <p><strong>Idle Timeout:</strong> <span className={getChangeStyle(snaps.before.seatIdle, snaps.after.seatIdle)}>{snaps.after.seatIdle !== null ? snaps.after.seatIdle + 's' : 'N/As'}</span></p>
+                            <p>
+                              <span
+                                className={`${
+                                  getBooleanStatusText(
+                                    snaps.after.impactLockout,
+                                    'On',
+                                    'Off',
+                                    true
+                                  ).colorClass
+                                } ${getChangeStyle(
+                                  snaps.before.impactLockout,
+                                  snaps.after.impactLockout
+                                )}`}
+                              >
+                                <strong>Impact Lockouts:</strong>{' '}
+                                {
+                                  getBooleanStatusText(
+                                    snaps.after.impactLockout,
+                                    'On',
+                                    'Off',
+                                    true
+                                  ).text
+                                }
+                              </span>
+                            </p>
+                            <p>
+                              <span
+                                className={`${
+                                  getBooleanStatusText(
+                                    snaps.after.fullLockoutEnabled,
+                                    'On',
+                                    'Off',
+                                    true
+                                  ).colorClass
+                                } ${getChangeStyle(
+                                  snaps.before.fullLockoutEnabled,
+                                  snaps.after.fullLockoutEnabled
+                                )}`}
+                              >
+                                <strong>Full Lockout:</strong>{' '}
+                                {
+                                  getBooleanStatusText(
+                                    snaps.after.fullLockoutEnabled,
+                                    'On',
+                                    'Off',
+                                    true
+                                  ).text
+                                }
+                              </span>
+                            </p>
+                            <p>
+                              <strong>Full Lockout Timeout:</strong>{' '}
+                              <span
+                                className={getChangeStyle(
+                                  snaps.before.fullLockoutTimeout,
+                                  snaps.after.fullLockoutTimeout
+                                )}
+                              >
+                                {snaps.after.fullLockoutTimeout || 0}s
+                              </span>
+                            </p>
+                            <p>
+                              <strong>Checklist Timeout:</strong>{' '}
+                              <span
+                                className={getChangeStyle(
+                                  snaps.before.surveyTimeout,
+                                  snaps.after.surveyTimeout
+                                )}
+                              >
+                                {snaps.after.surveyTimeout || 0}s
+                              </span>
+                            </p>
+                            <p>
+                              <strong>Idle Timeout:</strong>{' '}
+                              <span
+                                className={getChangeStyle(
+                                  snaps.before.seatIdle,
+                                  snaps.after.seatIdle
+                                )}
+                              >
+                                {snaps.after.seatIdle !== null
+                                  ? snaps.after.seatIdle + 's'
+                                  : 'N/As'}
+                              </span>
+                            </p>
                           </div>
                           <div>
                             <p>
-                              <span className={`${getBooleanStatusText(snaps.after.lockoutCode === '0', 'Unlocked', 'Locked', true).colorClass} ${getChangeStyle(snaps.before.lockoutCode, snaps.after.lockoutCode)}`}>
-                                <strong>Lockout Status:</strong> {getBooleanStatusText(snaps.after.lockoutCode === '0', 'Unlocked', 'Locked', true).text}
+                              <span
+                                className={`${
+                                  getBooleanStatusText(
+                                    snaps.after.lockoutCode === '0',
+                                    'Unlocked',
+                                    'Locked',
+                                    true
+                                  ).colorClass
+                                } ${getChangeStyle(
+                                  snaps.before.lockoutCode,
+                                  snaps.after.lockoutCode
+                                )}`}
+                              >
+                                <strong>Lockout Status:</strong>{' '}
+                                {
+                                  getBooleanStatusText(
+                                    snaps.after.lockoutCode === '0',
+                                    'Unlocked',
+                                    'Locked',
+                                    true
+                                  ).text
+                                }
                               </span>
                             </p>
-                            <p><strong>Checklist Schedule:</strong> <span className={getChangeStyle(snaps.before.preopSchedule, snaps.after.preopSchedule)}>{snaps.after.preopSchedule || 'N/A'}</span></p>
-                            <p className={`${snaps.after.redImpactThreshold && snaps.after.redImpactThreshold > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                              <strong>Red Impact Threshold:</strong> <span className={getChangeStyle(snaps.before.redImpactThreshold, snaps.after.redImpactThreshold)}>{snaps.after.redImpactThreshold || 0}g</span>
+                            <p>
+                              <strong>Checklist Schedule:</strong>{' '}
+                              <span
+                                className={getChangeStyle(
+                                  snaps.before.preopSchedule,
+                                  snaps.after.preopSchedule
+                                )}
+                              >
+                                {snaps.after.preopSchedule || 'N/A'}
+                              </span>
+                            </p>
+                            <p
+                              className={`${
+                                snaps.after.redImpactThreshold &&
+                                snaps.after.redImpactThreshold > 0
+                                  ? 'text-green-500'
+                                  : 'text-red-500'
+                              }`}
+                            >
+                              <strong>Red Impact Threshold:</strong>{' '}
+                              <span
+                                className={getChangeStyle(
+                                  snaps.before.redImpactThreshold,
+                                  snaps.after.redImpactThreshold
+                                )}
+                              >
+                                {snaps.after.redImpactThreshold || 0}g
+                              </span>
                             </p>
                           </div>
                         </div>
@@ -1418,7 +2238,10 @@ const VehicleDashboard: React.FC = () => {
         {/* Popup Modals */}
         {showPopup.masterCodes && activeVehicleId && (
           <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
-            <div ref={popupRef} className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'>
+            <div
+              ref={popupRef}
+              className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'
+            >
               <h3 className='text-lg font-semibold mb-4'>
                 Master Codes for {getVehicleDisplayName(activeVehicleId)}
               </h3>
@@ -1432,15 +2255,24 @@ const VehicleDashboard: React.FC = () => {
                   <table className='min-w-full bg-white'>
                     <thead>
                       <tr className='w-full h-16 border-b border-gray-200 bg-gray-50'>
-                        <th className='text-left pl-4'>Master Code User</th>
+                        <th className='text-left pl-4'>
+                          Master Code User
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {masterCodesByVehicle[activeVehicleId].map((user, idx) => (
-                        <tr key={idx} className='h-12 border-b border-gray-200'>
-                          <td className='text-left pl-4'>{user.master_code_user}</td>
-                        </tr>
-                      ))}
+                      {masterCodesByVehicle[activeVehicleId].map(
+                        (user, idx) => (
+                          <tr
+                            key={idx}
+                            className='h-12 border-b border-gray-200'
+                          >
+                            <td className='text-left pl-4'>
+                              {user.master_code_user}
+                            </td>
+                          </tr>
+                        )
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1460,16 +2292,21 @@ const VehicleDashboard: React.FC = () => {
         {/* Blacklisted Drivers Popup */}
         {showPopup.blacklistDrivers && activeVehicleId && (
           <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
-            <div ref={popupRef} className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'>
+            <div
+              ref={popupRef}
+              className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'
+            >
               <h3 className='text-lg font-semibold mb-4'>
-                Blacklisted Drivers for {getVehicleDisplayName(activeVehicleId)}
+                Blacklisted Drivers for{' '}
+                {getVehicleDisplayName(activeVehicleId)}
               </h3>
               {loadingStates.blacklistedDrivers ? (
                 <div className='flex items-center text-blue-500'>
                   <span className='mr-2 inline-block w-4 h-4 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
                   Loading blacklisted drivers...
                 </div>
-              ) : blacklistedDriversByVehicle[activeVehicleId]?.length > 0 ? (
+              ) : blacklistedDriversByVehicle[activeVehicleId]?.length >
+                0 ? (
                 <div className='overflow-x-auto'>
                   <table className='min-w-full bg-white'>
                     <thead>
@@ -1480,18 +2317,31 @@ const VehicleDashboard: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {blacklistedDriversByVehicle[activeVehicleId].map((driver, idx) => (
-                        <tr key={idx} className='h-12 border-b border-gray-200 bg-red-100/50'>
-                          <td className='text-left pl-4'>{driver.driver_name || 'Unknown'}</td>
-                          <td className='text-left pl-4'>{driver.driver_id || 'N/A'}</td>
-                          <td className='text-left pl-4'>{driver.card_id || 'N/A'}</td>
-                        </tr>
-                      ))}
+                      {blacklistedDriversByVehicle[activeVehicleId].map(
+                        (driver, idx) => (
+                          <tr
+                            key={idx}
+                            className='h-12 border-b border-gray-200 bg-red-100/50'
+                          >
+                            <td className='text-left pl-4'>
+                              {driver.driver_name || 'Unknown'}
+                            </td>
+                            <td className='text-left pl-4'>
+                              {driver.driver_id || 'N/A'}
+                            </td>
+                            <td className='text-left pl-4'>
+                              {driver.card_id || 'N/A'}
+                            </td>
+                          </tr>
+                        )
+                      )}
                     </tbody>
                   </table>
                 </div>
               ) : (
-                <p className='text-gray-600'>No blacklisted drivers found.</p>
+                <p className='text-gray-600'>
+                  No blacklisted drivers found.
+                </p>
               )}
               <button
                 className='mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700'
@@ -1506,9 +2356,13 @@ const VehicleDashboard: React.FC = () => {
         {/* Vehicle Logins Popup */}
         {showPopup.vehicleLogins && activeVehicleId && (
           <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
-            <div ref={popupRef} className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'>
+            <div
+              ref={popupRef}
+              className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'
+            >
               <h3 className='text-lg font-semibold mb-4'>
-                Recent Vehicle Logins for {getVehicleDisplayName(activeVehicleId)}
+                Recent Vehicle Logins for{' '}
+                {getVehicleDisplayName(activeVehicleId)}
               </h3>
               {loadingStates.vehicleLogins ? (
                 <div className='flex items-center text-blue-500'>
@@ -1528,49 +2382,61 @@ const VehicleDashboard: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {vehicleLoginsByVehicle[activeVehicleId].map((login, idx) => (
-                        <tr
-                          key={idx}
-                          className={`h-12 border-b border-gray-200 ${
-                            login.accepted !== undefined
-                              ? login.accepted
-                                ? 'bg-green-100/50'
-                                : 'bg-red-100/50'
-                              : ''
-                          }`}
-                        >
-                          <td className='text-left pl-4'>{login.driver_name || 'Unknown'}</td>
-                          <td className='text-left pl-4'>{login.driver_id || 'N/A'}</td>
-                          <td className='text-left pl-4'>{login.facility_code || 'N/A'}</td>
-                          <td className='text-left pl-4'>
-                            {login.login_time
-                              ? typeof login.login_time === 'string'
-                                ? login.login_time
-                                : new Date(login.login_time).toLocaleString()
-                              : 'N/A'}
-                          </td>
-                          <td
-                            className={`text-left pl-4 ${
+                      {vehicleLoginsByVehicle[activeVehicleId].map(
+                        (login, idx) => (
+                          <tr
+                            key={idx}
+                            className={`h-12 border-b border-gray-200 ${
                               login.accepted !== undefined
                                 ? login.accepted
-                                  ? 'text-green-600'
-                                  : 'text-red-600'
-                                : 'text-gray-500'
+                                  ? 'bg-green-100/50'
+                                  : 'bg-red-100/50'
+                                : ''
                             }`}
                           >
-                            {login.accepted !== undefined
-                              ? login.accepted
-                                ? 'Yes'
-                                : 'No'
-                              : 'Unknown'}
-                          </td>
-                        </tr>
-                      ))}
+                            <td className='text-left pl-4'>
+                              {login.driver_name || 'Unknown'}
+                            </td>
+                            <td className='text-left pl-4'>
+                              {login.driver_id || 'N/A'}
+                            </td>
+                            <td className='text-left pl-4'>
+                              {login.facility_code || 'N/A'}
+                            </td>
+                            <td className='text-left pl-4'>
+                              {login.login_time
+                                ? typeof login.login_time === 'string'
+                                  ? login.login_time
+                                  : new Date(
+                                      login.login_time
+                                    ).toLocaleString()
+                                : 'N/A'}
+                            </td>
+                            <td
+                              className={`text-left pl-4 ${
+                                login.accepted !== undefined
+                                  ? login.accepted
+                                    ? 'text-green-600'
+                                    : 'text-red-600'
+                                  : 'text-gray-500'
+                              }`}
+                            >
+                              {login.accepted !== undefined
+                                ? login.accepted
+                                  ? 'Yes'
+                                  : 'No'
+                                : 'Unknown'}
+                            </td>
+                          </tr>
+                        )
+                      )}
                     </tbody>
                   </table>
                 </div>
               ) : (
-                <p className='text-gray-600'>No vehicle logins found in the last 7 days.</p>
+                <p className='text-gray-600'>
+                  No vehicle logins found in the last 7 days.
+                </p>
               )}
               <button
                 className='mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700'
@@ -1585,16 +2451,21 @@ const VehicleDashboard: React.FC = () => {
         {/* Last Driver Logins Popup */}
         {showPopup.lastDriverLogins && activeVehicleId && (
           <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
-            <div ref={popupRef} className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'>
+            <div
+              ref={popupRef}
+              className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'
+            >
               <h3 className='text-lg font-semibold mb-4'>
-                Last 10 Driver Logins for {getVehicleDisplayName(activeVehicleId)}
+                Last 10 Driver Logins for{' '}
+                {getVehicleDisplayName(activeVehicleId)}
               </h3>
               {loadingStates.lastDriverLogins ? (
                 <div className='flex items-center text-blue-500'>
                   <span className='mr-2 inline-block w-4 h-4 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin'></span>
                   Loading last driver logins...
                 </div>
-              ) : lastDriverLoginsByVehicle[activeVehicleId]?.length > 0 ? (
+              ) : lastDriverLoginsByVehicle[activeVehicleId]?.length >
+                0 ? (
                 <div className='overflow-x-auto'>
                   <table className='min-w-full bg-white'>
                     <thead>
@@ -1606,48 +2477,58 @@ const VehicleDashboard: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {lastDriverLoginsByVehicle[activeVehicleId].map((login, idx) => (
-                        <tr
-                          key={idx}
-                          className={`h-12 border-b border-gray-200 ${
-                            login?.accepted !== undefined
-                              ? login.accepted
-                                ? 'bg-green-100/50'
-                                : 'bg-red-100/50'
-                              : ''
-                          }`}
-                        >
-                          <td className='text-left pl-4'>{login?.driver_name || 'Unknown'}</td>
-                          <td className='text-left pl-4'>{login?.driver_id || 'N/A'}</td>
-                          <td className='text-left pl-4'>
-                            {login?.login_time
-                              ? typeof login.login_time === 'string'
-                                ? login.login_time
-                                : new Date(login.login_time).toLocaleString()
-                              : 'N/A'}
-                          </td>
-                          <td
-                            className={`text-left pl-4 ${
+                      {lastDriverLoginsByVehicle[activeVehicleId].map(
+                        (login, idx) => (
+                          <tr
+                            key={idx}
+                            className={`h-12 border-b border-gray-200 ${
                               login?.accepted !== undefined
                                 ? login.accepted
-                                  ? 'text-green-600'
-                                  : 'text-red-600'
-                                : 'text-gray-500'
+                                  ? 'bg-green-100/50'
+                                  : 'bg-red-100/50'
+                                : ''
                             }`}
                           >
-                            {login?.accepted !== undefined
-                              ? login.accepted
-                                ? 'Yes'
-                                : 'No'
-                              : 'Unknown'}
-                          </td>
-                        </tr>
-                      ))}
+                            <td className='text-left pl-4'>
+                              {login?.driver_name || 'Unknown'}
+                            </td>
+                            <td className='text-left pl-4'>
+                              {login?.driver_id || 'N/A'}
+                            </td>
+                            <td className='text-left pl-4'>
+                              {login?.login_time
+                                ? typeof login.login_time === 'string'
+                                  ? login.login_time
+                                  : new Date(
+                                      login.login_time
+                                    ).toLocaleString()
+                                : 'N/A'}
+                            </td>
+                            <td
+                              className={`text-left pl-4 ${
+                                login?.accepted !== undefined
+                                  ? login.accepted
+                                    ? 'text-green-600'
+                                    : 'text-red-600'
+                                  : 'text-gray-500'
+                              }`}
+                            >
+                              {login?.accepted !== undefined
+                                ? login.accepted
+                                  ? 'Yes'
+                                  : 'No'
+                                : 'Unknown'}
+                            </td>
+                          </tr>
+                        )
+                      )}
                     </tbody>
                   </table>
                 </div>
               ) : (
-                <p className='text-gray-600'>No login information available.</p>
+                <p className='text-gray-600'>
+                  No login information available.
+                </p>
               )}
               <button
                 className='mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700'
@@ -1662,7 +2543,10 @@ const VehicleDashboard: React.FC = () => {
         {/* Messages Sent Popup */}
         {showPopup.messagesSent && activeVehicleId && (
           <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
-            <div ref={popupRef} className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'>
+            <div
+              ref={popupRef}
+              className='bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto'
+            >
               <h3 className='text-lg font-semibold mb-4'>
                 Messages Sent to {getVehicleDisplayName(activeVehicleId)}
               </h3>
@@ -1683,40 +2567,48 @@ const VehicleDashboard: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {messagesSentByVehicle[activeVehicleId].map((msg, idx) => (
-                        <tr
-                          key={idx}
-                          className={`h-12 border-b border-gray-200 ${
-                            msg.status === 'done'
-                              ? 'bg-green-100/50'
-                              : msg.status === 'in_queue'
-                              ? 'bg-amber-100/50'
-                              : ''
-                          }`}
-                        >
-                          <td className='text-left pl-4'>{msg.message_type || 'Unknown'}</td>
-                          <td className='text-left pl-4 max-w-xs truncate'>
-                            {msg.message_text || 'N/A'}
-                          </td>
-                          <td className='text-left pl-4'>{msg.message_timestamp || 'N/A'}</td>
-                          <td
-                            className={`text-left pl-4 ${
+                      {messagesSentByVehicle[activeVehicleId].map(
+                        (msg, idx) => (
+                          <tr
+                            key={idx}
+                            className={`h-12 border-b border-gray-200 ${
                               msg.status === 'done'
-                                ? 'text-green-600 font-semibold'
+                                ? 'bg-green-100/50'
                                 : msg.status === 'in_queue'
-                                ? 'text-amber-600 font-semibold'
-                                : 'text-gray-500'
+                                ? 'bg-amber-100/50'
+                                : ''
                             }`}
                           >
-                            {msg.status || 'N/A'}
-                          </td>
-                        </tr>
-                      ))}
+                            <td className='text-left pl-4'>
+                              {msg.message_type || 'Unknown'}
+                            </td>
+                            <td className='text-left pl-4 max-w-xs truncate'>
+                              {msg.message_text || 'N/A'}
+                            </td>
+                            <td className='text-left pl-4'>
+                              {msg.message_timestamp || 'N/A'}
+                            </td>
+                            <td
+                              className={`text-left pl-4 ${
+                                msg.status === 'done'
+                                  ? 'text-green-600 font-semibold'
+                                  : msg.status === 'in_queue'
+                                  ? 'text-amber-600 font-semibold'
+                                  : 'text-gray-500'
+                              }`}
+                            >
+                              {msg.status || 'N/A'}
+                            </td>
+                          </tr>
+                        )
+                      )}
                     </tbody>
                   </table>
                 </div>
               ) : (
-                <p className='text-gray-600'>No messages found in the last 7 days.</p>
+                <p className='text-gray-600'>
+                  No messages found in the last 7 days.
+                </p>
               )}
               <button
                 className='mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700'
