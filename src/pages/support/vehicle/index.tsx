@@ -663,6 +663,56 @@ const VehicleDashboard: React.FC = () => {
     return `Vehicle ${vehicleId}`;
   };
 
+  // Helper function to format dates for snapshot comparison
+  const formatSnapshotDate = (dateString: string | null | undefined): string => {
+    if (!dateString) return 'N/A';
+    
+    try {
+      // Handle different date formats
+      let date: Date;
+      
+      // If it's in DD/MM/YYYY format or similar with slashes
+      if (dateString.includes('/')) {
+        const parts = dateString.split(' ');
+        const datePart = parts[0];
+        const timePart = parts[1] || '';
+        
+        // Try DD/MM/YYYY format first
+        const dateComponents = datePart.split('/');
+        if (dateComponents.length === 3) {
+          const day = parseInt(dateComponents[0]);
+          const month = parseInt(dateComponents[1]) - 1; // JavaScript months are 0-indexed
+          const year = parseInt(dateComponents[2]);
+          
+          if (timePart) {
+            const timeComponents = timePart.split(':');
+            const hours = parseInt(timeComponents[0]) || 0;
+            const minutes = parseInt(timeComponents[1]) || 0;
+            const seconds = parseInt(timeComponents[2]) || 0;
+            date = new Date(year, month, day, hours, minutes, seconds);
+          } else {
+            date = new Date(year, month, day);
+          }
+        } else {
+          date = new Date(dateString);
+        }
+      } else {
+        // Try standard Date parsing
+        date = new Date(dateString);
+      }
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return dateString; // Return original if can't parse
+      }
+      
+      // Format as MM/dd/yyyy HH:mm
+      return format(date, 'MM/dd/yyyy HH:mm');
+    } catch (error) {
+      return dateString; // Return original if any error
+    }
+  };
+
   const isOlderThanTwoWeeks = (
     dateString: string | null | undefined
   ): boolean => {
@@ -1507,12 +1557,11 @@ const VehicleDashboard: React.FC = () => {
                       <div className='flex justify-between text-sm text-gray-600 mt-2'>
                         <span>
                           Before:{' '}
-                          {snaps.before.snapshot_date ||
-                          snaps.before.query_execution_date
+                          {(snaps.before.snapshot_date || snaps.before.query_execution_date)
                             ? format(
                                 new Date(
                                   snaps.before.snapshot_date ||
-                                    snaps.before.query_execution_date
+                                    snaps.before.query_execution_date!
                                 ),
                                 'MM/dd/yyyy HH:mm'
                               )
@@ -1520,12 +1569,11 @@ const VehicleDashboard: React.FC = () => {
                         </span>
                         <span>
                           After:{' '}
-                          {snaps.after.snapshot_date ||
-                          snaps.after.query_execution_date
+                          {(snaps.after.snapshot_date || snaps.after.query_execution_date)
                             ? format(
                                 new Date(
                                   snaps.after.snapshot_date ||
-                                    snaps.after.query_execution_date
+                                    snaps.after.query_execution_date!
                                 ),
                                 'MM/dd/yyyy HH:mm'
                               )
@@ -1673,7 +1721,7 @@ const VehicleDashboard: React.FC = () => {
                                 snaps.after.lastConnection
                               )}
                             >
-                              {snaps.before.lastConnection || 'N/A'}
+                              {formatSnapshotDate(snaps.before.lastConnection)}
                             </p>
                           </div>
                         </div>
@@ -1738,8 +1786,7 @@ const VehicleDashboard: React.FC = () => {
                                   snaps.after.impactRecalibrationDate
                                 )}
                               >
-                                {snaps.before.impactRecalibrationDate ||
-                                  'N/A'}
+                                {formatSnapshotDate(snaps.before.impactRecalibrationDate)}
                               </span>
                             </p>
                             <p>
@@ -2014,7 +2061,7 @@ const VehicleDashboard: React.FC = () => {
                                 snaps.after.lastConnection
                               )}
                             >
-                              {snaps.after.lastConnection || 'N/A'}
+                              {formatSnapshotDate(snaps.after.lastConnection)}
                             </p>
                           </div>
                         </div>
@@ -2079,8 +2126,7 @@ const VehicleDashboard: React.FC = () => {
                                   snaps.after.impactRecalibrationDate
                                 )}
                               >
-                                {snaps.after.impactRecalibrationDate ||
-                                  'N/A'}
+                                {formatSnapshotDate(snaps.after.impactRecalibrationDate)}
                               </span>
                             </p>
                             <p>
@@ -2204,6 +2250,7 @@ const VehicleDashboard: React.FC = () => {
                                 )}
                               >
                                 {snaps.after.preopSchedule || 'N/A'}
+                             
                               </span>
                             </p>
                             <p
