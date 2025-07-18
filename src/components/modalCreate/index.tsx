@@ -66,6 +66,14 @@ const TicketModal = ({
     setIsSubmitting(true);
 
     try {
+      // Get the authentication token
+      const token = localStorage.getItem('accessToken');
+
+      if (!token) {
+        toast.error('Authentication token not found. Please log in again.');
+        return;
+      }
+
       // Build your payload object
       const ticketPayload: Partial<Ticket> = {
         ...parcialTicketData,
@@ -84,13 +92,14 @@ const TicketModal = ({
 
       console.log('Ticket Payload:', ticketPayload);
 
-      // Send JSON directly with the proper header.
+      // Send JSON directly with the proper header including authentication
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/tickets`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(ticketPayload),
         }
