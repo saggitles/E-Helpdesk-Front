@@ -713,6 +713,54 @@ const VehicleDashboard: React.FC = () => {
     }
   };
 
+  // Helper function to safely parse snapshot dates for comparison headers
+  const parseSnapshotDateSafely = (snapshotDate: string | null | undefined, queryDate: string | null | undefined): string => {
+    const dateToUse = snapshotDate || queryDate;
+    if (!dateToUse) return 'N/A';
+    
+    try {
+      let date: Date;
+      
+      // If it's in DD/MM/YYYY format
+      if (dateToUse.includes('/')) {
+        const parts = dateToUse.split(' ');
+        const datePart = parts[0];
+        const timePart = parts[1] || '';
+        
+        const dateComponents = datePart.split('/');
+        if (dateComponents.length === 3) {
+          const day = parseInt(dateComponents[0]);
+          const month = parseInt(dateComponents[1]) - 1;
+          const year = parseInt(dateComponents[2]);
+          
+          if (timePart) {
+            const timeComponents = timePart.split(':');
+            const hours = parseInt(timeComponents[0]) || 0;
+            const minutes = parseInt(timeComponents[1]) || 0;
+            const seconds = parseInt(timeComponents[2]) || 0;
+            date = new Date(year, month, day, hours, minutes, seconds);
+          } else {
+            date = new Date(year, month, day);
+          }
+        } else {
+          date = new Date(dateToUse);
+        }
+      } else {
+        // ISO format or other standard format
+        date = new Date(dateToUse);
+      }
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return dateToUse; // Return original if can't parse
+      }
+      
+      return format(date, 'MM/dd/yyyy HH:mm');
+    } catch (error) {
+      return dateToUse; // Return original if any error
+    }
+  };
+
   const isOlderThanTwoWeeks = (
     dateString: string | null | undefined
   ): boolean => {
@@ -1557,27 +1605,11 @@ const VehicleDashboard: React.FC = () => {
                       <div className='flex justify-between text-sm text-gray-600 mt-2'>
                         <span>
                           Before:{' '}
-                          {(snaps.before.snapshot_date || snaps.before.query_execution_date)
-                            ? format(
-                                new Date(
-                                  snaps.before.snapshot_date ||
-                                    snaps.before.query_execution_date!
-                                ),
-                                'MM/dd/yyyy HH:mm'
-                              )
-                            : 'N/A'}
+                          {parseSnapshotDateSafely(snaps.before.snapshot_date, snaps.before.query_execution_date)}
                         </span>
                         <span>
                           After:{' '}
-                          {(snaps.after.snapshot_date || snaps.after.query_execution_date)
-                            ? format(
-                                new Date(
-                                  snaps.after.snapshot_date ||
-                                    snaps.after.query_execution_date!
-                                ),
-                                'MM/dd/yyyy HH:mm'
-                              )
-                            : 'N/A'}
+                          {parseSnapshotDateSafely(snaps.after.snapshot_date, snaps.after.query_execution_date)}
                         </span>
                       </div>
                     </div>
