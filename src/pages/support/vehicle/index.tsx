@@ -793,11 +793,11 @@ const VehicleDashboard: React.FC = () => {
     let date: Date;
     if (dateString.includes('/')) {
       const [datePart, timePart] = dateString.split(' ');
-      const [day, month, year] = datePart.split('/').map(Number);
+      const [day, month] = datePart.split('/').map(Number);
       const [hours, minutes] = timePart
         ? timePart.split(':').map(Number)
         : [0, 0];
-      date = new Date(year, month - 1, day, hours, minutes);
+      date = new Date(new Date().getFullYear(), month - 1, day, hours, minutes);
     } else {
       date = new Date(dateString);
     }
@@ -1091,12 +1091,30 @@ const VehicleDashboard: React.FC = () => {
                     {
                       vehicles.filter((v) => {
                         if (!v.vehicle_info.last_connection) return false;
-                        const threeDaysAgo = new Date();
-                        threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-                        return (
-                          new Date(v.vehicle_info.last_connection) <
-                          threeDaysAgo
-                        );
+                        
+                        try {
+                          let date: Date;
+                          const dateString = v.vehicle_info.last_connection;
+                          
+                          if (dateString.includes('/')) {
+                            const [datePart, timePart] = dateString.split(' ');
+                            const [day, month] = datePart.split('/').map(Number);
+                            const [hours, minutes] = timePart
+                              ? timePart.split(':').map(Number)
+                              : [0, 0];
+                            date = new Date(new Date().getFullYear(), month - 1, day, hours, minutes);
+                          } else {
+                            date = new Date(dateString);
+                          }
+                          
+                          if (isNaN(date.getTime())) return false;
+                          
+                          const threeDaysAgo = new Date();
+                          threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+                          return date < threeDaysAgo;
+                        } catch (error) {
+                          return false;
+                        }
                       }).length
                     }
                   </p>
@@ -1109,12 +1127,30 @@ const VehicleDashboard: React.FC = () => {
                     {
                       vehicles.filter((v) => {
                         if (!v.vehicle_info.last_connection) return false;
-                        const twoWeeksAgo = new Date();
-                        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-                        return (
-                          new Date(v.vehicle_info.last_connection) <
-                          twoWeeksAgo
-                        );
+                        
+                        try {
+                          let date: Date;
+                          const dateString = v.vehicle_info.last_connection;
+                          
+                          if (dateString.includes('/')) {
+                            const [datePart, timePart] = dateString.split(' ');
+                            const [day, month] = datePart.split('/').map(Number);
+                            const [hours, minutes] = timePart
+                              ? timePart.split(':').map(Number)
+                              : [0, 0];
+                            date = new Date(new Date().getFullYear(), month - 1, day, hours, minutes);
+                          } else {
+                            date = new Date(dateString);
+                          }
+                          
+                          if (isNaN(date.getTime())) return false;
+                          
+                          const twoWeeksAgo = new Date();
+                          twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+                          return date < twoWeeksAgo;
+                        } catch (error) {
+                          return false;
+                        }
                       }).length
                     }
                   </p>
@@ -2282,7 +2318,6 @@ const VehicleDashboard: React.FC = () => {
                                 )}
                               >
                                 {snaps.after.preopSchedule || 'N/A'}
-                             
                               </span>
                             </p>
                             <p
@@ -2484,11 +2519,43 @@ const VehicleDashboard: React.FC = () => {
                             </td>
                             <td className='text-left pl-4'>
                               {login.login_time
-                                ? typeof login.login_time === 'string'
-                                  ? login.login_time
-                                  : new Date(
-                                      login.login_time
-                                    ).toLocaleString()
+                                ? (() => {
+                                    try {
+                                      if (typeof login.login_time === 'string') {
+                                        // Check if it's in DD/MM/YYYY format
+                                        if (login.login_time.includes('/')) {
+                                          const parts = login.login_time.split(' ');
+                                          const datePart = parts[0];
+                                          const timePart = parts[1] || '';
+                                          
+                                          const dateComponents = datePart.split('/');
+                                          if (dateComponents.length === 3) {
+                                            const day = parseInt(dateComponents[0]);
+                                            const month = parseInt(dateComponents[1]) - 1;
+                                            const year = parseInt(dateComponents[2]);
+                                            
+                                            if (timePart) {
+                                              const timeComponents = timePart.split(':');
+                                              const hours = parseInt(timeComponents[0]) || 0;
+                                              const minutes = parseInt(timeComponents[1]) || 0;
+                                              const seconds = parseInt(timeComponents[2]) || 0;
+                                              const date = new Date(year, month, day, hours, minutes, seconds);
+                                              return isNaN(date.getTime()) ? login.login_time : date.toLocaleString();
+                                            } else {
+                                              const date = new Date(year, month, day);
+                                              return isNaN(date.getTime()) ? login.login_time : date.toLocaleDateString();
+                                            }
+                                          }
+                                        }
+                                        return login.login_time;
+                                      } else {
+                                        const date = new Date(login.login_time);
+                                        return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleString();
+                                      }
+                                    } catch (error) {
+                                      return login.login_time;
+                                    }
+                                  })()
                                 : 'N/A'}
                             </td>
                             <td
