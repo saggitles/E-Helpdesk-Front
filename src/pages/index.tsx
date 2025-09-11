@@ -87,7 +87,7 @@ export default function Home() {
     // Auto-redirect to dashboard after 5 seconds
     const redirectTimer = setTimeout(() => {
       router.push('/support/vehicle');
-    }, 5000);
+    }, 3000);
 
     return () => clearTimeout(redirectTimer);
   }, [router]);
