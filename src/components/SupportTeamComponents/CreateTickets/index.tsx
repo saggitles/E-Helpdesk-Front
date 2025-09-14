@@ -143,8 +143,6 @@ export const CreateTickets: React.FC<CreateTicketsProps> = ({
   const handleTypeChange = (
     event: React.ChangeEvent<HTMLSelectElement>
   ) => {
-    console.log('Hola');
-    console.log(event.target.value);
     setSelectedType(event.target.value);
   };
 
@@ -176,7 +174,6 @@ export const CreateTickets: React.FC<CreateTicketsProps> = ({
         );
       } else if (selectedPlatform === 'FleetIQ') {
         if (query.startsWith('cii_')) {
-          console.log('Aca estamos je');
           try {
             const response = await axios.get(
               `${process.env.NEXT_PUBLIC_API_URL}/api/fleetiq?vehicleId=${query}`,
@@ -187,16 +184,11 @@ export const CreateTickets: React.FC<CreateTicketsProps> = ({
               }
             );
 
-            console.log('Diego lo succiona');
-            console.log(response);
-
             if (response.data) {
               setResults([response.data]);
             } else {
               alert('GMTPID no encontrado en la respuesta.');
             }
-
-            console.log(response);
           } catch (error) {
             // Type narrowing for 'error'
             if (axios.isAxiosError(error)) {
@@ -234,8 +226,6 @@ export const CreateTickets: React.FC<CreateTicketsProps> = ({
                 },
               }
             );
-            console.log('Aca se esta haciendo la peticion');
-            console.log(response);
             setResults([response.data]);
           }
         }
@@ -273,11 +263,6 @@ export const CreateTickets: React.FC<CreateTicketsProps> = ({
         return;
       }
 
-      console.log(
-        'Ejecutando búsqueda de FleetIQ para GMPT ID:',
-        gmptCode
-      );
-
       const response = await axios.get(
         `${process.env.NEXT_PUBLIC_API_URL}/api/fleetiq?vehicleId=${gmptCode}`,
         {
@@ -286,8 +271,6 @@ export const CreateTickets: React.FC<CreateTicketsProps> = ({
           },
         }
       );
-
-      console.log('Respuesta de búsqueda automática:', response);
 
       if (response.data) {
         setResults([response.data]);
@@ -315,10 +298,6 @@ export const CreateTickets: React.FC<CreateTicketsProps> = ({
         const storedGmptCode = localStorage.getItem('selectedGmptCode');
 
         if (storedGmptCode && storedGmptCode.trim() !== '') {
-          console.log(
-            'GMPT ID encontrado en localStorage:',
-            storedGmptCode
-          );
           setQuery(storedGmptCode);
 
           // Si el GMPT ID comienza con "cii_", asumimos que es para FleetIQ
@@ -348,10 +327,6 @@ export const CreateTickets: React.FC<CreateTicketsProps> = ({
         const storedGmptCode = localStorage.getItem('selectedGmptCode');
 
         if (storedGmptCode && storedGmptCode.trim() !== '') {
-          console.log(
-            'GMPT ID encontrado en localStorage:',
-            storedGmptCode
-          );
           setQuery(storedGmptCode);
 
           // Si el GMPT ID comienza con "cii_", asumimos que es para FleetIQ
@@ -634,12 +609,8 @@ export const CreateTickets: React.FC<CreateTicketsProps> = ({
               </div>
               {results.length > 0 ? (
                 results.map((result, index) => {
-                  console.log('fffsbase ' + result.FSSS_BASE);
-                  console.log('fsssmult ' + result.FSSSMULTI);
                   const impactThreshold =
                     result.FSSS_BASE * result.FSSSMULTI;
-
-                  console.log(impactThreshold);
 
                   const blueImpactGForce = (
                     G_FORCE_COEFFICIENT *
