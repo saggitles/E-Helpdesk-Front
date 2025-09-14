@@ -4,7 +4,6 @@ import Searchbar from '../../generic_comp/searchbar';
 
 import { TicketRowItem } from '@/components/SupportTeamComponents';
 import * as XLSX from 'xlsx';
-// import TicketDoneAlert from '../TicketDoneAlert/TicketDoneAlert';
 
 import Image from 'next/image';
 import {
@@ -17,14 +16,14 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
   site_id,
 }) => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [page, setPage] = useState(1); // Estado para la página actual
-  const [hasMore, setHasMore] = useState(true); // Estado para manejar si hay más tickets por cargar
-  const limit = 100; // Número de tickets por página
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const limit = 100;
   const [currentPage, setCurrentPage] = useState(1);
   const ticketsPerPage = 12;
   const [totalPages, setTotalPages] = useState(0);
   const [searchResults, setSearchResults] = useState<Ticket[]>([]);
-  const [sortField, setSortField] = useState('id'); // Campo por defecto para ordenar
+  const [sortField, setSortField] = useState('id');
   const [sortOrder, setSortOrder] = useState('asc');
   const [showOnlyInProgress, setShowOnlyInProgress] = useState(false);
 
@@ -56,36 +55,20 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
   const handleImport = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    setIsLoading(true); // Start loading
-    console.log('Starting the import process...');
-
-    console.log('Borrar tickets primero');
+    setIsLoading(true);
 
     const token = localStorage.getItem('accessToken');
 
-    //   const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/deleteTicketsAndComents`, {
-    //     headers: {
-    //       'Authorization': `Bearer ${token}`,
-    //       'Content-Type': 'application/json',
-    //     },
-    //   });
-
-    //   console.log(response)
-
     const file = event.target.files?.[0];
-    let rowCounter = 0; // Inicializa el contador de filas
+    let rowCounter = 0;
     const maxEmptyColumns = 10;
-    const batchSize = 10; // Adjust the batch size as needed
+    const batchSize = 10;
 
     if (file) {
       const reader = new FileReader();
 
-      console.log('Leyendo el archivo');
-
       reader.onload = async (e) => {
         if (e.target) {
-          console.log('En el excel');
-
           const data = e.target.result;
           const workbook = XLSX.read(data, { type: 'binary' });
 
@@ -99,7 +82,7 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
             .sheet_to_json(sheet, { header: 1 })
             .slice(3)
             .forEach((row: any, index: number) => {
-              rowCounter++; // Incrementa el contador de filas
+              rowCounter++;
 
               if (
                 row.every(
@@ -116,18 +99,12 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
               const truncatedTitle =
                 words.length > 0 ? words.slice(0, 5).join(' ') : '';
 
-              console.log('FECHA FECHA DATE DATE');
-              console.log(row[1]);
-
               const utc_days = Math.floor(row[1] - 25569);
               const utc_value = utc_days * 86400;
-              const date_info = new Date(utc_value * 1000); // conversión de segundos a milisegundos
+              const date_info = new Date(utc_value * 1000);
 
-              // Ajustar la zona horaria ya que Date() asume que el parámetro está en UTC
               const offset = date_info.getTimezoneOffset() * 60000;
               const correctedDate = new Date(date_info.getTime() + offset);
-
-              console.log(correctedDate);
 
               const ticket = {
                 created_at:
@@ -150,25 +127,20 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
 
               ticketList.push(ticket);
 
-              // Check if there is a non-empty comment
               if (row[10] !== undefined && row[10] !== null) {
                 commentsList.push({
-                  id: 0, // default id value
+                  id: 0,
                   content: row[10],
-                  ticket_id: ticketList.length - 1, // This will be updated with IDTicket after creation
-                  author: '', // default author
-                  created_at: new Date().toISOString(), // default creation date
+                  ticket_id: ticketList.length - 1,
+                  author: '',
+                  created_at: new Date().toISOString(),
                 });
               }
             });
 
-          console.log('Total tickets: ', ticketList);
-          console.log('Total comments: ', commentsList);
-
           const createdTickets: { id: number; index: number }[] = [];
 
           try {
-            // Process tickets in batches
             for (let i = 0; i < ticketList.length; i += batchSize) {
               const batch = ticketList.slice(i, i + batchSize);
 
@@ -183,13 +155,6 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
                 }
               );
 
-              console.log(response);
-              console.log(
-                'Tickets importados exitosamente:',
-                response.data
-              );
-
-              // Assuming response.data.createdTickets contains the array of created tickets with their IDs
               response.data.createdTickets.forEach(
                 (createdTicket: any, idx: number) => {
                   createdTickets.push({
@@ -200,7 +165,6 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
               );
             }
 
-            // Update commentsList with the correct TicketID
             for (let comment of commentsList) {
               const associatedTicket = createdTickets.find(
                 (ticket) => ticket.index === comment.ticket_id
@@ -210,24 +174,17 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
               }
             }
 
-            console.log('Updated comments with Ticket IDs:', commentsList);
-
-            // Send comments to the other endpoint
             for (let comment of commentsList) {
               if (
                 comment.ticket_id !== undefined &&
                 comment.content !== null
               ) {
-                console.log(
-                  `Posting comment for TicketID ${comment.ticket_id}:`,
-                  comment.content
-                );
                 try {
                   const response = await axios.post(
                     `${process.env.NEXT_PUBLIC_API_URL}/api/comments`,
                     {
                       content: comment.content,
-                      ticket_id: comment.ticket_id, // Use the correct ID field from your API response
+                      ticket_id: comment.ticket_id,
                     },
                     {
                       headers: {
@@ -235,11 +192,6 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
                         'Content-Type': 'application/json',
                       },
                     }
-                  );
-
-                  console.log(
-                    'Comentario importado exitosamente:',
-                    response.data
                   );
                 } catch (error) {
                   console.error('Error al importar comentario', error);
@@ -249,7 +201,7 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
           } catch (error) {
             console.error('Error en el proceso de importación', error);
           } finally {
-            setIsLoading(false); // End loading
+            setIsLoading(false);
             window.location.reload();
           }
         }
@@ -257,7 +209,7 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
 
       reader.readAsBinaryString(file);
     } else {
-      setIsLoading(false); // End loading if no file is selected
+      setIsLoading(false);
     }
   };
 
@@ -308,14 +260,12 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
 
     setShowDoneAlert(ticketsChangedToDone);
 
-    // Actualizar la referencia de tickets anteriores después de la comparación
     prevTicketsRef.current = tickets;
   }, [tickets]);
 
   useEffect(() => {
-    // alert("El ticket es: " + site_id)
     const fetchTickets = async () => {
-      const token = localStorage.getItem('accessToken'); // Obtener el token de autenticación
+      const token = localStorage.getItem('accessToken');
 
       if (!token) {
         console.error('No access token found.');
@@ -328,7 +278,7 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
           {
             method: 'GET',
             headers: {
-              Authorization: `Bearer ${token}`, // Incluir el token en el encabezado
+              Authorization: `Bearer ${token}`,
               'Content-Type': 'application/json',
             },
           }
@@ -337,7 +287,6 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
         if (!response.ok) throw new Error('Error fetching tickets');
 
         const data = await response.json();
-        console.log('Data que quiero leer:', data);
 
         setTickets(data.tickets);
       } catch (error) {
@@ -419,17 +368,17 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
 
   const loadMoreTickets = () => {
     if (hasMore) {
-      setPage((prevPage) => prevPage + 1); // Incrementar la página
+      setPage((prevPage) => prevPage + 1);
     }
   };
 
   const loadPreviousTickets = () => {
     if (currentPage > 1) {
-      setCurrentPage(currentPage - 1); // Decrementar la página
+      setCurrentPage(currentPage - 1);
     }
   };
 
-  const [searchQuery, setSearchQuery] = useState(''); // Guarda el texto del input
+  const [searchQuery, setSearchQuery] = useState('');
 
   return (
     <>
@@ -443,7 +392,6 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
       ) : (
         <div className='bg-teal-50 min-h-screen py-16 px-6'>
           <div className='max-w-7xl mx-auto'>
-            {/* Table */}
             <div className='bg-white rounded-lg shadow-lg overflow-hidden'>
               <table className='w-full'>
                 <thead>
