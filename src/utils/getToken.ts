@@ -1,31 +1,23 @@
-//-------------Token Aplicacion -------------------------
 import axios from 'axios';
 
+const CLIENT_ID = 'A5aQWK2jyYAjxAgfSoXKKrRqJLHHoXwA';
+const CLIENT_SECRET = 'r8Io4D8iSkp6s2c3InTJ7xHG4-3Pc1RdT0MJmGWLLGWEiYLyVNTvEU46t7mQpTyT';
+const AUDIENCE = 'https://e-helpdesk-back-dgcjdsb9djh2hgbn.eastus-01.azurewebsites.net';
+const DOMAIN = 'https://dev-so03q0yu6n6ltwg2.us.auth0.com';
 
-export const getToken = async () => {
-
-
+export const getToken = async (): Promise<string | null> => {
   try {
-    const auth0TokenUrl = `https://${process.env.NEXT_PUBLIC_AUTH0_DOMAIN}/oauth/token`;
+    const response = await axios.post(`${DOMAIN}/oauth/token`, {
+      client_id: CLIENT_ID,
+      client_secret: CLIENT_SECRET,
+      audience: AUDIENCE,
+      grant_type: 'client_credentials',
+    });
 
-    const response = await axios.post(
-      auth0TokenUrl,
-      {
-        grant_type: 'client_credentials',
-        client_id: process.env.AUTH0_CLIENT_ID,
-        client_secret: process.env.AUTH0_CLIENT_SECRET,
-        audience: `https://www.ehelpdesk.com`   
-      }
-    );
-
-    const accessToken = response.data.access_token;
-
-
-    console.log("Aca esta el token de la aplicacion")
-    console.log(accessToken)
-    return accessToken;
+    const { access_token } = response.data;
+    
+    return access_token;
   } catch (error) {
-    console.error('Error al obtener el token de acceso:', error);
     return null;
   }
 };

@@ -26,7 +26,7 @@ export default function Login() {
         setProviders(providersData || {});
         setCsrfToken(csrfData || '');
       } catch (error) {
-        console.error('Error fetching auth data:', error);
+        // Silent error handling for auth data fetch
       }
     };
 
@@ -71,7 +71,6 @@ export default function Login() {
         setIsLoading(false);
       }
     } catch (error) {
-      console.error('Login error:', error);
       setError('An unexpected error occurred');
       setIsLoading(false);
     }
@@ -86,16 +85,14 @@ export default function Login() {
       });
       
       if (result?.error) {
-        console.error('Google sign-in error:', result.error);
         setError(result.error === 'DomainNotAllowed' 
           ? 'Your email domain is not authorized for this application' 
           : 'An error occurred during sign in');
         setIsLoading(false);
       } else {
-        console.log('Login successful, redirecting...');
+        // Silent success handling for Google login
       }
     } catch (error) {
-      console.error('Google login exception:', error);
       setError('An unexpected error occurred');
       setIsLoading(false);
     }

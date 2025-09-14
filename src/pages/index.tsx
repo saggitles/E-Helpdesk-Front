@@ -39,14 +39,6 @@ export default function Home() {
   });
 
   useEffect(() => {
-    // Display environment variables for debugging
-    console.log('Environment diagnostics:', {
-      NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-      NODE_ENV: process.env.NODE_ENV,
-      basePath: router.basePath,
-      assetPrefix: process.env.NEXT_PUBLIC_BASE_PATH || '',
-    });
-
     // Set diagnostic info for display
     setDiagnosticInfo({
       apiUrl: process.env.NEXT_PUBLIC_API_URL || 'Not set',
@@ -58,38 +50,32 @@ export default function Home() {
     // Check API status
     const checkApi = async () => {
       try {
-        // Simple ping to check if API is online
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/ping`,
+          `${process.env.NEXT_PUBLIC_API_URL}/health`,
           {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
             },
-            // Short timeout to prevent long waiting
-            signal: AbortSignal.timeout(5000),
           }
         );
 
         if (response.ok) {
           setApiStatus('online');
+          
+          // Redirect after successful API check
+          setTimeout(() => {
+            router.push('/support/tickets/pending');
+          }, 3000);
         } else {
           setApiStatus('offline');
         }
       } catch (error) {
-        console.error('API check failed:', error);
         setApiStatus('offline');
       }
     };
 
     checkApi();
-
-    // Auto-redirect to dashboard after 5 seconds
-    const redirectTimer = setTimeout(() => {
-      router.push('/support/vehicle');
-    }, 3000);
-
-    return () => clearTimeout(redirectTimer);
   }, [router]);
 
   return (

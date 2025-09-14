@@ -351,104 +351,12 @@ export const CreateTickets: React.FC<CreateTicketsProps> = ({
   return (
     <>
       <div className='bg-teal-50 min-h-screen text-center text-lg w-full'>
-        {/* <h1 className="text-gray-600">
-          Welcome to <span className="text-teal-700 font-bold">Collective Intelligence E-Helpdesk!</span> 
-        </h1> */}
-        {/* <form className="max-w-4xl mx-auto mt-5" onSubmit={handleSearch}>
-          <div className="flex">
-            <select className="bg-teal-100 text-sm font-medium text-teal-800 rounded-s-md text-center border border-teal-300" onChange={handleSelectChange}>
-              <option value="">Dashboard</option>
-              {dealers.map(dealer => (
-                <option key={dealer.id} value={dealer.id}>
-                  {dealer.client_name}
-                </option>
-              ))}
-            </select>
-
-            <select className="bg-teal-100 text-sm font-medium text-teal-800 text-center border border-teal-300" value={selectedCompany} onChange={handleCompanyChange}>
-              <option value="">Company</option>
-              {companies.map((company, index) => (
-                <option key={index} value={company.USER_NAME}>
-                  {company.USER_NAME}
-                </option>
-              ))}
-            </select>
-
-            <select className="bg-teal-100 text-sm font-medium text-teal-800 text-center border border-teal-300">
-              <option value="">Vehicle</option>
-              <option value="Driver">Driver</option>
-            </select>
-            <select
-              className="bg-teal-100 text-sm font-medium text-teal-800 text-center border border-teal-300"
-              value={selectedPlatform}
-              onChange={(e) => setSelectedPlatform(e.target.value)}
-            >
-              <option value="" disabled>
-                Platform
-              </option>
-              <option value="FleetXQ">FleetXQ</option>
-              <option value="FleetIQ">FleetIQ</option>
-              <option value="Fleet Focus">Fleet Focus</option>  
-            </select>
-
-            <select
-              className="bg-teal-100 text-sm font-medium text-teal-800 text-center border border-teal-300"
-              value={selectedType}
-              onChange={handleTypeChange} // Nuevo manejador de cambio
-            >
-              <option value="" disabled>
-                Type
-              </option>
-              <option value="Serial">Serial</option>
-              <option value="Name">Name</option>
-            </select>
-
-            <div className="relative w-full">
-              <input
-                type="search"
-                id="location-search"
-                className="block p-2.5 w-full z-20 text-sm text-teal-900 bg-teal-50 rounded-e-lg border-s-teal-50 border-s-2 border border-teal-300 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Search for Vehicle ID, serial ID or GMTP ID"
-                value={query}
-                onChange={handleChange}
-                required
-              />
-              <button
-                type="submit"
-                className="absolute top-0 end-0 h-full px-3.5 text-sm font-medium text-white bg-teal-400 rounded-e-lg border border-teal-500 hover:bg-teal-500 focus:ring-4 focus:outline-none focus:ring-blue-300"
-              >
-                <svg
-                  className="w-4 h-4"
-                  aria-hidden="true"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
-                  />
-                </svg>
-                <span className="sr-only">Search</span>
-              </button>
-            </div>
-          </div>
-        </form> */}
-
         <div className='w-full flex justify-center pb-2 mt-5 relative border border-teal-50 overflow-x-auto sm:rounded-lg '>
           <div className='bg-teal-50 w-1/2 m-auto'>
             <div className='flex items-center justify-between py-5 px-8'>
               <p className='border-l-2 border-teal-700 pl-3 text-teal-700 font-semibold'>
                 Equipment details
               </p>
-              <div>
-                {/* <button onClick={handleShowModal} className="bg-teal-50 border-2 border-teal-200 hover:bg-teal-500 hover:text-gray-50 px-4 py-2 rounded-md text-sm text-teal-900">
-                  Create Ticket
-                </button> */}
-              </div>
             </div>
           </div>
         </div>
@@ -647,7 +555,6 @@ export const CreateTickets: React.FC<CreateTicketsProps> = ({
                           Red Impact:{' '}
                         </label>
                         <span>{redImpactGForce}</span>
-                        {/* <span>{redImpactThreshold}</span> */}
                       </div>
                       <div className='text-center'>
                         <label className='font-bold flex'>
@@ -674,7 +581,7 @@ export const CreateTickets: React.FC<CreateTicketsProps> = ({
             </div>
           </div>
         </div>
-        {/* SECTION 3 */}
+
         <div className='w-full text-sm text-left rounded-md rtl:text-right text-gray-500 flex justify-center pb-4'>
           {/* DriverList */}
           <div className='w-84'>
@@ -752,7 +659,7 @@ export const CreateTickets: React.FC<CreateTicketsProps> = ({
             </div>
           </div>
         </div>
-        {/* SECTION 4 */}
+
         <div className='w-full text-sm text-left rounded-md rtl:text-right text-gray-500 flex justify-center pb-4'>
           {/* SupervisorList */}
           <div className='w-84'>
@@ -831,7 +738,7 @@ export const CreateTickets: React.FC<CreateTicketsProps> = ({
             </div>
           </div>
         </div>
-        {/* SECTION 5 */}
+
         <div className='w-full text-sm text-left rounded-md rtl:text-right text-gray-500 flex justify-center pb-4'>
           {/* PreopChecklists */}
           <div className='w-84'>
@@ -880,7 +787,6 @@ export const CreateTickets: React.FC<CreateTicketsProps> = ({
                                 <label className='font-bold flex'>
                                   Critical:{' '}
                                 </label>
-                                {/* <span>{checklist.IsCriticalQuestion ? 'Yes' : 'No'}</span> */}
                                 <span>{checklist.CRITICAL_ANS}</span>
                               </div>
                             </div>

@@ -51,7 +51,7 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
           gmptCode: storedGmptCode,
         });
       } catch (error) {
-        console.error('Error loading data from localStorage:', error);
+        // Error loading data from localStorage
       } finally {
         setTimeout(() => {
           setLoadingData(false);
@@ -84,7 +84,7 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
           }));
         }
       } catch (error) {
-        console.error('Error fetching customers:', error);
+        // Error fetching customers
       } finally {
         setTimeout(() => {
           setLoadingCustomers(false);
@@ -111,10 +111,9 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
           throw new Error(`HTTP error! Status: ${response.status}`);
 
         const data = await response.json();
-        console.log('Fetched Sites:', data);
         setSites(Array.isArray(data) ? data : []);
       } catch (error) {
-        console.error('Error fetching sites:', error);
+        // Error fetching sites
         setSites([]);
       } finally {
         setTimeout(() => {
@@ -130,7 +129,6 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
   // useEffect(() => {
   //   const fetchVehicleByGmpt = async () => {
   //     if (!filters.gmptCode) return;
-  //     console.log('Fetching vehicle by GMPT code:', filters.gmptCode);
   //     // ... rest of auto-population logic removed
   //   };
   //   fetchVehicleByGmpt();
@@ -141,7 +139,6 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
     customer: string;
     site: string;
   }) => {
-    console.log('User selected company:', selectedCompany);
     localStorage.setItem('selectedCustomer', selectedCompany.customer);
     localStorage.setItem('selectedSite', selectedCompany.site);
 
@@ -201,14 +198,8 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
   const handleSearch = () => {
     // Allow search if either customer is selected OR GMPT code is provided
     if (!filters.customer && !filters.gmptCode) {
-      console.error('Either Customer or GMPT Code is required for search.');
       return;
     }
-
-    console.log('Saving to local storage:');
-    console.log('Customer:', filters.customer || 'None selected');
-    console.log('Site:', filters.site || 'None selected');
-    console.log('GMPT:', filters.gmptCode || 'None input');
 
     // Store customer and site in local storage - Make sure we store the raw values
     localStorage.setItem('selectedCustomer', filters.customer || '');
@@ -218,14 +209,12 @@ const Navsearch: React.FC<NavsearchProps> = ({ onFilterChange }) => {
     // Clear cache to ensure fresh data on parameter change
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/clear-vehicle-cache`, {
       method: 'POST',
-    }).catch((err) => console.error('Failed to clear cache:', err));
+    }).catch((err) => {
+      // Failed to clear cache
+    });
 
     if (typeof onFilterChange === 'function') {
       onFilterChange();
-    } else {
-      console.warn(
-        'onFilterChange is not defined, skipping function call.'
-      );
     }
   };
 

@@ -243,7 +243,6 @@ const VehicleDashboard: React.FC = () => {
 
     // Allow search if either customer is provided OR GMPT code is provided
     if (!customer && !gmptCode) {
-      console.warn('Either Customer or GMPT Code is required for search.');
       setLoadingVehicles(false);
       setLoadingStates((prev) => ({ ...prev, vehicles: false }));
       return;
@@ -276,7 +275,7 @@ const VehicleDashboard: React.FC = () => {
         fetchVehicleStatus(vehicleCDs);
       }
     } catch (error) {
-      console.error('Error fetching vehicles:', error);
+      // Error fetching vehicles
     } finally {
       setLoadingStates((prev) => ({ ...prev, vehicles: false }));
       setLoadingVehicles(false);
@@ -322,7 +321,7 @@ const VehicleDashboard: React.FC = () => {
         })
       );
     } catch (error) {
-      console.error('Error fetching vehicle status:', error);
+      // Error fetching vehicle status
     } finally {
       setLoadingStates((prev) => ({ ...prev, vehicleStatus: false }));
     }
@@ -349,7 +348,7 @@ const VehicleDashboard: React.FC = () => {
       const masterCodesData = await response.json();
       setMasterCodesByVehicle(masterCodesData);
     } catch (error) {
-      console.error('Error fetching master codes:', error);
+      // Error fetching master codes
       const fallbackData = vehicleIds.reduce((acc, id) => {
         acc[id] = [];
         return acc;
@@ -383,7 +382,7 @@ const VehicleDashboard: React.FC = () => {
       const blacklistedDriversData = await response.json();
       setBlacklistedDriversByVehicle(blacklistedDriversData);
     } catch (error) {
-      console.error('Error fetching blacklisted drivers:', error);
+      // Error fetching blacklisted drivers
       const fallbackData = vehicleIds.reduce((acc, id) => {
         acc[id] = [];
         return acc;
@@ -419,7 +418,7 @@ const VehicleDashboard: React.FC = () => {
       });
       setVehicleLoginsByVehicle(processedData);
     } catch (error) {
-      console.error('Error fetching vehicle logins:', error);
+      // Error fetching vehicle logins
       const fallbackData = vehicleIds.reduce((acc, id) => {
         acc[id] = [];
         return acc;
@@ -460,7 +459,7 @@ const VehicleDashboard: React.FC = () => {
         const lastDriverLoginsData = await response.json();
         setLastDriverLoginsByVehicle(lastDriverLoginsData);
       } catch (error) {
-        console.error('Error fetching last driver logins:', error);
+        // Error fetching last driver logins
         setLastDriverLoginsByVehicle(fallbackData);
       }
     } finally {
@@ -489,7 +488,7 @@ const VehicleDashboard: React.FC = () => {
       const messagesSentData = await response.json();
       setMessagesSentByVehicle(messagesSentData);
     } catch (error) {
-      console.error('Error fetching messages sent:', error);
+      // Error fetching messages sent
       const fallbackData = vehicleIds.reduce((acc, id) => {
         acc[id] = [];
         return acc;
@@ -522,7 +521,7 @@ const VehicleDashboard: React.FC = () => {
         }
       }
     } catch (error) {
-      console.error('Error fetching dates:', error);
+      // Error fetching dates
       setDates([]);
     }
   };
@@ -535,7 +534,7 @@ const VehicleDashboard: React.FC = () => {
       const data = await response.json();
       setAvailableTimes1(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error('Error fetching first times:', error);
+      // Error fetching first times
       setAvailableTimes1([]);
     }
   };
@@ -548,7 +547,7 @@ const VehicleDashboard: React.FC = () => {
       const data = await response.json();
       setAvailableTimes2(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error('Error fetching second times:', error);
+      // Error fetching second times
       setAvailableTimes2([]);
     }
   };
@@ -557,7 +556,6 @@ const VehicleDashboard: React.FC = () => {
     setLoadingSnapshots(true);
 
     if (!selectedFirstTime || !selectedSecondTime) {
-      console.error('Missing snapshot times');
       return;
     }
 
@@ -592,7 +590,7 @@ const VehicleDashboard: React.FC = () => {
       const data = await response.json();
       setSnapshotData(data);
     } catch (error) {
-      console.error('Failed to fetch snapshots:', error);
+      // Failed to fetch snapshots
     } finally {
       setTimeout(() => {
         setLoadingSnapshots(false);
@@ -879,13 +877,10 @@ const VehicleDashboard: React.FC = () => {
     }
   };
 
-  // Fetch vehicles when the component loads or when localStorage changes
   useEffect(() => {
-    // Only fetch dates on initial load, no automatic vehicle fetching
     fetchDates();
 
-    // Remove all automatic localStorage listening and auto-fetching
-    // Data will only be fetched when user clicks Search or Refresh buttons
+ 
   }, []);
 
   return (

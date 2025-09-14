@@ -1,58 +1,39 @@
-import { DriverHistoryType } from '@/components/homeComponents/DriverHistory';
-import { CategoryType } from '@/components/homeComponents/Events';
-import { GeneralDetailsType } from '@/components/homeComponents/SiteDetails';
-import { TicketInfo } from '@/reducers/UnresolvedTickets/types';
+import axios from 'axios';
 import { getToken } from '@/utils';
-import axios, { AxiosRequestConfig } from 'axios';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
-console.log(`API URL configured as: ${BASE_URL}`);
-
-const instance = axios.create({
+// Create axios instance
+const api = axios.create({
   baseURL: BASE_URL,
-  timeout: 30000, // Increased timeout for slower connections
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Add request interceptor to handle CORS and authentication
-instance.interceptors.request.use(
-  async (config) => {
-    // Add CORS headers
-    config.headers['Access-Control-Allow-Origin'] = '*';
-    config.headers['Access-Control-Allow-Methods'] = 'GET,PUT,POST,DELETE,OPTIONS';
-    config.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization';
-
-    // Get token and add to headers if available
-    const token = await getToken();
+// Request interceptor to add auth token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('accessToken');
     if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
+      config.headers.Authorization = `Bearer ${token}`;
     }
-
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Add response interceptor for logging and error handling
-instance.interceptors.response.use(
+// Response interceptor for error handling
+api.interceptors.response.use(
   (response) => {
-    if (response.status >= 200 && response.status < 300) {
-      console.log(`✅ Successful API call to ${response.config.url}`);
-    }
     return response;
   },
   (error) => {
-    console.error('API Error:', {
-      url: error.config?.url,
-      method: error.config?.method,
-      status: error.response?.status,
-      message: error.message,
-    });
+    if (error.response?.status === 401) {
+      localStorage.removeItem('accessToken');
+      window.location.href = '/login';
+    }
     return Promise.reject(error);
   }
 );
@@ -73,7 +54,7 @@ const useAxios = async <T>({
   const token = await getToken();
 
   const defaultInstance = async () => {
-    return (await instance
+    return (await api
       .get(url, {
         ...config,
         headers: {
@@ -89,17 +70,17 @@ const useAxios = async <T>({
     case 'GET':
       return await defaultInstance();
     case 'POST':
-      return (await instance
+      return (await api
         .post(url, data, config)
         .then((res) => res.data)
         .catch(() => null)) as T;
     case 'PUT':
-      return (await instance
+      return (await api
         .put(url, data, config)
         .then((res) => res.data)
         .catch(() => null)) as T;
     case 'DELETE':
-      return (await instance
+      return (await api
         .delete(url, config)
         .then((res) => res.data)
         .catch(() => null)) as T;
@@ -186,12 +167,18 @@ export const getDriversByEquipment = <T>(equipmentId: string) => {
   });
 };
 
-export const newTicket = (data: any) => {
-  return useAxios({
-    method: 'POST',
-    url: `/api/ticket/new`,
-    data,
-  });
+export const newTicket = async (data: any) => {
+  const token = await getToken();
+  try {
+    const response = await api.post('/tickets', data, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    return Promise.reject(error);
+  }
 };
 
 type GetCustomerDetails = {
@@ -248,11 +235,7 @@ export const getExpiredLicenses = async (equipmentID: string) => {
 };
 
 export const getAllDrivers = async (equipmentID: string) => {
-  console.log('Aca debe estar el token. Caul es el problema????');
-
   const token = localStorage.getItem('token');
-
-  console.log(token);
 
   await axios
     .get(`/api/driver/history/${equipmentID}`, {
@@ -274,10 +257,17 @@ export const getDriversWithExpiredLicenses = (
 };
 
 export const getUnresolvedTickets = async () => {
-  const data = await useAxios<TicketInfo[] | null>({
-    method: 'GET',
-    url: `/api/tickets`,
-  });
-  return data;
+  const token = await getToken();
+
+  try {
+    const response = await api.get('/tickets/unresolved', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    return Promise.reject(error);
+  }
 };
 

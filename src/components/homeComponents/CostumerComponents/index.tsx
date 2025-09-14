@@ -15,10 +15,9 @@ import { Alert } from '@/components/generalComponents';
 import { EquipmentInfo, useGenerateDetails } from '@/contexts';
 import { TicketInfo } from '@/reducers/UnresolvedTickets/types';
 
-
 import {
   getCustomerDetails,
-  getDriversByEquipment,  
+  getDriversByEquipment,
   getEquipment,
   newTicket,
 } from '@/services/api';
@@ -382,7 +381,7 @@ function GeneralDetails({
                   )}
                 </div>
                 <div className='flex items-center px-0 py-2'>
-                  <p className='min-w-[150px]'>Gmtp   ID*</p>{' '}
+                  <p className='min-w-[150px]'>Gmtp ID*</p>{' '}
                   <TextField
                     size='small'
                     type='text'
@@ -398,7 +397,7 @@ function GeneralDetails({
                       testingField('equipment_id', e.target.value);
                     }}
                   />
-                  {wrongEquipmentID && (  
+                  {wrongEquipmentID && (
                     <p className='ml-2 text-red-600'>Alo</p>
                   )}
                 </div>

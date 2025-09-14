@@ -66,8 +66,6 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
   };
 
   const handleExportTickets = async () => {
-    console.log('Exporting tickets...');
-
     const token = localStorage.getItem('accessToken');
     if (!token) {
       console.error('No access token found!');
@@ -75,13 +73,7 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
     }
 
     try {
-      // For exporting all tickets - check your API structure
       const exportUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/export`;
-      // OR if your API expects a different format:
-      // const exportUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/export/tickets`;
-
-      console.log('Export URL:', exportUrl);
-      console.log('Using token:', token.substring(0, 15) + '...');
 
       const response = await fetch(exportUrl, {
         method: 'GET',
@@ -108,8 +100,6 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
       document.body.appendChild(a);
       a.click();
       a.remove();
-
-      console.log('Exported tickets successfully');
     } catch (error) {
       console.error('Error exporting tickets:', error);
     }
@@ -118,18 +108,13 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
   const handleStatusFilter = async (selectedStatuses: string[]) => {
     if (selectedStatuses.length === 0) return;
 
-    console.log('Applying filters:', selectedStatuses);
-
     try {
-      // Convert selected statuses to a comma-separated string for the query parameter
       const statusQuery = selectedStatuses.join(',');
 
-      // Send a GET request with statuses as query parameters
       const response = await axios.get(
         `${process.env.NEXT_PUBLIC_API_URL}/tickets/filterByStatus?status=${statusQuery}`
       );
 
-      // Sort the tickets by ID in descending order
       const sorted = response.data.sort(
         (a: Ticket, b: Ticket) => b.id - a.id
       );
@@ -137,7 +122,7 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
       setTickets(sorted);
       setSearchResults(sorted);
     } catch (error) {
-      console.error('❌ Error filtering tickets:', error);
+      console.error('Error filtering tickets:', error);
     }
   };
 
@@ -185,24 +170,22 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
       }
     };
 
-    // Add event listener when dropdown is open
     if (statusDropdownOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
-    // Cleanup function
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [statusDropdownOpen]);
+
   useEffect(() => {
     const fetchAllTickets = async () => {
       const token = localStorage.getItem('accessToken');
 
       try {
-        console.log('Fetching all tickets...');
         const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/tickets`, // Remove the /site?site_id=${site_id} part
+          `${process.env.NEXT_PUBLIC_API_URL}/api/tickets`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -210,10 +193,7 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
             },
           }
         );
-        console.log('API response status:', response.status);
-        console.log('Raw response data:', response.data);
 
-        // Process response
         const sorted = response.data.sort(
           (a: Ticket, b: Ticket) => b.id - a.id
         );
@@ -224,13 +204,12 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
       }
     };
 
-    fetchAllTickets(); // Always fetch all tickets
-  }, []); // Remove site_id dependency
+    fetchAllTickets();
+  }, []);
 
   return (
     <div className='bg-teal-50 min-h-screen px-6'>
       <div className='max-w-7xl mx-auto'>
-        {/* 🔍 Search + Filter Button */}
         <div className='bg-white rounded-lg shadow-lg p-4 mb-6'>
           <div className='flex gap-4 items-center'>
             <input
@@ -249,7 +228,6 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
           </div>
         </div>
 
-        {/* 📁 Import / Export */}
         <div className='flex gap-4 mb-6'>
           <button
             className='bg-teal-500 text-white px-4 py-2 rounded-md'
@@ -272,7 +250,6 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
             Export All Tickets
           </button>
 
-          {/* 🧩 Status Filter */}
           <div className='relative'>
             <button
               className='bg-teal-500 text-white px-4 py-2 rounded-md'
@@ -317,7 +294,6 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
           </div>
         </div>
 
-        {/* 📋 Ticket Table */}
         <div className='bg-white rounded-lg shadow-lg overflow-hidden'>
           <table className='w-full'>
             <thead>
@@ -353,7 +329,6 @@ export const PendingTickets: React.FC<PendingTicketsProps> = ({
           </table>
         </div>
 
-        {/* ⏮️ Pagination Controls */}
         <div className='flex justify-center items-center gap-4 mt-6'>
           <button
             className='px-4 py-2 bg-gray-300 rounded-md'

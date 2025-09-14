@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import LoadingScreen from '@/components/generalComponents/LoadingScreen';
 import { useAuthUser } from '@/lib/auth/auth-hooks';
-import { signIn, signOut } from 'next-auth/react';
+import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 import { createPortal } from 'react-dom';
 
@@ -29,17 +29,36 @@ const NavBar: React.FC = () => {
     });
   };
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(async () => {
     setIsLoading(true);
-    signOut({
-      callbackUrl: '/',
-    });
-  };
+    try {
+      // Call logout API if available
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      // Clear local storage
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('user');
+      
+      // Redirect to login
+      router.push('/login');
+    } catch (error) {
+      // Fallback: just clear local storage and redirect
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('user');
+      router.push('/login');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [router]);
 
   // Toggle profile popup
   const toggleProfilePopup = (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log('Avatar clicked, toggling popup');
     setShowProfilePopup((prev) => !prev);
   };
 
@@ -235,7 +254,6 @@ const NavBar: React.FC = () => {
                         <div className='py-1'>
                           <button
                             onClick={() => {
-                              console.log('Logout clicked');
                               handleLogout();
                               setShowProfilePopup(false);
                             }}
