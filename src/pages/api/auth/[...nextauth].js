@@ -54,7 +54,8 @@ export const authOptions = {
         "tolintelligence.com",
         "forkliftiq360.com",
         "collectiveintelligence.com.au",
-        "ciiquk.com"
+        "ciiquk.com",
+        "collectiveintention.com"
       ];
       
       if (user.email) {
